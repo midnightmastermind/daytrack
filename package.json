@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.9"
   },
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",

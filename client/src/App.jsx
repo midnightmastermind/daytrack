@@ -6,6 +6,7 @@ import { useDrag, useDrop } from "react-dnd"; // Import react-dnd hooks
 import { DndProvider } from "react-dnd"; // Import DndProvider
 import { DateTime } from "luxon";
 import { Icon } from "@blueprintjs/core";
+import { TouchBackend } from "react-dnd-touch-backend";
 import { HTML5Backend } from "react-dnd-html5-backend"; // Import backend for drag and drop
 import "./App.css";
 
@@ -148,12 +149,12 @@ function App() {
     const [taskState, setTaskState] = useState(task);  // Use the entire task object as state
   
     const [{ isDragging }, drag] = useDrag(() => ({
-      type: ItemTypes.TASK,
-      item: taskState, // Pass the entire task object
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
-    }));
+  type: ItemTypes.TASK,
+  item: { task: taskState.name, details: taskState.options }, // Explicitly set task and details
+  collect: (monitor) => ({
+    isDragging: monitor.isDragging(),
+  }),
+}));
   
     const handleCaretClick = () => setIsOpen(!isOpen);
   
@@ -286,25 +287,61 @@ function App() {
     );
   };
 
-  // TaskDisplay component (Displays task info)
-  const TaskDisplay = ({ taskAssignments }) => {
-    return (
-      <CardList className="display">
-        {Object.keys(taskAssignments).map((timeSlot, index) => (
-          <Card key={timeSlot} elevation={Elevation.FOUR} style={{ backgroundColor: (index % 2 ? "white" : "aliceblue") }} className="display-card">
+const TaskDisplay = ({ taskAssignments }) => {
+  return (
+    <CardList className="display">
+      {Object.keys(taskAssignments).map((timeSlot, index) => {
+        const { task, details } = taskAssignments[timeSlot];
+
+        // Extract only checked checkboxes and filled input fields
+        const selectedDetails = [];
+        details.forEach((category) => {
+          const selectedOptions = category.options
+            .filter((option) => (option.type === "checkbox" && option.value) || (option.type === "input" && option.value.trim()))
+            .map((option) => ({
+              name: option.name,
+              value: option.type === "checkbox" ? "✔" : option.value,
+            }));
+
+          if (selectedOptions.length > 0) {
+            selectedDetails.push({
+              category: category.name,
+              options: selectedOptions,
+            });
+          }
+        });
+
+        return (
+          <Card key={timeSlot} elevation={Elevation.FOUR} style={{ backgroundColor: index % 2 ? "white" : "aliceblue" }} className="display-card">
             <div className="task-details">
-              <div className="timeslot">{timeSlot}</div> {/* Display the timeslot */}
-              <div className="task-name">{taskAssignments[timeSlot].task}</div> {/* Display the task */}
-              <div>Details: {JSON.stringify(taskAssignments[timeSlot].details)}</div> {/* Display task details */}
+              <div className="timeslot"><strong>{timeSlot}</strong></div>
+              <div className="task-name"><strong>{task}</strong></div>
+              {selectedDetails.length > 0 ? (
+                selectedDetails.map((category, i) => (
+                  <div key={i} className="task-category">
+                    <strong>{category.category}</strong>
+                    <ul>
+                      {category.options.map((option, j) => (
+                        <li key={j}>
+                          {option.name}: {option.value}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              ) : (
+                <div className="no-options">No details selected</div>
+              )}
             </div>
           </Card>
-        ))}
-      </CardList>
-    );
-  };
+        );
+      })}
+    </CardList>
+  );
+};
 
   return (
-    <DndProvider backend={HTML5Backend}> {/* Wrap app in DndProvider */}
+<DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
       <div className="container">
         <CardList className="card-column task-bank">
           {taskStructure.map((taskItem) => (
