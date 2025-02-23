@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchMessage } from "./store/messageSlice";
-import { Button, Card, CardList, Collapse, Elevation, Checkbox, InputGroup } from "@blueprintjs/core"; // Import BlueprintJS components
-import { useDrag, useDrop } from "react-dnd"; // Import react-dnd hooks
-import { DndProvider } from "react-dnd"; // Import DndProvider
+import { Button, Card, CardList, Collapse, Elevation, Checkbox, InputGroup, Navbar, Drawer, DrawerSize, Position, Alignment } from "@blueprintjs/core";
+import { useDrag, useDrop } from "react-dnd";
+import { DndProvider } from "react-dnd";
 import { DateTime } from "luxon";
+import NewTaskForm from './NewTaskForm.jsx';
 import { Icon } from "@blueprintjs/core";
 import { TouchBackend } from "react-dnd-touch-backend";
-import { HTML5Backend } from "react-dnd-html5-backend"; // Import backend for drag and drop
+import { HTML5Backend } from "react-dnd-html5-backend";
 import "./App.css";
 
 // Define type constants for drag and drop
@@ -15,13 +16,121 @@ const ItemTypes = {
   TASK: "task"
 };
 
+const taskStructure = [
+  {
+    name: "check-in",
+    options: [
+      {
+        name: "me",
+        options: [
+          { name: "meds", type: "checkbox", value: false },
+          { name: "water", type: "checkbox", value: false },
+          { name: "eat", type: "checkbox", value: false }
+        ]
+      },
+      {
+        name: "others",
+        options: [
+          { name: "messages", type: "checkbox", value: false },
+          { name: "feed cats", type: "checkbox", value: false },
+          { name: "pet cats", type: "checkbox", value: false },
+          { name: "mom", type: "checkbox", value: false }
+        ]
+      },
+      {
+        name: "develop",
+        options: [
+          { name: "finance", type: "checkbox", value: false },
+          { name: "nutrition", type: "checkbox", value: false },
+          { name: "fitness", type: "checkbox", value: false },
+          { name: "todo", type: "checkbox", value: false }
+        ]
+      }
+    ]
+  },
+  {
+    name: "clean-up",
+    options: [
+      {
+        name: "physical",
+        options: [
+          { name: "laundry", type: "checkbox", value: false },
+          { name: "trash", type: "checkbox", value: false },
+          { name: "dishes", type: "checkbox", value: false },
+          { name: "items", type: "checkbox", value: false }
+        ]
+      },
+      {
+        name: "virtual",
+        options: [
+          { name: "images", type: "checkbox", value: false },
+          { name: "documents", type: "checkbox", value: false },
+          { name: "videos", type: "checkbox", value: false },
+          { name: "code", type: "checkbox", value: false },
+          { name: "bookmarks", type: "checkbox", value: false }
+        ]
+      },
+      {
+        name: "work-area",
+        options: [
+          { name: "surrounding", type: "checkbox", value: false },
+          { name: "session", type: "checkbox", value: false },
+          { name: "notes", type: "checkbox", value: false }
+        ]
+      }
+    ]
+  },
+  {
+    name: "work",
+    options: [
+      {
+        name: "options",
+        options: [
+          { name: "action", type: "input", value: "" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "play",
+    options: [
+      {
+        name: "options",
+        options: [
+          { name: "action", type: "input", value: "" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "bath-time",
+    options: null
+  },
+  {
+    name: "meditate",
+    options: [
+      {
+        name: "actions",
+        options: [
+          { name: "plan", type: "input", value: "" },
+          { name: "reflect", type: "input", value: "" },
+          { name: "create", type: "input", value: "" }
+        ]
+      }
+    ]
+  }
+];
+
 function App() {
   const dispatch = useDispatch();
   const message = useSelector((state) => state.message.value);
   const status = useSelector((state) => state.message.status);
 
-  // Track dropped tasks (task assignments to time slots)
   const [taskAssignments, setTaskAssignments] = useState({});
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [tasks, setTasks] = useState(taskStructure); // Set taskStructure as default value
+  const [task, setTask] = useState(null);
+
   const generateTimeSlots = () => {
     let slots = [];
     let startTime = DateTime.local().set({ hour: 7, minute: 0 });
@@ -39,125 +148,24 @@ function App() {
     dispatch(fetchMessage());
   }, [dispatch]);
 
-  const taskStructure = [
-    {
-      name: "check-in",
-      options: [
-        {
-          name: "me",
-          options: [
-            { name: "meds", type: "checkbox", value: false },
-            { name: "water", type: "checkbox", value: false },
-            { name: "eat", type: "checkbox", value: false }
-          ]
-        },
-        {
-          name: "others",
-          options: [
-            { name: "messages", type: "checkbox", value: false },
-            { name: "feed cats", type: "checkbox", value: false },
-            { name: "pet cats", type: "checkbox", value: false },
-            { name: "mom", type: "checkbox", value: false }
-          ]
-        },
-        {
-          name: "develop",
-          options: [
-            { name: "finance", type: "checkbox", value: false },
-            { name: "nutrition", type: "checkbox", value: false },
-            { name: "fitness", type: "checkbox", value: false },
-            { name: "todo", type: "checkbox", value: false }
-          ]
-        }
-      ]
-    },
-    {
-      name: "clean-up",
-      options: [
-        {
-          name: "physical",
-          options: [
-            { name: "laundry", type: "checkbox", value: false },
-            { name: "trash", type: "checkbox", value: false },
-            { name: "dishes", type: "checkbox", value: false },
-            { name: "items", type: "checkbox", value: false }
-          ]
-        },
-        {
-          name: "virtual",
-          options: [
-            { name: "images", type: "checkbox", value: false },
-            { name: "documents", type: "checkbox", value: false },
-            { name: "videos", type: "checkbox", value: false },
-            { name: "code", type: "checkbox", value: false },
-            { name: "bookmarks", type: "checkbox", value: false }
-          ]
-        },
-        {
-          name: "work-area",
-          options: [
-            { name: "surrounding", type: "checkbox", value: false },
-            { name: "session", type: "checkbox", value: false },
-            { name: "notes", type: "checkbox", value: false }
-          ]
-        }
-      ]
-    },
-    {
-      name: "work",
-      options: [
-        {
-          name: "options",
-          options: [
-            { name: "action", type: "input", value: "" }
-          ]
-        }
-      ]
-    },
-    {
-      name: "play",
-      options: [
-        {
-          name: "options",
-          options: [
-            { name: "action", type: "input", value: "" }
-          ]
-        }
-      ]
-    },
-    {
-      name: "bath-time",
-      options: null
-    },
-    {
-      name: "meditate",
-      options: [
-        {
-          name: "actions",
-          options: [
-            { name: "plan", type: "input", value: "" },
-            { name: "reflect", type: "input", value: "" },
-            { name: "create", type: "input", value: "" }
-          ]
-        }
-      ]
-    }
-  ];
+  const handleDrawerToggle = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
 
   const TaskCard = ({ task }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [taskState, setTaskState] = useState(task);  // Use the entire task object as state
-  
+    const [taskState, setTaskState] = useState(task);
+
     const [{ isDragging }, drag] = useDrag(() => ({
-  type: ItemTypes.TASK,
-  item: { task: taskState.name, details: taskState.options }, // Explicitly set task and details
-  collect: (monitor) => ({
-    isDragging: monitor.isDragging(),
-  }),
-}));
-  
+      type: ItemTypes.TASK,
+      item: { task: taskState.name, details: taskState.options },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }));
+
     const handleCaretClick = () => setIsOpen(!isOpen);
-  
+
     const handleTaskDetailChange = (category, option, value) => {
       setTaskState((prev) => {
         const updatedTask = { ...prev };
@@ -172,24 +180,20 @@ function App() {
       });
     };
 
-    // Log the item as it's being dragged
     useEffect(() => {
       if (isDragging) {
         console.log('Dragging task:', taskState);
       }
-    }, [isDragging, taskState]); // This will run every time the dragging state or task changes
+    }, [isDragging, taskState]);
 
-  
-    // Apply cursor style dynamically based on the isDragging state
     const dragStyle = {
-      cursor: isDragging ? "grabbing" : "grab", // Change cursor to grabbing/fist when dragging
-      opacity: isDragging ? 0.5 : 1, // Optionally change opacity during dragging
+      cursor: isDragging ? "grabbing" : "grab",
+      opacity: isDragging ? 0.5 : 1,
     };
-  
+
     return (
       <Card ref={drag} elevation={Elevation.FOUR} style={dragStyle}>
         <div className="task-header">
-          {/* Only display the caret button if there are options to expand */}
           {taskState.options ? (
             <Button icon={isOpen ? "caret-down" : "caret-right"} onClick={handleCaretClick} />
           ) : (
@@ -198,8 +202,7 @@ function App() {
           <div className="task-name">{taskState.name}</div>
           <Icon icon="horizontal-inbetween" />
         </div>
-  
-        {/* If the task has options, show a collapsible section with checkboxes and/or inputs */}
+
         {taskState.options && (
           <Collapse isOpen={isOpen} keepChildrenMounted>
             <div className="task-column-container">
@@ -231,38 +234,52 @@ function App() {
       </Card>
     );
   };
-  
 
-
-
-  // ScheduleCard component (Droppable)
-  const ScheduleCard = ({ timeSlot, taskAssignments, setTaskAssignments, index }) => {
+  const ScheduleCard = ({ timeSlot, taskAssignments, setTaskAssignments, index, tasks, setTasks }) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
       accept: ItemTypes.TASK,
       drop: (item) => {
         console.log(item);
-        // Add the dropped task and its details to the taskAssignments for the timeSlot
+        const clonedTask = { ...item, details: JSON.parse(JSON.stringify(item.details)) };
+
         setTaskAssignments((prevAssignments) => ({
           ...prevAssignments,
           [timeSlot]: {
-            task: item.task,  // Store the task name
-            details: item.details // Store the task details (checkboxes or input)
+            task: clonedTask.task,
+            details: clonedTask.details
           },
         }));
 
-        // Print the dropped task and its options (checkboxes or input)
-        console.log(`Dropped Task: ${item.task}`);
-        console.log("Options: ", item.details);
+        console.log(`Dropped Task: ${clonedTask.task}`);
+        console.log("Options: ", clonedTask.details);
+
+        // Reset the values of the original task
+        const resetTask = tasks.map(task => {
+          if (task.name === item.task) {
+            return {
+              ...task,
+              options: task.options.map(category => ({
+                ...category,
+                options: category.options.map(option => ({
+                  ...option,
+                  value: option.type === "checkbox" ? false : "", // Reset checkbox to false or input to an empty string
+                }))
+              }))
+            };
+          }
+          return task;
+        });
+
+        setTasks(resetTask); // Update the task list with the reset task
       },
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
       }),
     }));
-
     const cardStyle = {
       border: isOver ? "2px dashed #4caf50" : "2px solid #ccc",
-      backgroundColor: isOver ? "#e0f7e0" : (index % 2 ? "white" : "aliceblue"), // Set background color to aliceblue
+      backgroundColor: isOver ? "#e0f7e0" : (index % 2 ? "white" : "aliceblue"),
       transition: "background-color 0.2s, border 0.2s",
     };
 
@@ -277,7 +294,7 @@ function App() {
                 return newAssignments;
               })} className="remove-task-btn" />
               <div>{taskAssignments[timeSlot].task}</div>
-              <div>Details: {JSON.stringify(taskAssignments[timeSlot].details)}</div>
+              <div>{timeSlot}</div>
             </div>
           </div>
         ) : (
@@ -287,87 +304,119 @@ function App() {
     );
   };
 
-const TaskDisplay = ({ taskAssignments }) => {
-  return (
-    <CardList className="display">
-      {Object.keys(taskAssignments).map((timeSlot, index) => {
-        const { task, details } = taskAssignments[timeSlot];
+  const TaskDisplay = ({ taskAssignments }) => {
+    console.log(taskAssignments);
+    return (
+      <CardList className="display">
+        {timeSlots.map((timeSlot, index) => {
+          const assignment = taskAssignments[timeSlot];
+          if (!assignment) return null;
 
-        // Extract only checked checkboxes and filled input fields
-        const selectedDetails = [];
-        details.forEach((category) => {
-          const selectedOptions = category.options
-            .filter((option) => (option.type === "checkbox" && option.value) || (option.type === "input" && option.value.trim()))
-            .map((option) => ({
-              name: option.name,
-              value: option.type === "checkbox" ? "✔" : option.value,
-            }));
+          const { task, details } = assignment;
 
-          if (selectedOptions.length > 0) {
-            selectedDetails.push({
-              category: category.name,
-              options: selectedOptions,
-            });
-          }
-        });
+          const selectedDetails = [];
+          details.forEach((category) => {
+            const selectedOptions = category.options
+              .filter((option) => (option.type === "checkbox" && option.value) || (option.type === "input" && option.value.trim()))
+              .map((option) => ({
+                name: option.name,
+                value: option.type === "checkbox" ? "✔" : option.value,
+              }));
 
-        return (
-          <Card key={timeSlot} elevation={Elevation.FOUR} style={{ backgroundColor: index % 2 ? "white" : "aliceblue" }} className="display-card">
-            <div className="task-details">
+            if (selectedOptions.length > 0) {
+              selectedDetails.push({
+                category: category.name,
+                options: selectedOptions,
+              });
+            }
+          });
+
+          return (
+            <Card key={timeSlot} elevation={Elevation.FOUR} style={{ backgroundColor: index % 2 ? "white" : "aliceblue" }} className="display-card">
               <div className="timeslot"><strong>{timeSlot}</strong></div>
               <div className="task-name"><strong>{task}</strong></div>
-              {selectedDetails.length > 0 ? (
-                selectedDetails.map((category, i) => (
-                  <div key={i} className="task-category">
-                    <strong>{category.category}</strong>
-                    <ul>
-                      {category.options.map((option, j) => (
-                        <li key={j}>
-                          {option.name}: {option.value}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))
-              ) : (
-                <div className="no-options">No details selected</div>
-              )}
-            </div>
-          </Card>
-        );
-      })}
-    </CardList>
-  );
-};
+              <div className="task-details">
+                {selectedDetails.length > 0 ? (
+                  selectedDetails.map((category, i) => (
+                    <div key={i} className="task-category">
+                      <strong>{category.category}</strong>
+                      <div className="task-options">
+                        {category.options.map((option, j) => (
+                          <div key={j} className="task-option">
+                            • {option.name}: {option.value}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-options">No details selected</div>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </CardList>
+    );
+  };
+
+
+  const handleSave = (newTask) => {
+    setTasks((prevTasks) => [...prevTasks, newTask]);
+    setIsDrawerOpen(false);
+  };
 
   return (
-<DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
       <div className="container">
-        <CardList className="card-column task-bank">
-          {taskStructure.map((taskItem) => (
-            <TaskCard key={taskItem.name} task={taskItem} />
-          ))}
-        </CardList>
+        <Navbar className="tool-bar">
+          <Navbar.Group align={Alignment.LEFT} className="navbar-group">
+            <Button icon="plus" intent="primary" minimal onClick={handleDrawerToggle} />
+          </Navbar.Group>
+        </Navbar>
 
-        <div className="schedule">
-          <Card className="boundary-card" elevation={Elevation.FOUR} interactive={false}>
-            <div className="timeslot">Wakeup</div>
-          </Card>
-          <CardList className="card-column">
-            {timeSlots.map((timeSlot, index) => (
-              <ScheduleCard
-                key={index}
-                timeSlot={timeSlot}
-                taskAssignments={taskAssignments}
-                setTaskAssignments={setTaskAssignments} // Pass setTaskAssignments to ScheduleCard
-              />
+        <Drawer
+          isOpen={isDrawerOpen}
+          onClose={handleDrawerToggle}
+          size={DrawerSize.SMALL}
+          position={Position.LEFT}
+          title="Create a New Task"
+        >
+          <NewTaskForm taskData={task} onSave={handleSave} />
+        </Drawer>
+
+        <div className="left-side">
+          <CardList className="card-column task-bank">
+            {tasks.map((taskItem) => (
+              <TaskCard key={taskItem.name} task={taskItem} />
             ))}
           </CardList>
-          <Card className="boundary-card" elevation={Elevation.FOUR} interactive={false}>
-            <div className="timeslot">Sleep</div>
-          </Card>
+
+          <div className="schedule">
+            <Card className="boundary-card" elevation={Elevation.FOUR} interactive={false}>
+              <div className="timeslot">Wakeup</div>
+            </Card>
+            <CardList className="card-column">
+              {timeSlots.map((timeSlot, index) => (
+                <ScheduleCard
+                  key={index}
+                  timeSlot={timeSlot}
+                  taskAssignments={taskAssignments}
+                  setTaskAssignments={setTaskAssignments}
+                  tasks={tasks}  // Pass tasks
+                  setTasks={setTasks}  // Pass setTasks
+                />
+              ))}
+            </CardList>
+            <Card className="boundary-card" elevation={Elevation.FOUR} interactive={false}>
+              <div className="timeslot">Sleep</div>
+            </Card>
+          </div>
         </div>
-        <TaskDisplay taskAssignments={taskAssignments} /> {/* Display Task Cards */}
+
+        <div className="right-side">
+          <TaskDisplay taskAssignments={taskAssignments} />
+        </div>
       </div>
     </DndProvider>
   );
