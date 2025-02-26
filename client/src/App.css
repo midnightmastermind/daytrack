@@ -1,233 +1,229 @@
 @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600&display=swap');
 
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  text-align: center;
-  margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
 }
 
-h1 {
-  color: whitesmoke;
-}
-
-p {
-  font-size: 18px;
-}
-
-.bg-container {
-  background-image: url("./background.jpg");
-  background-size: cover;
-  background-position: center;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: end;
-  color: white;
-}
-
+/* Main container for the app */
 .container {
-  height: 100vh;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: start;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow-y: hidden;
 }
 
-/* Make the Navbar vertical */
-.container .tool-bar {  
-  display: flex;
-  flex-direction: column; /* Stack items vertically */
-  height: 100vh; /* Full height */
-  width: 50px; /* Set the width */
-  background-color: aliceblue; /* Light background color */
-  padding-top: 10px;
+/* Vertical toolbar */
+.tool-bar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 55px;
+    background-color: aliceblue;
+    padding: 0;
 }
 
-/* Make sure navbar items are aligned correctly */
-.container .tool-bar .navbar-group {
-  display: flex;
-  flex-direction: column; /* Stack items vertically inside navbar */
-  padding: 10px;
+.tool-bar .bp5-navbar-group {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    max-height: 100vh;
 }
 
-/* Optional: Adjust button styles inside the navbar */
-.container .tool-bar .bp3-button {
-  margin: 10px 0; /* Space buttons vertically */
+/* Main content container */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
 }
 
-
-.container .left-side {
-  width: 480px;
-  display: flex;
-  flex-direction: row;
-}
-.container .right-side {
-  width: 480px;
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-}
-.container .goal-display {
-  width: 100%;
-  height: 50vh;
-}
-.container .display {
-  width: 100%;
-  height: 50vh;
-}
-.container .task-bank .bp5-card {
-  min-height: 25px;
-  padding: 0px;
-  flex-direction: column;
-  align-items: start;
-}
-.container .task-bank {
-  height: 100vh;
-  max-width: 300px;
+/* Left side: Task Bank and Schedule */
+.left-side {
+    width: 480px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
 }
 
-.container .task-bank .task-header {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  padding-left: 0px;
-  padding-right: 10px;
-  align-items: center;
-  height: 100%;
-  min-height: 30px;
+/* Right side: Display Panel */
+.right-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
 }
 
-.container .task-bank .task-header .bp5-icon-dot {
-  margin-left: 7px;
-  margin-right: 5px;
+/* ---------- TASK BANK ---------- */
+.task-bank {
+    /* Ensures the task bank takes full available height */
+    max-height: 100vh;
+    width: 100%;
+    max-width: 280px;
+}
+.task-bank .bp5-card {
+    /* Override Blueprint card defaults for task bank items */
+    min-height: 25px;
+    padding: 5px;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 5px;
 }
 
-.container .task-bank .bp5-collapse {
-  width: 100%;
+.task-bank .task-header {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
 }
 
-.container .task-bank .task-column-container {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: start;
-  align-items: start;
+.task-bank .task-name {
+    flex: 1;
+    text-align: left;
+    margin-left: 5px;
+    font-size: 13px;
+    font-weight: bold;
 }
 
-.container .task-bank .task-column {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  align-items: start;
-  font-size: 11px;
-  margin-left: 10px;
+.task-bank .task-children {
+    display: flex;
 }
 
-.container .task-bank .task-column .column-name{
-  align-self: center;
-  text-decoration: underline;
+.task-bank .category-name {
+    text-align: left;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 2px;
 }
 
-.container .task-bank .task-checkbox {
-  margin-bottom: 5px;
-}
-.container .task-bank .task-checkbox .option-name{
-  margin-left: -8px;
-}
-/*
-.container .task-bank .task-checkbox span {
-  margin-inline-start: 0px;
-  display: block;
-}  */
-.container .schedule {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+.task-bank .child-task {
+    display: flex;
+    font-size: 12px;
 }
 
-.container .schedule .droppable-card {
-  display: flex;
-  flex-direction: column;
-  padding: 0px;
-  min-height: 30px;
-  text-align: center;
-  width: 240px;
-  border-left: 2px solid black;
-  border-right: 2px solid black;
+.task-bank .child-task .bp5-checkbox {
+    margin-bottom: 2px;
 }
 
-.droppable-card .assigned-task {
-  display: flex;
-  justify-content: start;
-  align-items: center;
+/* ---------- SCHEDULE ---------- */
+.schedule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+    max-height: 100vh;
+    overflow-y: scroll;
+    max-width: 280px;
+    width: 100%;
 }
 
-.droppable-card .task-content {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-right: 10px;
+.schedule .droppable-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 30px;
+    width: 280px;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+    text-align: center;
+    margin-bottom: 10px;
 }
 
-.container .schedule .boundary-card{
-  display: flex;
-  flex-direction: column;
-  padding: 0px;
-  min-height: 30px;
-  text-align: center;
-  width: 240px;
-  background-color: gray;
-  border-left: 2px solid black;
-  border-top: 2px solid black;
-  border-right: 2px solid black;
-  border-bottom: 2px solid black;
+.schedule .boundary-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 30px;
+    width: 280px;
+    background-color: gray;
+    border: 2px solid black;
+    text-align: center;
 }
 
-/* Add the bottom border back for every second card (the 30-minute mark) */
-.container .schedule .droppable-card:nth-child(2n):not(.boundary-card) {
-  border-bottom: 2px solid black;
-  background-color: aliceblue;
+/* Timeslot header within a schedule card */
+.timeslot {
+    height: 29px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
-.container .schedule .bp5-card .timeslot {
-  width: 100%;
-  height: 29px;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
+/* Assigned task display inside a schedule slot */
+.assigned-task {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 2px 5px;
 }
 
-
-.container .schedule .bp5-card .assigned-task {
-  width: 100%;
-  height: 29px;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-}
-.container .card-column {
-  max-width: 240px;
+/* ---------- DISPLAY PANEL ---------- */
+.display {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.container .display-card {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
+.display-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 5px;
+    margin-bottom: 5px;
 }
 
-.container .display-card>div {
-  width: 33%;
+.display-card>div {
+    width: 33%;
 }
 
+/* ---------- TYPOGRAPHY ---------- */
 .elegant-text {
-  font-family: 'Great Vibes', cursive;
-  font-size: 3rem;
-  font-weight: 400;
-  color: whitesmoke;
+    font-family: 'Great Vibes', cursive;
+    font-size: 3rem;
+    font-weight: 400;
+    color: whitesmoke;
+}
+
+/* ---------- DATEPICKER ADJUSTMENTS ---------- */
+.bp5-datepicker-content .rdp-caption_dropdowns {
+    display: flex;
+    justify-content: space-around;
+}
+
+.rdp-vhidden {
+    display: none;
+}
+
+.rdp-caption {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(17, 20, 24, 0.1);
+    background-color: aliceblue;
+}
+
+.bp5-datepicker-content .bp5-icon-double-caret-vertical {
+    right: 0 !important;
+}
+
+/* ---------- RESPONSIVE ADJUSTMENTS ---------- */
+@media (max-width: 800px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tool-bar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+
+    .main-content {
+        flex-direction: column;
+    }
 }

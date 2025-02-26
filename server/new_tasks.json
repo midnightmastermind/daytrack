@@ -1,0 +1,684 @@
+[
+    {
+      "_id": { "$oid": "64a1e0cfcf1e123456789001" },
+      "name": "check-in with me",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d0cf1e123456789010" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d0cf1e123456789010" },
+      "name": "actions",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d0cf1e123456789002" },
+        { "$oid": "64a1e0d0cf1e123456789003" },
+        { "$oid": "64a1e0d0cf1e123456789004" },
+        { "$oid": "64a1e0d0cf1e123456789005" }
+      ],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d0cf1e123456789002" },
+      "name": "meds",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d0cf1e123456789003" },
+      "name": "water",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d0cf1e123456789004" },
+      "name": "eat",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d0cf1e123456789005" },
+      "name": "todo",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e123456789006" },
+      "name": "check-in with others",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d1cf1e123456789010" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e123456789010" },
+      "name": "actions",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d1cf1e123456789007" },
+        { "$oid": "64a1e0d1cf1e123456789008" },
+        { "$oid": "64a1e0d1cf1e123456789009" },
+        { "$oid": "64a1e0d1cf1e12345678900a" }
+      ],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e123456789007" },
+      "name": "messages",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e123456789008" },
+      "name": "feed cats",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e123456789009" },
+      "name": "pet cats",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d1cf1e12345678900a" },
+      "name": "mom",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e12345678900b" },
+      "name": "clean-up",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d2cf1e12345678900c" },
+        { "$oid": "64a1e0d3cf1e123456789011" },
+        { "$oid": "64a1e0d3cf1e123456789017" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e12345678900c" },
+      "name": "physical",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d2cf1e12345678900d" },
+        { "$oid": "64a1e0d2cf1e12345678900e" },
+        { "$oid": "64a1e0d2cf1e12345678900f" },
+        { "$oid": "64a1e0d2cf1e123456789010" }
+      ],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e12345678900d" },
+      "name": "laundry",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e12345678900e" },
+      "name": "trash",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e12345678900f" },
+      "name": "dishes",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d2cf1e123456789010" },
+      "name": "items",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789011" },
+      "name": "virtual",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d3cf1e123456789012" },
+        { "$oid": "64a1e0d3cf1e123456789013" },
+        { "$oid": "64a1e0d3cf1e123456789014" },
+        { "$oid": "64a1e0d3cf1e123456789015" },
+        { "$oid": "64a1e0d3cf1e123456789016" }
+      ],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789012" },
+      "name": "images",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789013" },
+      "name": "documents",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789014" },
+      "name": "videos",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789015" },
+      "name": "code",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789016" },
+      "name": "bookmarks",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789017" },
+      "name": "work-area",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d3cf1e123456789018" },
+        { "$oid": "64a1e0d3cf1e123456789019" },
+        { "$oid": "64a1e0d3cf1e12345678901a" }
+      ],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789018" },
+      "name": "surrounding",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e123456789019" },
+      "name": "session",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d3cf1e12345678901a" },
+      "name": "notes",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e12345678901b" },
+      "name": "work",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d4cf1e12345678901c" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e12345678901c" },
+      "name": "action",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": true,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e12345678901d" },
+      "name": "play",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d4cf1e12345678901e" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e12345678901e" },
+      "name": "action",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": false,
+        "input": true,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e12345678901f" },
+      "name": "finance",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e123456789020" },
+      "name": "nutrition",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e123456789021" },
+      "name": "fitness",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d4cf1e123456789022" },
+      "name": "bath-time",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d5cf1e123456789023" },
+      "name": "meditate",
+      "description": "",
+      "children": [
+        { "$oid": "64a1e0d5cf1e123456789024" },
+        { "$oid": "64a1e0d5cf1e123456789025" },
+        { "$oid": "64a1e0d5cf1e123456789026" }
+      ],
+      "properties": {
+        "card": true,
+        "checkbox": false,
+        "input": false,
+        "category": true
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d5cf1e123456789024" },
+      "name": "plan",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d5cf1e123456789025" },
+      "name": "reflect",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "64a1e0d5cf1e123456789026" },
+      "name": "create",
+      "description": "",
+      "children": [],
+      "properties": {
+        "card": false,
+        "checkbox": true,
+        "input": false,
+        "category": false
+      },
+      "goals": [],
+      "counters": [],
+      "createdAt": { "$date": "2023-07-04T00:00:00.000Z" },
+      "updatedAt": { "$date": "2023-07-04T00:00:00.000Z" }
+    }
+  ]
+  

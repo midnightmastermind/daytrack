@@ -2,15 +2,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const cors = require("cors");
+const tasksRoutes = require('./routes/tasks');
+const dayplansRoutes = require('./routes/dayplans'); // updated routes
+const goalRoutes = require('./routes/goals');
+const counterRoutes = require('./routes/counters');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
@@ -41,5 +42,10 @@ app.post("/users", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.use('/api/tasks', tasksRoutes);
+app.use('/api/dayplans', dayplansRoutes); // register day plan routes
+app.use('/api/goals', goalRoutes);
+app.use('/api/counters', counterRoutes);
 
 app.listen(5000, () => console.log("Server started on port 5000"));
