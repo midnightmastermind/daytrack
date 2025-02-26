@@ -2,16 +2,15 @@ import React from "react";
 import { CardList } from "@blueprintjs/core";
 import TaskCard from "./TaskCard";
 
+// Only display top-level tasks (where properties.card is true)
 const TaskBank = ({ tasks, onEditTask, onOpenDrawer }) => {
-    console.log(tasks);
-  // Only display tasks where properties.card is true (top-level tasks)
   const topLevelTasks = tasks.filter(
     (task) => task.properties && task.properties.card
   );
-
-  console.log(topLevelTasks);
   return (
-    <CardList className="card-column task-bank">
+    <CardList className="task-bank-container">
+      <div className="task-bank-header">Task Bank</div>
+      <div className="task-bank">
       {topLevelTasks.map((taskItem) => (
         <TaskCard 
           key={taskItem._id} 
@@ -20,6 +19,7 @@ const TaskBank = ({ tasks, onEditTask, onOpenDrawer }) => {
           onOpenDrawer={onOpenDrawer} 
         />
       ))}
+      </div>
     </CardList>
   );
 };

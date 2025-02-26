@@ -149,6 +149,7 @@ function App() {
           planDirty={planDirty} 
           onSaveDayPlan={handleSaveDayPlan} 
         />
+        <div className="left-side">
           <TaskBank 
             tasks={tasksState} 
             onEditTask={(task) => {
@@ -163,10 +164,13 @@ function App() {
             setAssignments={setAssignments} 
             setPlanDirty={setPlanDirty}
           />
+          </div>
+          <div className="right-side">
           <TaskDisplay 
             timeSlots={timeSlots} 
             assignments={assignments} 
           />
+          </div>
         </div>
         <Drawer
           isOpen={isDrawerOpen}
