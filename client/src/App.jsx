@@ -1,31 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchMessage } from "./store/messageSlice";
+import { DragDropContext } from "react-beautiful-dnd";
+import { DateTime } from "luxon";
+import { Drawer, DrawerSize, Position } from "@blueprintjs/core";
+import "./App.css";
 import { fetchTasks } from "./store/tasksSlice";
 import { fetchAllDayPlans, createDayPlan, updateDayPlan } from "./store/dayPlanSlice";
-import { DndProvider } from "react-dnd";
-import { TouchBackend } from "react-dnd-touch-backend";
-import { DateTime } from "luxon";
-import {
-  Button,
-  Card,
-  CardList,
-  Collapse,
-  Dialog,
-  Drawer,
-  DrawerSize,
-  Elevation,
-  Checkbox,
-  InputGroup,
-  Navbar,
-  Position,
-  Alignment,
-  Icon,
-  Popover,
-} from "@blueprintjs/core";
-import "./App.css";
 
-// Components
+// Components (assumed to be in ./components)
 import Toolbar from "./components/Toolbar";
 import TaskBank from "./components/TaskBank";
 import Schedule from "./components/Schedule";
@@ -37,17 +19,11 @@ function App() {
   const { tasks } = useSelector((state) => state.tasks);
   const { dayplans } = useSelector((state) => state.dayplans);
 
-  // Local state (sync with Redux)
   const [tasksState, setTasksState] = useState(tasks || []);
   const [dayPlansState, setDayPlansState] = useState(dayplans || []);
-  
-  // Selected date for the DayPlan
   const [selectedDate, setSelectedDate] = useState(new Date());
-  // Local schedule assignments: keyed by timeslot with an array of assigned tasks
   const [assignments, setAssignments] = useState({});
-  // Dirty flag to indicate schedule changes
   const [planDirty, setPlanDirty] = useState(false);
-  // For editing a task from the task bank
   const [task, setTask] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -65,8 +41,7 @@ function App() {
   const timeSlots = generateTimeSlots();
 
   useEffect(() => {
-    console.log("Dispatching fetchMessage, fetchTasks, and fetchAllDayPlans");
-    dispatch(fetchMessage());
+    console.log("Dispatching fetchTasks and fetchAllDayPlans");
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
   }, [dispatch]);
@@ -106,11 +81,6 @@ function App() {
     }
   }, [selectedDate, dayPlansState]);
 
-  const handleDrawerToggle = () => {
-    console.log("Toggling drawer. Current state:", isDrawerOpen);
-    setIsDrawerOpen(!isDrawerOpen);
-  };
-
   const handleSaveDayPlan = () => {
     console.log("Saving DayPlan for date:", selectedDate);
     const resultArray = Object.keys(assignments).map((timeSlot) => {
@@ -140,41 +110,128 @@ function App() {
     setPlanDirty(false);
   };
 
+  // onDragEnd: if a task is dropped in a timeslot and a task with the same id already exists, replace it; otherwise, add it.
+  const onDragEnd = (result) => {
+    console.log("onDragEnd:", result);
+    const { source, destination, draggableId } = result;
+    if (!destination || !source) {
+      console.log("Missing source or destination, exiting.");
+      return;
+    }
+    if (typeof source.index !== "number" || typeof destination.index !== "number") {
+      console.log("Invalid source or destination index, exiting.");
+      return;
+    }
+
+    // Copy the current assignments
+    let updatedAssignments = { ...assignments };
+    // Determine if the drag originates from the task bank
+    const fromTaskBank = source.droppableId === "taskBank";
+    let movedTask;
+
+    if (fromTaskBank) {
+      // Get the full task from tasksState using the draggableId (which is task._id)
+      const taskFromBank = tasksState.find(
+        (task) => task._id.toString() === draggableId
+      );
+      if (!taskFromBank) {
+        console.log("Task not found in tasksState");
+        return;
+      }
+      // Always create a new instance with a new assignmentId for each drop
+      movedTask = {
+        ...taskFromBank,
+        id: taskFromBank._id.toString(),        // original id (for reference)
+        originalId: taskFromBank._id.toString(),  // reference to the original task
+        // Generate a new unique assignmentId (ensuring a new draggable identity)
+        assignmentId: `${taskFromBank._id}-${Date.now()}-${Math.random()}`,
+        parent_id: null,
+      };
+    } else {
+      // Dragging from within the schedule: use the existing instance.
+      const sourceTasks = [...(assignments[source.droppableId] || [])];
+      movedTask = sourceTasks[source.index];
+      // Remove it from the source timeslot.
+      sourceTasks.splice(source.index, 1);
+      updatedAssignments[source.droppableId] = sourceTasks;
+    }
+
+    // Get the destination tasks for the timeslot.
+    const destTasks = [...(assignments[destination.droppableId] || [])];
+
+    if (fromTaskBank) {
+      // Always add as a new instance when dragging from task bank,
+      // so even if a task with the same originalId exists, we add a new copy.
+      destTasks.splice(destination.index, 0, movedTask);
+    } else {
+      // If moving within the schedule, update based on assignmentId.
+      const existingIndex = destTasks.findIndex(
+        (task) => task.assignmentId === movedTask.assignmentId
+      );
+      if (existingIndex !== -1) {
+        destTasks[existingIndex] = movedTask;
+      } else {
+        destTasks.splice(destination.index, 0, movedTask);
+      }
+    }
+
+    updatedAssignments[destination.droppableId] = destTasks;
+    console.log("Updated assignments:", updatedAssignments);
+    setAssignments(updatedAssignments);
+    setPlanDirty(true);
+  };
+
+
+
+
   return (
-    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+    <DragDropContext onDragEnd={onDragEnd}>
       <div className="container">
-        <Toolbar 
-          selectedDate={selectedDate} 
-          setSelectedDate={setSelectedDate} 
-          planDirty={planDirty} 
-          onSaveDayPlan={handleSaveDayPlan} 
-        />
-        <div className="left-side">
-          <TaskBank 
-            tasks={tasksState} 
-            onEditTask={(task) => {
-              console.log("Editing task:", task.name);
-              setTask(task);
-            }}
-            onOpenDrawer={() => setIsDrawerOpen(true)}
-          />
-          <Schedule 
-            timeSlots={timeSlots} 
-            assignments={assignments} 
-            setAssignments={setAssignments} 
-            setPlanDirty={setPlanDirty}
-          />
+      <Toolbar 
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        planDirty={planDirty}
+        onSaveDayPlan={handleSaveDayPlan}
+        onOpenDrawer={() => {
+          console.log("Opening drawer");
+          setTask(null);
+          setIsDrawerOpen(true);
+        }}
+      />
+        <div className="main-content">
+          <div className="left-side">
+            <div className="task-bank-container">
+              <div className="task-bank-header">Task Bank</div>
+              <TaskBank
+                tasks={tasksState}
+                onEditTask={(task) => {
+                  console.log("Editing task:", task.name);
+                  setTask(task);
+                }}
+                onOpenDrawer={() => setIsDrawerOpen(true)}
+              />
+            </div>
+            <div className="schedule-container">
+              <div className="boundary-card">Wake Up</div>
+              <Schedule
+                timeSlots={timeSlots}
+                assignments={assignments}
+                setAssignments={setAssignments}
+                setPlanDirty={setPlanDirty}
+              />
+              <div className="boundary-card">Sleep</div>
+            </div>
           </div>
           <div className="right-side">
-          <TaskDisplay 
-            timeSlots={timeSlots} 
-            assignments={assignments} 
-          />
+            <TaskDisplay
+              timeSlots={timeSlots}
+              assignments={assignments}
+            />
           </div>
         </div>
         <Drawer
           isOpen={isDrawerOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setIsDrawerOpen(false)}
           size={DrawerSize.SMALL}
           position={Position.LEFT}
           title="Create / Edit Task"
@@ -184,11 +241,12 @@ function App() {
             onSave={(newTask) => {
               console.log("New task saved:", newTask);
               setTasksState((prev) => [...prev, newTask]);
-              handleDrawerToggle();
+              setIsDrawerOpen(false);
             }}
           />
         </Drawer>
-    </DndProvider>
+      </div>
+    </DragDropContext>
   );
 }
 

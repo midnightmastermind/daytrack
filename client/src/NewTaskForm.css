@@ -44,3 +44,30 @@
     align-items: center;
     justify-content: start;
   }
+
+  .child-editor .child-header {
+    height: 40px;
+    border-top: 1px solid #30363D;
+  }
+.child-editor .bp5-checkbox input {
+    left: 5px;
+}
+
+.child-editor .bp5-control-indicator {
+    margin-inline-end: 0px;
+    margin-inline-start: 0px;
+}
+.child-editor .bp5-checkbox {
+    padding-inline-start: 0px;
+    margin-bottom: 0px;
+    margin-top: 3px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-left: 10px;
+    border-left: 1px solid #30363D;
+}
+.child-editor .child-property-selection {
+    font-size: 10px;
+}

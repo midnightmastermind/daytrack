@@ -1,79 +1,74 @@
 import React from "react";
 import { Card, CardList, Elevation, Button } from "@blueprintjs/core";
-import { useDrop } from "react-dnd";
-
-const ItemTypes = { TASK: "task" };
+import { Droppable, Draggable } from "react-beautiful-dnd";
 
 const ScheduleCard = ({ timeSlot, assignments, setAssignments, setPlanDirty }) => {
   const tasksForSlot = assignments[timeSlot] || [];
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.TASK,
-    drop: (item) => {
-      console.log(`Dropped task "${item.name}" into timeslot "${timeSlot}"`);
-      const newTask = { ...item, parent_id: null };
-      setAssignments((prev) => {
-        const currentTasks = prev[timeSlot] ? [...prev[timeSlot]] : [];
-        // If a task with the same id already exists, replace it; otherwise, add it.
-        const filteredTasks = currentTasks.filter((t) => t.id.toString() !== newTask.id.toString());
-        const updated = { ...prev, [timeSlot]: [...filteredTasks, newTask] };
-        console.log("Updated assignments after drop:", updated);
-        return updated;
-      });
-      setPlanDirty(true);
-    },
-    collect: (monitor) => ({ isOver: monitor.isOver() }),
-  }));
-
-  // Remove a task from the timeslot by index.
+  
   const removeTask = (index) => {
-    setAssignments((prev) => {
+    setAssignments(prev => {
       const currentTasks = prev[timeSlot] ? [...prev[timeSlot]] : [];
       const updatedTasks = currentTasks.filter((_, i) => i !== index);
-      const updated = { ...prev, [timeSlot]: updatedTasks };
-      console.log("Updated assignments after removal:", updated);
-      return updated;
+      return { ...prev, [timeSlot]: updatedTasks };
     });
     setPlanDirty(true);
   };
 
   return (
-    <Card
-      ref={drop}
-      elevation={Elevation.FOUR}
-      interactive
-      className="timeslot"
-      style={{
-        border: isOver ? "2px dashed #4caf50" : "2px solid #ccc",
-        backgroundColor: isOver ? "#e0f7e0" : undefined,
-      }}
-    >
-      <div>{timeSlot}</div>
-      {tasksForSlot.map((assignedTask, idx) => (
-        <div key={idx} className="assigned-task" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>{assignedTask.name}</div>
-          <Button icon="cross" minimal onClick={() => removeTask(idx)} />
-        </div>
-      ))}
-    </Card>
+    <Droppable droppableId={timeSlot}>
+      {(provided, snapshot) => (
+        <Card
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          elevation={Elevation.FOUR}
+          interactive
+          className="timeslot"
+          style={{
+            border: snapshot.isDraggingOver ? "2px dashed #4caf50" : "1px solid #30363D",
+            backgroundColor: snapshot.isDraggingOver ? "#0E1115" : undefined
+          }}
+        >
+          <div>{timeSlot}</div>
+          {tasksForSlot.map((assignedTask, idx) => (
+            <Draggable key={assignedTask.assignmentId} draggableId={assignedTask.assignmentId} index={idx}>
+            {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className="assigned-task"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    ...provided.draggableProps.style
+                  }}
+                >
+                  <div>{assignedTask.name}</div>
+                  <Button icon="cross" minimal onClick={() => removeTask(idx)} />
+                </div>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </Card>
+      )}
+    </Droppable>
   );
 };
 
 const Schedule = ({ timeSlots, assignments, setAssignments, setPlanDirty }) => {
   return (
-    <CardList className="schedule card-column">
-      <div className="boundary-card">Wake Up</div>
-      <div className="timeslot-container">
+    <CardList className="schedule">
       {timeSlots.map((slot, index) => (
         <ScheduleCard 
-          key={index}
+          key={slot}
           timeSlot={slot}
           assignments={assignments}
           setAssignments={setAssignments}
           setPlanDirty={setPlanDirty}
         />
       ))}
-      </div>
-      <div className="boundary-card">Sleep</div>
     </CardList>
   );
 };

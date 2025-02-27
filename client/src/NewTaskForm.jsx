@@ -1,160 +1,132 @@
-import React, { useState, useEffect } from 'react';
-import { Button, FormGroup, InputGroup, HTMLSelect, Switch } from '@blueprintjs/core';
+import React, { useState } from "react";
+import { Button, FormGroup, InputGroup, Checkbox, Popover, Tag } from "@blueprintjs/core";
 import "./NewTaskForm.css";
 
-const NewTaskForm = ({ task, handleSave, handleDelete }) => {
-  // Top-level task name is stored in "name"
-  const [taskName, setTaskName] = useState("");
-  // Using columns (instead of categories) for the new structure
-  const [hasColumns, setHasColumns] = useState(true);
-  // Each column is an object with a name and an array of subtasks
-  // Each new column starts with a default subtask field (type "text")
-  const [columns, setColumns] = useState([
-    { name: "Actions", subtasks: [{ name: "subtask", type: "text", value: "" }] }
-  ]);
+// Recursive component to edit a child task (or category)
+const ChildEditor = ({ child, onChange, onDelete }) => {
+  // onChange callback receives the updated child object
+  const handleFieldChange = (field, value) => {
+    onChange({ ...child, [field]: value });
+  };
 
-  // If a task is provided, initialize form values for editing.
-  useEffect(() => {
+  // Update nested children recursively
+  const handleNestedChange = (childId, updatedNestedChild) => {
+    const newChildren = child.children.map((c) =>
+      c.id === childId ? updatedNestedChild : c
+    );
+    onChange({ ...child, children: newChildren });
+  };
+
+  // Add a new nested child
+  const addNestedChild = () => {
+    const newChild = {
+      id: Date.now() + "-" + Math.random(),
+      name: "",
+      properties: { checkbox: false, input: false, category: false },
+      values: { checkbox: false, input: "" },
+      children: []
+    };
+    onChange({ ...child, children: [...(child.children || []), newChild] });
+  };
+
+  return (
+    <div className="child-editor" style={{ marginLeft: "20px", marginTop: "10px" }}>
+      <div className="child-header" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <InputGroup
+          value={child.name}
+          placeholder="Child name"
+          onChange={(e) => handleFieldChange("name", e.target.value)}
+          style={{ flex: 1 }}
+        />
+        <Checkbox
+          label={(<div className="child-property-selection">Checkbox</div>)}
+          checked={child.properties.checkbox}
+          onChange={(e) => handleFieldChange("properties", { ...child.properties, checkbox: e.target.checked })}
+        />
+        <Checkbox
+          label={(<div className="child-property-selection">Input</div>)}
+          checked={child.properties.input}
+          onChange={(e) => handleFieldChange("properties", { ...child.properties, input: e.target.checked })}
+        />
+        <Checkbox
+          label={(<div className="child-property-selection">Category</div>)}
+          checked={child.properties.category}
+          onChange={(e) => handleFieldChange("properties", { ...child.properties, category: e.target.checked })}
+        />
+        <Button icon="delete" minimal onClick={onDelete} />
+      </div>
+      {child.properties.category && (
+        <div className="nested-controls" style={{ marginLeft: "20px", marginTop: "5px" }}>
+          <Button icon="plus" minimal text="Add Nested Child" onClick={addNestedChild} />
+        </div>
+      )}
+      {child.children && child.children.length > 0 && (
+        <div className="nested-children">
+          {child.children.map((nestedChild) => (
+            <ChildEditor
+              key={nestedChild.id}
+              child={nestedChild}
+              onChange={(updated) => handleNestedChange(nestedChild.id, updated)}
+              onDelete={() => {
+                const newChildren = child.children.filter(c => c.id !== nestedChild.id);
+                onChange({ ...child, children: newChildren });
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NewTaskForm = ({ task, onSave, onDelete }) => {
+  const [taskName, setTaskName] = useState("");
+  // We'll store direct children (subtasks/categories) in one array.
+  const [children, setChildren] = useState([]);
+
+  // When editing an existing task, initialize state
+  React.useEffect(() => {
     if (task) {
       setTaskName(task.name || "");
-      setColumns(
-        task.columns || [
-          { name: "Actions", subtasks: [{ name: "subtask", type: "text", value: "" }] }
-        ]
-      );
+      // We assume the existing task has a children array (if any)
+      setChildren(task.children || []);
     }
   }, [task]);
 
-  // Add a new column with a default subtask
-  const addColumn = () => {
-    setColumns(prev => [
-      ...prev,
-      { name: "New Column", subtasks: [{ name: "subtask", type: "text", value: "" }] }
-    ]);
+  const addChild = () => {
+    // Create a new child with default properties (all false) and empty children array.
+    const newChild = {
+      id: Date.now() + "-" + Math.random(),
+      name: "",
+      properties: { checkbox: false, input: false, category: false },
+      values: { checkbox: false, input: "" },
+      children: []
+    };
+    setChildren((prev) => [...prev, newChild]);
   };
 
-  // Add a new subtask (field) to a column
-  const addFieldToColumn = (columnIndex) => {
-    const defaultField = { name: "subtask", type: "text", value: "" };
-    setColumns(prev => {
-      const updated = [...prev];
-      updated[columnIndex].subtasks.push(defaultField);
-      return updated;
-    });
+  const updateChild = (childId, updatedChild) => {
+    setChildren((prev) => prev.map(child => child.id === childId ? updatedChild : child));
   };
 
-  // Delete a column (only if more than one exists)
-  const deleteColumn = (columnIndex) => {
-    if (columns.length > 1) {
-      setColumns(prev => prev.filter((_, i) => i !== columnIndex));
-    }
+  const deleteChild = (childId) => {
+    setChildren((prev) => prev.filter(child => child.id !== childId));
   };
 
-  // Delete a subtask from a column (only if more than one exists)
-  const deleteFieldFromColumn = (columnIndex, fieldIndex) => {
-    setColumns(prev => {
-      const updated = [...prev];
-      if (updated[columnIndex].subtasks.length > 1) {
-        updated[columnIndex].subtasks = updated[columnIndex].subtasks.filter((_, i) => i !== fieldIndex);
-      }
-      return updated;
-    });
+  const handleSaveTask = () => {
+    const newTask = {
+      name: taskName,
+      description: "",
+      properties: { card: true, checkbox: false, input: false, category: true },
+      // Save direct children in the "children" field
+      children: children
+    };
+    onSave(newTask);
   };
-
-  const updateFieldName = (columnIndex, fieldIndex, newName) => {
-    setColumns(prev => {
-      const updated = [...prev];
-      updated[columnIndex].subtasks[fieldIndex].name = newName;
-      return updated;
-    });
-  };
-
-  const updateFieldType = (columnIndex, fieldIndex, newType) => {
-    setColumns(prev => {
-      const updated = [...prev];
-      updated[columnIndex].subtasks[fieldIndex].type = newType;
-      // Update default value based on field type
-      updated[columnIndex].subtasks[fieldIndex].value = newType === "bool" ? false : "";
-      return updated;
-    });
-  };
-
-  // When saving/updating, the final task structure is:
-  // { name, category (null), columns }
-  const handleTaskSave = () => {
-    const newTask = { name: taskName, category: null, columns };
-    handleSave(newTask);
-  };
-
-  // Renders a single column editor
-  const renderColumnEditor = (column, index) => (
-    <div
-      key={index}
-      className="column"
-      style={{ flex: 1, border: '1px solid #ccc', padding: '10px', borderRadius: '4px' }}
-    >
-      <div
-        className="column-header"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        {hasColumns ? (
-          <InputGroup
-            value={column.name}
-            onChange={(e) => {
-              const newColumns = [...columns];
-              newColumns[index].name = e.target.value;
-              setColumns(newColumns);
-            }}
-          />
-        ) : (
-          <InputGroup value="Default" disabled />
-        )}
-        {hasColumns && (
-          <Button
-            icon="delete"
-            intent="danger"
-            onClick={() => deleteColumn(index)}
-            disabled={columns.length <= 1}
-          />
-        )}
-      </div>
-
-      {/* Subtasks List */}
-      <div className="fields-list">
-        {column.subtasks && column.subtasks.map((field, fieldIndex) => (
-          <div
-            key={fieldIndex}
-            className="field-row"
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}
-          >
-            <InputGroup
-              value={field.name}
-              onChange={(e) => updateFieldName(index, fieldIndex, e.target.value)}
-            />
-            <HTMLSelect
-              value={field.type}
-              onChange={(e) => updateFieldType(index, fieldIndex, e.target.value)}
-            >
-              <option value="text">Text</option>
-              <option value="bool">Bool</option>
-            </HTMLSelect>
-            {column.subtasks.length > 1 && (
-              <Button
-                icon="delete"
-                intent="danger"
-                onClick={() => deleteFieldFromColumn(index, fieldIndex)}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-      <Button icon="plus" intent="primary" text="Add Field" onClick={() => addFieldToColumn(index)} />
-    </div>
-  );
 
   return (
-    <div style={{ padding: "20px" }}>
-      {/* Task Name */}
+    <div className="new-task-form" style={{ padding: "20px" }}>
+      <h3>Create/Edit Task Form</h3>
       <FormGroup label="Task Name" labelFor="task-name">
         <InputGroup
           id="task-name"
@@ -163,54 +135,24 @@ const NewTaskForm = ({ task, handleSave, handleDelete }) => {
           onChange={(e) => setTaskName(e.target.value)}
         />
       </FormGroup>
-
-      {/* Columns Section */}
-      <div style={{ marginTop: "20px" }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h5>Columns</h5>
-          <Switch
-            checked={hasColumns}
-            label="Use Columns"
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setHasColumns(checked);
-              if (!checked) {
-                // Force a single default column when columns are disabled.
-                setColumns(columns.length > 0 
-                  ? [{ ...columns[0], name: "Default" }]
-                  : [{ name: "Default", subtasks: [{ name: "subtask", type: "text", value: "" }] }]
-                );
-              }
-            }}
-          />
+      <div className="children-section" style={{ marginTop: "20px" }}>
+        <h5>Children</h5>
+        <Button icon="plus" text="New Child" onClick={addChild} />
+        <div className="children-list" style={{ marginTop: "10px" }}>
+          {children.map((child) => (
+            <ChildEditor
+              key={child.id}
+              child={child}
+              onChange={(updatedChild) => updateChild(child.id, updatedChild)}
+              onDelete={() => deleteChild(child.id)}
+            />
+          ))}
         </div>
-        {hasColumns ? (
-          <div className="column-editor" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', marginTop: "10px" }}>
-            {columns.map((column, index) => renderColumnEditor(column, index))}
-            <div className="new-column-button">
-              <Button icon="plus" intent="primary" onClick={addColumn} />
-            </div>
-          </div>
-        ) : (
-          <div className="column-editor" style={{ marginTop: "10px" }}>
-            {renderColumnEditor(columns[0] || { name: "Default", subtasks: [{ name: "subtask", type: "text", value: "" }] }, 0)}
-          </div>
-        )}
       </div>
-
-      {/* Save/Update and Delete Task Buttons */}
-      <div style={{ padding: "10px", marginTop: "20px" }}>
-        <Button onClick={handleTaskSave} text={task ? "Update Task" : "Save Task"} intent="primary" />
+      <div style={{ marginTop: "20px" }}>
+        <Button text={task ? "Update Task" : "Save Task"} intent="primary" onClick={handleSaveTask} />
         {task && (
-          <Button
-            onClick={() => {
-              if (window.confirm("Are you sure you want to delete this task?")) {
-                handleDelete(task);
-              }
-            }}
-            text="Delete Task"
-            intent="danger"
-          />
+          <Button text="Delete Task" intent="danger" onClick={() => onDelete(task)} style={{ marginLeft: "10px" }} />
         )}
       </div>
     </div>
