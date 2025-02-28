@@ -1,0 +1,80 @@
+/* GoalForm.css */
+
+.goal-form {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .goal-form h3 {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+  }
+  
+  .goal-form .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .goal-form .goal-actual,
+  .goal-form .goal-preview {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    flex: 1;
+  }
+  
+  .goal-form .goal-actual h4,
+  .goal-form .goal-preview h4 {
+    margin-top: 0;
+  }
+  
+  .goal-form .goal-actual {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .goal-form .goal-actual .bp3-switch {
+    margin-bottom: 10px;
+  }
+  
+  .goal-form .goal-tasks-actual,
+  .goal-form .goal-tasks-preview {
+    margin-top: 10px;
+  }
+  
+  .goal-form .goal-tasks-actual div,
+  .goal-form .goal-tasks-preview div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  
+  .goal-form .goal-tasks-actual button,
+  .goal-form .goal-tasks-preview button {
+    margin-left: 5px;
+  }
+  
+  /* Two-panel layout */
+  .goal-form .panels-container {
+    display: flex;
+    gap: 20px;
+  }
+  
+  /* General button spacing */
+  .goal-form button {
+    margin-top: 10px;
+  }
+  
+  /* Styling for dropdown content in GoalForm (if needed) */
+  .goal-form .dropdown-content {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Adjust input group styling */
+  .goal-form .bp3-input-group {
+    margin-bottom: 10px;
+  }
+  

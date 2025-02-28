@@ -5,6 +5,7 @@ const cors = require("cors");
 const tasksRoutes = require('./routes/tasks');
 const dayplansRoutes = require('./routes/dayplans'); // updated routes
 const goalRoutes = require('./routes/goals');
+const goalProgressRoutes = require('./routes/goalprogress');
 const counterRoutes = require('./routes/counters');
 
 const app = express();
@@ -47,5 +48,6 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/dayplans', dayplansRoutes); // register day plan routes
 app.use('/api/goals', goalRoutes);
 app.use('/api/counters', counterRoutes);
+app.use('/api/goalprogress', goalProgressRoutes);
 
 app.listen(5000, () => console.log("Server started on port 5000"));

@@ -6,6 +6,8 @@ import { Drawer, DrawerSize, Position } from "@blueprintjs/core";
 import "./App.css";
 import { fetchTasks } from "./store/tasksSlice";
 import { fetchAllDayPlans, createDayPlan, updateDayPlan } from "./store/dayPlanSlice";
+import GoalDisplay from "./components/GoalDisplay";
+import GoalForm from "./GoalForm";
 
 // Components (assumed to be in ./components)
 import Toolbar from "./components/Toolbar";
@@ -26,6 +28,9 @@ function App() {
   const [planDirty, setPlanDirty] = useState(false);
   const [task, setTask] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [goals, setGoals] = useState([]); // Fetched from Redux or API
 
   const generateTimeSlots = () => {
     let slots = [];
@@ -187,17 +192,17 @@ function App() {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="container">
-      <Toolbar 
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        planDirty={planDirty}
-        onSaveDayPlan={handleSaveDayPlan}
-        onOpenDrawer={() => {
-          console.log("Opening drawer");
-          setTask(null);
-          setIsDrawerOpen(true);
-        }}
-      />
+        <Toolbar
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          planDirty={planDirty}
+          onSaveDayPlan={handleSaveDayPlan}
+          onOpenDrawer={() => {
+            console.log("Opening drawer");
+            setTask(null);
+            setIsDrawerOpen(true);
+          }}
+        />
         <div className="main-content">
           <div className="left-side">
             <div className="task-bank-container">
@@ -223,6 +228,13 @@ function App() {
             </div>
           </div>
           <div className="right-side">
+          <GoalDisplay
+              goals={goals}
+              onEditGoal={(goal) => {
+                setEditingGoal(goal);
+                setGoalDrawerOpen(true);
+              }}
+            />
             <TaskDisplay
               timeSlots={timeSlots}
               assignments={assignments}
@@ -242,6 +254,26 @@ function App() {
               console.log("New task saved:", newTask);
               setTasksState((prev) => [...prev, newTask]);
               setIsDrawerOpen(false);
+            }}
+          />
+        </Drawer>
+        <Drawer
+          isOpen={goalDrawerOpen}
+          onClose={() => setGoalDrawerOpen(false)}
+          size={DrawerSize.SMALL}
+          position={Position.RIGHT}
+          title="Create / Edit Goal"
+        >
+          <GoalForm
+            goal={editingGoal}
+            tasks={tasksState}  // pass all tasks for the dropdown
+            onSave={(newGoal) => {
+              // dispatch create or update goal action
+              setGoalDrawerOpen(false);
+            }}
+            onDelete={(goalToDelete) => {
+              // dispatch delete action
+              setGoalDrawerOpen(false);
             }}
           />
         </Drawer>
