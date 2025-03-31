@@ -4,28 +4,37 @@ import { DragDropContext } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position } from "@blueprintjs/core";
 import "./App.css";
+import "./responsive.css";
+// Redux actions
 import { fetchTasks } from "./store/tasksSlice";
 import { fetchAllDayPlans, createDayPlan, updateDayPlan } from "./store/dayPlanSlice";
-import { fetchGoals } from "./store/goalSlice";
+import { fetchGoals, createGoal, updateGoal, deleteGoal } from "./store/goalSlice";
 import { fetchGoalProgress } from "./store/goalProgressSlice";
 
-import GoalDisplay from "./components/GoalDisplay";
-import GoalForm from "./GoalForm";
-
-// Components (assumed to be in ./components)
+// Components
 import Toolbar from "./components/Toolbar";
 import TaskBank from "./components/TaskBank";
 import Schedule from "./components/Schedule";
 import TaskDisplay from "./components/TaskDisplay";
+import GoalDisplay from "./components/GoalDisplay";
 import NewTaskForm from "./NewTaskForm.jsx";
+import GoalForm from "./GoalForm.jsx";
 
 function App() {
   const dispatch = useDispatch();
+  
+  // Redux state
   const { tasks } = useSelector((state) => state.tasks);
   const { dayplans } = useSelector((state) => state.dayplans);
+  const { goals } = useSelector((state) => state.goals);
+  const { goalProgress } = useSelector((state) => state.goalProgress);
 
+  // Local state copies for immediate UI use
   const [tasksState, setTasksState] = useState(tasks || []);
   const [dayPlansState, setDayPlansState] = useState(dayplans || []);
+  const [goalsState, setGoalsState] = useState(goals || []);
+  const [goalProgressState, setGoalProgressState] = useState(goalProgress || []);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [assignments, setAssignments] = useState({});
   const [planDirty, setPlanDirty] = useState(false);
@@ -33,8 +42,8 @@ function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
-  const [goals, setGoals] = useState([]); // Fetched from Redux or API
 
+  // Generate time slots (7:00 AM - 11:30 PM, 30-minute increments)
   const generateTimeSlots = () => {
     let slots = [];
     let startTime = DateTime.local().set({ hour: 7, minute: 0 });
@@ -48,25 +57,40 @@ function App() {
   };
   const timeSlots = generateTimeSlots();
 
+  // Dispatch initial fetches
   useEffect(() => {
-    console.log("Dispatching fetchTasks and fetchAllDayPlans");
+    console.log("Dispatching fetchTasks, fetchAllDayPlans, fetchGoals, and fetchGoalProgress");
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
     dispatch(fetchGoals());
     dispatch(fetchGoalProgress());
   }, [dispatch]);
 
+  // Sync Redux tasks with local state
   useEffect(() => {
     console.log("Redux tasks updated:", tasks);
     setTasksState(tasks || []);
   }, [tasks]);
 
+  // Sync Redux dayplans with local state
   useEffect(() => {
     console.log("Redux dayplans updated:", dayplans);
     setDayPlansState(dayplans || []);
   }, [dayplans]);
 
-  // Update assignments when selectedDate or dayPlansState change
+  // Sync Redux goals with local state
+  useEffect(() => {
+    console.log("Redux goals updated:", goals);
+    setGoalsState(goals || []);
+  }, [goals]);
+
+  // Sync Redux goalProgress with local state
+  useEffect(() => {
+    console.log("Redux goalProgress updated:", goalProgress);
+    setGoalProgressState(goalProgress || []);
+  }, [goalProgress]);
+
+  // Update assignments for the selected date based on dayPlansState
   useEffect(() => {
     console.log("Updating assignments for selected date:", selectedDate);
     if (dayPlansState && dayPlansState.length > 0) {
@@ -91,6 +115,7 @@ function App() {
     }
   }, [selectedDate, dayPlansState]);
 
+  // Save or update the DayPlan when requested
   const handleSaveDayPlan = () => {
     console.log("Saving DayPlan for date:", selectedDate);
     const resultArray = Object.keys(assignments).map((timeSlot) => {
@@ -120,7 +145,7 @@ function App() {
     setPlanDirty(false);
   };
 
-  // onDragEnd: if a task is dropped in a timeslot and a task with the same id already exists, replace it; otherwise, add it.
+  // onDragEnd: Handle drag-and-drop logic
   const onDragEnd = (result) => {
     console.log("onDragEnd:", result);
     const { source, destination, draggableId } = result;
@@ -133,14 +158,11 @@ function App() {
       return;
     }
 
-    // Copy the current assignments
     let updatedAssignments = { ...assignments };
-    // Determine if the drag originates from the task bank
     const fromTaskBank = source.droppableId === "taskBank";
     let movedTask;
 
     if (fromTaskBank) {
-      // Get the full task from tasksState using the draggableId (which is task._id)
       const taskFromBank = tasksState.find(
         (task) => task._id.toString() === draggableId
       );
@@ -148,33 +170,28 @@ function App() {
         console.log("Task not found in tasksState");
         return;
       }
-      // Always create a new instance with a new assignmentId for each drop
+      // Create a new instance with a new assignmentId so it becomes independent
       movedTask = {
         ...taskFromBank,
-        id: taskFromBank._id.toString(),        // original id (for reference)
+        id: taskFromBank._id.toString(),        // original id for reference
         originalId: taskFromBank._id.toString(),  // reference to the original task
-        // Generate a new unique assignmentId (ensuring a new draggable identity)
         assignmentId: `${taskFromBank._id}-${Date.now()}-${Math.random()}`,
         parent_id: null,
       };
     } else {
-      // Dragging from within the schedule: use the existing instance.
+      // Moving from within the schedule
       const sourceTasks = [...(assignments[source.droppableId] || [])];
       movedTask = sourceTasks[source.index];
-      // Remove it from the source timeslot.
       sourceTasks.splice(source.index, 1);
       updatedAssignments[source.droppableId] = sourceTasks;
     }
 
-    // Get the destination tasks for the timeslot.
     const destTasks = [...(assignments[destination.droppableId] || [])];
 
     if (fromTaskBank) {
-      // Always add as a new instance when dragging from task bank,
-      // so even if a task with the same originalId exists, we add a new copy.
+      // Always add a new instance when dragging from the task bank.
       destTasks.splice(destination.index, 0, movedTask);
     } else {
-      // If moving within the schedule, update based on assignmentId.
       const existingIndex = destTasks.findIndex(
         (task) => task.assignmentId === movedTask.assignmentId
       );
@@ -191,9 +208,6 @@ function App() {
     setPlanDirty(true);
   };
 
-
-
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="container">
@@ -202,40 +216,43 @@ function App() {
           setSelectedDate={setSelectedDate}
           planDirty={planDirty}
           onSaveDayPlan={handleSaveDayPlan}
+          onOpenDrawer={() => {
+            console.log("Opening task drawer");
+            setTask(null);
+            setIsDrawerOpen(true);
+          }}
         />
         <div className="main-content">
           <div className="left-side">
+            <div className="task-bank-container">
+              <div className="task-bank-header">Task Bank</div>
               <TaskBank
                 tasks={tasksState}
                 onEditTask={(task) => {
                   console.log("Editing task:", task.name);
                   setTask(task);
                 }}
-                onOpenDrawer={() => {
-                  console.log("Opening drawer");
-                  setTask(null);
-                  setIsDrawerOpen(true);
-                }}
+                onOpenDrawer={() => setIsDrawerOpen(true)}
               />
+            </div>
+            
             <div className="schedule-container">
-              <div className="boundary-card">Wake Up</div>
               <Schedule
                 timeSlots={timeSlots}
                 assignments={assignments}
                 setAssignments={setAssignments}
                 setPlanDirty={setPlanDirty}
               />
-              <div className="boundary-card">Sleep</div>
             </div>
           </div>
           <div className="right-side">
-          <GoalDisplay
-              goals={goals}
-              onEditGoal={(goal) => {
-                setEditingGoal(goal);
-                setGoalDrawerOpen(true);
-              }}
-            />
+            <GoalDisplay
+  goals={goalsState}
+  onEditGoal={(goal) => {
+    setEditingGoal(goal);
+    setGoalDrawerOpen(true);
+  }}
+/>
             <TaskDisplay
               timeSlots={timeSlots}
               assignments={assignments}
@@ -261,19 +278,25 @@ function App() {
         <Drawer
           isOpen={goalDrawerOpen}
           onClose={() => setGoalDrawerOpen(false)}
-          size={DrawerSize.Medium}
+          size={DrawerSize.MEDIUM}
           position={Position.RIGHT}
           title="Create / Edit Goal"
         >
           <GoalForm
             goal={editingGoal}
-            tasks={tasksState}  // pass all tasks for the dropdown
+            tasks={tasksState} // Pass all tasks for the dropdown
             onSave={(newGoal) => {
-              // dispatch create or update goal action
+              if (editingGoal && editingGoal._id) {
+                dispatch(updateGoal({ id: editingGoal._id, goalData: newGoal }));
+              } else {
+                dispatch(createGoal(newGoal));
+              }
               setGoalDrawerOpen(false);
             }}
             onDelete={(goalToDelete) => {
-              // dispatch delete action
+              if (goalToDelete && goalToDelete._id) {
+                dispatch(deleteGoal(goalToDelete._id));
+              }
               setGoalDrawerOpen(false);
             }}
           />

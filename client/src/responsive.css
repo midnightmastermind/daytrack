@@ -1,0 +1,187 @@
+/* ========== RESPONSIVE & LAYOUT FIXES ========== */
+
+/* Layout proportions */
+.container .left-side {
+  width: 75%;
+  display: flex;
+  flex-direction: row;
+}
+
+.container .right-side {
+  width: 25%;
+  margin-left: 0;
+}
+
+/* TaskBank & Schedule containers */
+.container .task-bank-container,
+.container .schedule-container {
+  width: 100%;
+  max-width: none;
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Fixed header for Task Bank */
+.container .task-bank-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+/* Scrollable task list (below header) */
+.container .main-content .task-bank {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make Task Cards full width */
+.task-bank .task-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Task Card styling */
+.task-card {
+  margin: 4px 0;
+  padding: 12px;
+  font-size: 16px;
+}
+
+/* Task header inside card */
+.container .task-bank .task-header {
+  font-size: 16px;
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container .task-bank .task-children {
+  font-size: 14px;
+  padding: 8px;
+}
+
+/* Timeslot styling */
+.container .schedule-container .timeslot {
+  width: 100%;
+  height: 56px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+/* Scrollability fix for Schedule container */
+.container .schedule-container {
+  overflow-y: auto;
+  padding-bottom: 80px; /* ensures bottom slots are visible */
+  max-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Sticky Schedule Header */
+.schedule-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--color-bg);
+  text-align: center;
+  padding: 8px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Full height structure */
+.container,
+.container .main-content,
+.container .left-side,
+.container .task-bank-container,
+.container .schedule-container {
+  height: 100vh;
+}
+
+.task-bank li {
+  width: 100%;
+  display: flex;
+}
+
+.task-bank .task-card {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Padding or min-height ensures final slot is scrollable */
+.container .schedule-container .bp5-card:last-child {
+  margin-bottom: 60px;
+}
+
+.container .schedule-container {
+  overflow-y: auto;
+  padding-bottom: 61px; /* keep it below last timeslot height */
+}
+
+.task-card.bp5-elevation-2 {
+  max-width: 100%;
+  width: 100% !important;
+}
+
+/* Constrain the ghost clone when dragging a task */
+.task-card.bp5-elevation-2[style*="transform"] {
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  margin: 0 auto !important;
+}
+
+/* Also limit the Blueprint portal item (used in drag layer) */
+.bp5-portal .task-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* Optional: For even tighter control */
+.task-bank .task-card,
+.task-bank .task-card.dragging {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.task-card.dragging {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* ========== Drag Preview Width Fix ========== */
+
+/* Force dragged task card to match container width */
+.bp5-portal .task-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.task-card.dragging {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}

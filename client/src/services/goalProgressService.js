@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api/goalprogress/';
+const API_URL = 'http://localhost:5000/api/goalprogress/';
 
 const getGoalProgress = () => {
   return axios.get(API_URL);

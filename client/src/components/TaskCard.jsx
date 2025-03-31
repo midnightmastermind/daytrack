@@ -78,17 +78,17 @@ const TaskCard = ({ task, index, onEditTask, onOpenDrawer }) => {
         <Draggable draggableId={task._id.toString()} index={index}>
             {(provided, snapshot) => (
                 <Card
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    elevation={2}
-                    style={{
-                        cursor: snapshot.isDragging ? "grabbing" : "grab",
-                        opacity: snapshot.isDragging ? 0.5 : 1,
-                        ...provided.draggableProps.style
-                    }}
-                    className="task-card"
-                >
+  ref={provided.innerRef}
+  {...provided.draggableProps}
+  {...provided.dragHandleProps}
+  elevation={2}
+  className={`task-card${snapshot.isDragging ? ' dragging' : ''}`}
+  style={{
+    cursor: snapshot.isDragging ? "grabbing" : "grab",
+    opacity: snapshot.isDragging ? 0.5 : 1,
+    ...provided.draggableProps.style,
+  }}
+>
                     <div className="task-header">
                         <div className="task-header-left">
                             {taskState.children && taskState.children.length > 0 ? (

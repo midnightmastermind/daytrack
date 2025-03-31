@@ -530,3 +530,15 @@ background-color: var(--color-bg);
   .bp5-switch {
     align-self: start;
   }
+  
+  .goal-display-container .goals-container {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+    .goal-display-container .goals-container .goal-item {
+      width: 30%;
+background-color: var(--color-bg-light);
+border: 1px solid var(--color-border);
+  box-shadow: 0 2px 4px var(--color-shadow);
+    }
