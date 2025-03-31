@@ -6,6 +6,9 @@ import { Drawer, DrawerSize, Position } from "@blueprintjs/core";
 import "./App.css";
 import { fetchTasks } from "./store/tasksSlice";
 import { fetchAllDayPlans, createDayPlan, updateDayPlan } from "./store/dayPlanSlice";
+import { fetchGoals } from "./store/goalSlice";
+import { fetchGoalProgress } from "./store/goalProgressSlice";
+
 import GoalDisplay from "./components/GoalDisplay";
 import GoalForm from "./GoalForm";
 
@@ -49,6 +52,8 @@ function App() {
     console.log("Dispatching fetchTasks and fetchAllDayPlans");
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
+    dispatch(fetchGoals());
+    dispatch(fetchGoalProgress());
   }, [dispatch]);
 
   useEffect(() => {
@@ -197,25 +202,21 @@ function App() {
           setSelectedDate={setSelectedDate}
           planDirty={planDirty}
           onSaveDayPlan={handleSaveDayPlan}
-          onOpenDrawer={() => {
-            console.log("Opening drawer");
-            setTask(null);
-            setIsDrawerOpen(true);
-          }}
         />
         <div className="main-content">
           <div className="left-side">
-            <div className="task-bank-container">
-              <div className="task-bank-header">Task Bank</div>
               <TaskBank
                 tasks={tasksState}
                 onEditTask={(task) => {
                   console.log("Editing task:", task.name);
                   setTask(task);
                 }}
-                onOpenDrawer={() => setIsDrawerOpen(true)}
+                onOpenDrawer={() => {
+                  console.log("Opening drawer");
+                  setTask(null);
+                  setIsDrawerOpen(true);
+                }}
               />
-            </div>
             <div className="schedule-container">
               <div className="boundary-card">Wake Up</div>
               <Schedule
@@ -260,7 +261,7 @@ function App() {
         <Drawer
           isOpen={goalDrawerOpen}
           onClose={() => setGoalDrawerOpen(false)}
-          size={DrawerSize.SMALL}
+          size={DrawerSize.Medium}
           position={Position.RIGHT}
           title="Create / Edit Goal"
         >

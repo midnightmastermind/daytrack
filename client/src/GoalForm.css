@@ -16,13 +16,19 @@
   
   .goal-form .goal-actual,
   .goal-form .goal-preview {
-    background-color: #f9f9f9;
+    background-color: #1A2129;
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 10px;
+  }
+  .goal-form .goal-actual {
+    flex: 3;
+  }
+
+  .goal-form .goal-preview {
     flex: 1;
   }
-  
+
   .goal-form .goal-actual h4,
   .goal-form .goal-preview h4 {
     margin-top: 0;
@@ -42,13 +48,13 @@
     margin-top: 10px;
   }
   
-  .goal-form .goal-tasks-actual div,
+  /* .goal-form .goal-tasks-actual div,
   .goal-form .goal-tasks-preview div {
     display: flex;
     align-items: center;
     margin-bottom: 5px;
   }
-  
+   */
   .goal-form .goal-tasks-actual button,
   .goal-form .goal-tasks-preview button {
     margin-left: 5px;
@@ -58,11 +64,6 @@
   .goal-form .panels-container {
     display: flex;
     gap: 20px;
-  }
-  
-  /* General button spacing */
-  .goal-form button {
-    margin-top: 10px;
   }
   
   /* Styling for dropdown content in GoalForm (if needed) */
@@ -77,4 +78,45 @@
   .goal-form .bp3-input-group {
     margin-bottom: 10px;
   }
-  
+
+  .goal-actual .header-switch {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    gap: 5;
+  }
+  .goal-actual .header-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .goal-actual .add-task-button {
+    align-self: end;
+  }
+
+  .goal-actual .bp5-control .bp5-control-indicator {
+    margin-left: 0px;
+    border-radius: .2em;
+    margin-bottom: 1px;
+  }
+  .goal-form .goal-tags {
+    display: flex;
+    gap: 5;
+    justify-content: start;
+    flex: 1;
+  }
+
+  .goal-form .goal-tags .bp5-tag {
+    margin-right: 4px;
+  }
+
+  .goal-form .condition-container {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 5px;
+    flex: 1.2;
+  }

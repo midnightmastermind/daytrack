@@ -15,7 +15,7 @@ const renderTaskTree = (task, isTopLevel = false) => {
       .map(child => renderTaskTree(child))
       .filter(childJSX => childJSX !== null);
   }
-  
+
   // If the node is marked as a category and it's not top-level,
   // then only render if it has at least one child.
   if (task.properties?.category && !isTopLevel) {
@@ -31,7 +31,7 @@ const renderTaskTree = (task, isTopLevel = false) => {
       </div>
     );
   }
-  
+
   // For top-level tasks or leaf nodes:
   if (task.properties?.card || task.properties?.category) {
     // Top-level tasks should always be rendered
@@ -68,27 +68,32 @@ const renderTaskTree = (task, isTopLevel = false) => {
 
 const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
   return (
-    <CardList className="display">
-      {timeSlots.map((timeSlot) => {
-        const tasksForSlot = assignments[timeSlot] || [];
-        const renderedTasks = tasksForSlot
-          .map(task => renderTaskTree(task, task.properties?.card))
-          .filter(taskJSX => taskJSX !== null);
-        if (renderedTasks.length === 0) return null;
-        return (
-          <Card key={timeSlot} elevation={Elevation.FOUR} className="display-card">
-            <div className="timeslot">
-              <strong>{timeSlot}</strong>
-            </div>
-            {renderedTasks.map((taskJSX, idx) => (
-              <div key={idx} className="task-option">
-                {taskJSX}
+    <div className="display-container">
+      <div className="display-header">
+        Completed Tasks
+      </div>
+      <CardList className="display">
+        {timeSlots.map((timeSlot) => {
+          const tasksForSlot = assignments[timeSlot] || [];
+          const renderedTasks = tasksForSlot
+            .map(task => renderTaskTree(task, task.properties?.card))
+            .filter(taskJSX => taskJSX !== null);
+          if (renderedTasks.length === 0) return null;
+          return (
+            <Card key={timeSlot} elevation={Elevation.FOUR} className="display-card">
+              <div className="timeslot">
+                <strong>{timeSlot}</strong>
               </div>
-            ))}
-          </Card>
-        );
-      })}
-    </CardList>
+              {renderedTasks.map((taskJSX, idx) => (
+                <div key={idx} className="task-option">
+                  {taskJSX}
+                </div>
+              ))}
+            </Card>
+          );
+        })}
+      </CardList>
+    </div>
   );
 };
 

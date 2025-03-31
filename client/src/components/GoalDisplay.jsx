@@ -24,9 +24,9 @@ const GoalItem = ({ goal, onEdit }) => {
 
 const GoalDisplay = ({ goals, onEditGoal }) => {
   return (
-    <div className="goal-display-container" style={{ padding: "10px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3>Goals / Habits</h3>
+    <div className="goal-display-container">
+      <div className="goal-display-header-container">
+        <div className="goal-display-header">Goals</div>
         <Button icon="plus" text="New Goal" minimal onClick={() => onEditGoal(null)} />
       </div>
       {goals && goals.length > 0 ? (

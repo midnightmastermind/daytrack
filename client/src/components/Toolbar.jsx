@@ -3,11 +3,10 @@ import { Navbar, Button, Popover } from "@blueprintjs/core";
 import { DatePicker3 } from "@blueprintjs/datetime2";
 import { DateTime } from "luxon";
 
-const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan, onOpenDrawer }) => {
+const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan }) => {
   return (
     <Navbar className="tool-bar">
       <Navbar.Group align="left" className="navbar-group">
-        <Button icon="plus" minimal onClick={onOpenDrawer} />
         <Popover
           content={
             <DatePicker3

@@ -161,11 +161,15 @@ p {
   flex-direction: column;
   align-items: start;
   height: 100%;
+  margin-left: 10px;
 }
-.container .goal-display {
+.container .goal-display-container {
   width: 100%;
   height: 50vh;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
 }
+
 .container .display {
   width: 100%;
   height: 50vh;
@@ -187,6 +191,19 @@ p {
   margin-right: 10px;
   border: 1px solid var(--color-border);
   padding: 1px;
+}
+
+.container .task-bank-header-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  background-color: var(--color-bg);
+}
+.container .task-bank-header {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  margin-left: 10px;
 }
 .container .main-content .task-bank {
     display: flex;
@@ -405,6 +422,21 @@ box-shadow: unset;
 background-color: var(--color-bg);
 }
 
+.container .display-container {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.container .display-header {
+  background-color: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 1px solid var(--color-border);
+  height: 30px;
+}
+
 .container .display-card {
   display: flex;
   flex-direction: row;
@@ -464,4 +496,37 @@ background-color: var(--color-bg);
 
   .rdp-day {
     color: white !important;
+  }
+
+  .goal-display-header-container {
+    background-color: var(--color-bg);
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .goal-display-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 10px;
+  }
+
+  .bp5-input, .bp5-html-select select:hover, .bp5-html-select select, .bp5-html-select option{
+    background-color: var(--color-bg);
+    color: white;
+    border: none !important;
+    box-shadow: unset;
+  }
+
+  .bp5-popover .bp5-popover-content {
+    background-color: var(--color-bg-light);
+  }
+  
+  .bp5-control {
+    margin-bottom: 0px;
+  }
+
+  .bp5-switch {
+    align-self: start;
   }
