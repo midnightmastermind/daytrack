@@ -1,6 +1,6 @@
-// backend/routes/dayplans.js
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const DayPlan = require('../models/DayPlan');
 
 // GET all day plans
@@ -21,7 +21,6 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Date query parameter is required' });
     }
     const parsedDate = new Date(date);
-    // Find the day plan for that day (assuming one plan per date)
     const dayPlan = await DayPlan.findOne({ date: parsedDate });
     res.json(dayPlan);
   } catch (err) {
@@ -29,19 +28,22 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST a new day plan
+// POST create a new day plan
 router.post('/', async (req, res) => {
   try {
     const { date, plan, result } = req.body;
     const newDayPlan = new DayPlan({ date, plan, result });
     const savedDayPlan = await newDayPlan.save();
+
+    console.log("📝 Saved new DayPlan:", savedDayPlan);
     res.status(201).json(savedDayPlan);
   } catch (err) {
+    console.error("❌ Error in POST /dayplans:", err.message);
     res.status(400).json({ error: 'Failed to create day plan', details: err.message });
   }
 });
 
-// PUT update an existing day plan by ID
+// PUT update an existing day plan
 router.put('/:id', async (req, res) => {
   try {
     const updatedDayPlan = await DayPlan.findByIdAndUpdate(req.params.id, req.body, { new: true });

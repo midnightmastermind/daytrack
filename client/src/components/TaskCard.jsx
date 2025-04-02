@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Card, Button, Collapse, Icon, Checkbox, InputGroup, Tag } from "@blueprintjs/core";
+import { Card, Button, Collapse, Icon, Checkbox, InputGroup, Tag, Elevation } from "@blueprintjs/core";
 import { Draggable } from "react-beautiful-dnd";
 
-const TaskCard = ({ task, index, onEditTask, onOpenDrawer }) => {
+const TaskCard = ({ task, index, onEditTask, onOpenDrawer, onTaskUpdate }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [taskState, setTaskState] = useState(task);
     const taskStateRef = useRef(taskState);
 
     useEffect(() => {
         taskStateRef.current = taskState;
+        console.log(taskState);
     }, [taskState]);
 
     const toggleCollapse = () => {
@@ -35,7 +36,7 @@ const TaskCard = ({ task, index, onEditTask, onOpenDrawer }) => {
                 );
             } else {
                 return (
-                    <Tag key={child._id} className="child-task" minimal>
+                    <Tag elevation={Elevation.FOUR} key={child._id} intent={'primary'} className="child-task" minimal>
                         {child.properties && child.properties.checkbox && (
                             <Checkbox
                                 checked={child.values?.checkbox ?? false}
@@ -59,7 +60,8 @@ const TaskCard = ({ task, index, onEditTask, onOpenDrawer }) => {
     const updateChildValue = (childrenArray, childId, key, newValue) => {
         return childrenArray.map(child => {
             if (child._id.toString() === childId.toString()) {
-                return { ...child, values: { ...child.values, [key]: newValue } };
+                const updatedValues = { ...(child.values || {}), [key]: newValue };
+                return { ...child, values: updatedValues };
             } else if (child.children && child.children.length > 0) {
                 return { ...child, children: updateChildValue(child.children, childId, key, newValue) };
             }
@@ -69,26 +71,34 @@ const TaskCard = ({ task, index, onEditTask, onOpenDrawer }) => {
 
     const handleChildChange = (childId, key, newValue) => {
         setTaskState(prev => {
-            const updatedChildren = updateChildValue(prev.children, childId, key, newValue);
-            return { ...prev, children: updatedChildren };
+          const updatedChildren = updateChildValue(prev.children, childId, key, newValue);
+          const updatedTask = { ...prev, children: updatedChildren };
+          
+          // Notify parent (App.jsx) of this update so task bank is synced
+          if (onTaskUpdate) {
+            console.log("🔄 Updating task in global state");
+            onTaskUpdate(updatedTask);
+          }
+      
+          return updatedTask;
         });
-    };
+      };
 
     return (
         <Draggable draggableId={task._id.toString()} index={index}>
             {(provided, snapshot) => (
                 <Card
-  ref={provided.innerRef}
-  {...provided.draggableProps}
-  {...provided.dragHandleProps}
-  elevation={2}
-  className={`task-card${snapshot.isDragging ? ' dragging' : ''}`}
-  style={{
-    cursor: snapshot.isDragging ? "grabbing" : "grab",
-    opacity: snapshot.isDragging ? 0.5 : 1,
-    ...provided.draggableProps.style,
-  }}
->
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    elevation={2}
+                    className={`task-card${snapshot.isDragging ? ' dragging' : ''}`}
+                    style={{
+                        cursor: snapshot.isDragging ? "grabbing" : "grab",
+                        opacity: snapshot.isDragging ? 0.5 : 1,
+                        ...provided.draggableProps.style,
+                    }}
+                >
                     <div className="task-header">
                         <div className="task-header-left">
                             {taskState.children && taskState.children.length > 0 ? (

@@ -2,21 +2,21 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/goalprogress/';
 
-const getGoalProgress = () => {
-  return axios.get(API_URL);
+// Expect destructured props to enforce camelCase usage
+const getGoalProgress = () => axios.get(API_URL);
+
+const createGoalProgress = ({ goalId, taskId, date, increment }) => {
+  return axios.post(API_URL, {
+    goalId,     // ✅ Explicit camelCase keys
+    taskId,
+    date,
+    increment,
+  });
 };
 
-const createGoalProgress = (data) => {
-  return axios.post(API_URL, data);
-};
+const updateGoalProgress = (id, data) => axios.put(`${API_URL}${id}`, data);
 
-const updateGoalProgress = (id, data) => {
-  return axios.put(API_URL + id, data);
-};
-
-const deleteGoalProgress = (id) => {
-  return axios.delete(API_URL + id);
-};
+const deleteGoalProgress = (id) => axios.delete(`${API_URL}${id}`);
 
 export default {
   getGoalProgress,

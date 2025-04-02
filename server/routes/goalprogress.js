@@ -12,28 +12,44 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST create a new goal progress record
+// POST create or increment progress for a task within a goal
 router.post('/', async (req, res) => {
   try {
-    const newRecord = new GoalProgress(req.body);
-    const savedRecord = await newRecord.save();
-    res.status(201).json(savedRecord);
+    const { taskId, goalId, date, increment } = req.body;
+
+    if (!goalId || !taskId || typeof increment !== 'number') {
+      return res.status(400).json({ error: 'Missing goalId, taskId, or increment' });
+    }
+
+    const update = { $inc: { [`progress.${taskId}`]: increment } };
+    const filter = { goal_id: goalId, date: new Date(date) };
+
+    const updated = await GoalProgress.findOneAndUpdate(filter, update, {
+      upsert: true,
+      new: true,
+    });
+
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// PUT update a goal progress record by id
+// PUT replace a full goal progress record by ID
 router.put('/:id', async (req, res) => {
   try {
-    const updatedRecord = await GoalProgress.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedRecord = await GoalProgress.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     res.json(updatedRecord);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// DELETE a goal progress record by id
+// DELETE a goal progress record by ID
 router.delete('/:id', async (req, res) => {
   try {
     await GoalProgress.findByIdAndDelete(req.params.id);

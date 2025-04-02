@@ -3,38 +3,58 @@
 :root {
   /* Base Backgrounds */
   /* Base Backgrounds */
-  --color-bg: #0D1117;             /* Main background: dark blue-gray */
-  --color-bg-alt: #0A0F16;         /* Alternative background: even deeper for overlays/modals */
-  --color-bg-light: #1A2129;       /* Lighter background: for panels or secondary sections */
-  
+  --color-bg: #0D1117;
+  /* Main background: dark blue-gray */
+  --color-bg-alt: #0A0F16;
+  /* Alternative background: even deeper for overlays/modals */
+  --color-bg-light: #1A2129;
+  /* Lighter background: for panels or secondary sections */
+
   /* New Additional Backgrounds */
-  --color-bg-secondary: #12151B;   /* Secondary background: sits between main and light */
-  --color-surface-dark: #0E1115;     /* Darker surface: useful for active states or hovered cards */
-  
+  --color-bg-secondary: #12151B;
+  /* Secondary background: sits between main and light */
+  --color-surface-dark: #0E1115;
+  /* Darker surface: useful for active states or hovered cards */
+
   /* Surface Colors */
-  --color-surface: #161B22;        /* Surface (cards, panels) */
-  --color-surface-light: #1E2430;  /* A lighter surface for subtle contrast */
+  --color-surface: #161B22;
+  /* Surface (cards, panels) */
+  --color-surface-light: #1E2430;
+  /* A lighter surface for subtle contrast */
   /* Text Colors */
-  --color-text-primary: #C9D1D9;   /* Light bluish-gray for primary text */
-  --color-text-secondary: #8B949E; /* Muted gray for secondary text */
-  --color-text-disabled: #484F58;  /* For disabled or less prominent text */
+  --color-text-primary: #C9D1D9;
+  /* Light bluish-gray for primary text */
+  --color-text-secondary: #8B949E;
+  /* Muted gray for secondary text */
+  --color-text-disabled: #484F58;
+  /* For disabled or less prominent text */
 
   /* Accent Colors */
-  --color-accent: #58A6FF;         /* Bright sky-blue accent */
-  --color-accent-hover: #1F6FEB;   /* Darker blue for hover states */
-  --color-secondary-accent: #79C0FF; /* A lighter complementary accent */
-  
+  --color-accent: #58A6FF;
+  /* Bright sky-blue accent */
+  --color-accent-hover: #1F6FEB;
+  /* Darker blue for hover states */
+  --color-secondary-accent: #79C0FF;
+  /* A lighter complementary accent */
+
   /* Status Colors */
-  --color-success: #2DA44E;        /* Success state (green) */
-  --color-warning: #D29922;        /* Warning state (warm amber) */
-  --color-error: #F85149;          /* Error state (red) */
-  --color-info: #58A6FF;           /* Info state (using primary accent) */
-  
+  --color-success: #2DA44E;
+  /* Success state (green) */
+  --color-warning: #D29922;
+  /* Warning state (warm amber) */
+  --color-error: #F85149;
+  /* Error state (red) */
+  --color-info: #58A6FF;
+  /* Info state (using primary accent) */
+
   /* UI Elements */
-  --color-border: #30363D;         /* For borders and dividers */
-  --color-shadow: rgba(1, 4, 9, 0.7); /* For drop shadows */
-  --color-disabled: #484F58;       /* Disabled UI elements */
-  
+  --color-border: #30363D;
+  /* For borders and dividers */
+  --color-shadow: rgba(1, 4, 9, 0.7);
+  /* For drop shadows */
+  --color-disabled: #484F58;
+  /* Disabled UI elements */
+
   /* Optional Gradient Background */
   --gradient-bg: linear-gradient(135deg, #0D1117, #161B22);
 }
@@ -56,7 +76,9 @@ body {
   box-shadow: 0 2px 4px var(--color-shadow);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   color: var(--color-text-primary);
 }
 
@@ -72,6 +94,7 @@ button {
 button:hover {
   background-color: var(--color-accent-hover);
 }
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
@@ -104,7 +127,7 @@ p {
 }
 
 .bp5-drawer .bp5-heading {
-    color: white;
+  color: white;
 
 }
 
@@ -127,13 +150,18 @@ p {
   display: flex;
   flex-direction: row;
 }
+
 /* Make the Navbar vertical */
-.container .tool-bar {  
+.container .tool-bar {
   display: flex;
-  flex-direction: column; /* Stack items vertically */
-  height: 100%; /* Full height */
-  width: 50px; /* Set the width */
-  background-color: var(--color-bg); /* Light background color */
+  flex-direction: column;
+  /* Stack items vertically */
+  height: 100%;
+  /* Full height */
+  width: 50px;
+  /* Set the width */
+  background-color: var(--color-bg);
+  /* Light background color */
   padding-top: 10px;
   border: 1px solid var(--color-border);
 }
@@ -141,13 +169,15 @@ p {
 /* Make sure navbar items are aligned correctly */
 .container .tool-bar .bp5-navbar-group {
   display: flex;
-  flex-direction: column; /* Stack items vertically inside navbar */
+  flex-direction: column;
+  /* Stack items vertically inside navbar */
   padding: 10px;
 }
 
 /* Optional: Adjust button styles inside the navbar */
 .container .tool-bar .bp3-button {
-  margin: 10px 0; /* Space buttons vertically */
+  margin: 10px 0;
+  /* Space buttons vertically */
 }
 
 .container .left-side {
@@ -155,6 +185,7 @@ p {
   flex-direction: row;
   height: 100%;
 }
+
 .container .right-side {
   width: 480px;
   display: flex;
@@ -163,6 +194,7 @@ p {
   height: 100%;
   margin-left: 10px;
 }
+
 .container .goal-display-container {
   width: 100%;
   height: 50vh;
@@ -174,6 +206,7 @@ p {
   width: 100%;
   height: 50vh;
 }
+
 .container .task-bank .bp5-card {
   padding: 0px;
   flex-direction: column;
@@ -199,18 +232,20 @@ p {
   justify-content: space-between;
   background-color: var(--color-bg);
 }
+
 .container .task-bank-header {
   display: flex;
   justify-content: center;
   flex-direction: column;
   margin-left: 10px;
 }
+
 .container .main-content .task-bank {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: scroll;
-    background-color: var(--color-bg); 
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: scroll;
+  background-color: var(--color-bg);
 }
 
 .container .task-bank .task-header {
@@ -228,25 +263,29 @@ p {
 
 .container .task-header-left,
 .container .task-header-right {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .container .task-header-left {
-    justify-content: start;
-    padding-left: 3px;
+  justify-content: start;
+  padding-left: 3px;
 }
+
 .container .task-header-left .bp5-button {
-background-color: var(--color-surface);
-box-shadow: unset;
+  background-color: var(--color-surface);
+  box-shadow: unset;
 }
+
 .container .task-header-right {
-    justify-content: end;
-    padding-right: 10px;
+  justify-content: end;
+  padding-right: 10px;
 }
+
 .container .task-bank .task-header .task-name {
-    margin-left: 10px;
+  margin-left: 10px;
 }
+
 .container .task-bank .task-header .bp5-icon-dot {
   margin-left: 7px;
   margin-right: 5px;
@@ -268,35 +307,42 @@ box-shadow: unset;
 }
 
 .container .task-bank .task-children-collapse>.bp5-collapse-body {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
 }
+
 .container .task-bank .task-children-collapse {
   width: 100%;
 }
 
 .container .task-bank .task-children-header .bp5-fill {
-    color: white;
-    font-size: 10px;
-  }
+  color: white;
+  font-size: 10px;
+}
 
+.container .task-bank .category-container .bp5-collapse {
+  width: 100%;
+  padding: 0px 5px;
+}
 .container .task-bank .category-container {
-    height: 100%;
-    margin-right: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    border: 1px solid var(--color-border);
+  height: 100%;
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  border: 1px solid var(--color-border);
+  width: 100%;
 }
 
 .container .task-bank .category-collapse {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-} 
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
 .container .task-bank .category {
   display: flex;
   flex-direction: column;
@@ -307,74 +353,76 @@ box-shadow: unset;
 .container .task-bank .category-container .category-name {
   width: 100%;
 }
+
 .container .task-bank .category-container .category-name .bp5-tag {
-  color: white;
+  color: gray;
   width: 100%;
   font-size: 11px;
-  font-weight: 600;
-  text-decoration: underline;
   text-align: center;
   padding-left: 10px;
   background-color: var(--color-bg-secondary);
 }
+
+.container .task-bank .category-container .category-name .bp5-tag span {
+  flex-grow: 0;
+}
 .container .task-bank .child-task {
   font-size: 11px;
-  font-weight: 400;
-  min-width: 80px;
-  color: white;
-  background-color: var(--color-bg-alt);
+  font-weight: 600;
+  margin: 3px;
+  padding: 3px;
 }
 
 .container .task-bank .child-task .bp5-fill {
   display: flex;
-  height: 24px;
   align-items: center;
-  padding-top: 2px;
+  justify-content: space-between;
 }
 
 .container .task-bank .child-task .bp5-checkbox {
   margin-bottom: 0px;
-  margin-left: 5px;
   padding-inline-start: 0px;
 }
-.container .task-bank .child-task .child-task-name{
-  margin-left: 2px;
-  margin-right: 5px;
+
+.container .task-bank .child-task .child-task-name {
   display: flex;
+  margin-left: 2px;
 }
 
 .container .task-bank .child-task .bp5-control-indicator {
   margin-inline-start: 0px;
   margin-inline-end: 3px;
 }
-.container .task-bank .child-task .child-task-input .bp5-input{
+
+.container .task-bank .child-task .child-task-input .bp5-input {
   height: 14px;
   font-size: 12px;
   max-width: 150px;
 }
+
 /*
 .container .task-bank .task-checkbox span {
   margin-inline-start: 0px;
   display: block;
 }  */
 .container .schedule-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background-color: var(--color-bg);
-    width: 100%;
-    min-width: 315px;
-    border: 1px solid var(--color-border);
-    padding: 1px;
-    max-width: 315px;
-  }
-
-.container .schedule {
-    background-color: var(--color-bg);
-    overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-bg);
+  width: 100%;
+  min-width: 315px;
+  border: 1px solid var(--color-border);
+  padding: 1px;
+  max-width: 315px;
 }
 
-.container .schedule-container .boundary-card{
+.container .schedule {
+  background-color: var(--color-bg);
+  overflow-x: hidden;
+}
+
+.container .schedule-container .boundary-card {
   display: flex;
   flex-direction: column;
   padding: 0px;
@@ -401,9 +449,9 @@ box-shadow: unset;
 }
 
 .container .schedule-container .timeslot:hover {
-    background-color: var(--color-surface-light);
+  background-color: var(--color-surface-light);
 }
-  
+
 
 
 .container .schedule .bp5-card .assigned-task {
@@ -414,12 +462,13 @@ box-shadow: unset;
   justify-content: center;
   align-items: center;
 }
+
 .container .card-column {
   max-width: 240px;
 }
 
 .container .display {
-background-color: var(--color-bg);
+  background-color: var(--color-bg);
 }
 
 .container .display-container {
@@ -456,89 +505,172 @@ background-color: var(--color-bg);
 }
 
 .bp5-datepicker-content .rdp-caption_dropdowns {
-    display: flex;
-    justify-content: space-around;
-  }
-  
-  .rdp-vhidden {
-    display: none;
-  }
-  .rdp-caption {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(17, 20, 24, 0.1);
-    background-color: var(--color-bg-light);
-  }
-  
-  .bp5-datepicker-content  .bp5-icon-double-caret-vertical {
-    right: 0px !important;
-  }
-  .rdp-table {
-    background-color: var(--color-bg-secondary);
-  }
-  .rdp-caption .bp5-html-select {
-    background-color: var(--color-bg-light);
-    border: none !important;
-  }
-  .rdp-caption .bp5-html-select select {
-    color: white !important;
-    background-color: var(--color-bg-light);
-    border: none !important;
-    box-shadow: unset;
+  display: flex;
+  justify-content: space-around;
+}
 
-  }
-  .rdp-caption .bp5-html-select select option{
-    color: white !important;
-    background-color: var(--color-bg-light);
-    border: none !important;
-    box-shadow: unset;
-  }
+.rdp-vhidden {
+  display: none;
+}
 
-  .rdp-day {
-    color: white !important;
-  }
+.rdp-caption {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(17, 20, 24, 0.1);
+  background-color: var(--color-bg-light);
+}
 
-  .goal-display-header-container {
-    background-color: var(--color-bg);
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--color-border);
-  }
+.bp5-datepicker-content .bp5-icon-double-caret-vertical {
+  right: 0px !important;
+}
 
-  .goal-display-header {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 10px;
-  }
+.rdp-table {
+  background-color: var(--color-bg-secondary);
+}
 
-  .bp5-input, .bp5-html-select select:hover, .bp5-html-select select, .bp5-html-select option{
-    background-color: var(--color-bg);
-    color: white;
-    border: none !important;
-    box-shadow: unset;
-  }
+.rdp-caption .bp5-html-select {
+  background-color: var(--color-bg-light);
+  border: none !important;
+}
 
-  .bp5-popover .bp5-popover-content {
-    background-color: var(--color-bg-light);
-  }
-  
-  .bp5-control {
-    margin-bottom: 0px;
-  }
+.rdp-caption .bp5-html-select select {
+  color: white !important;
+  background-color: var(--color-bg-light);
+  border: none !important;
+  box-shadow: unset;
 
-  .bp5-switch {
-    align-self: start;
-  }
-  
-  .goal-display-container .goals-container {
-    display: flex;
-    flex-wrap: wrap;
-  }
-  
-    .goal-display-container .goals-container .goal-item {
-      width: 30%;
-background-color: var(--color-bg-light);
-border: 1px solid var(--color-border);
+}
+
+.rdp-caption .bp5-html-select select option {
+  color: white !important;
+  background-color: var(--color-bg-light);
+  border: none !important;
+  box-shadow: unset;
+}
+
+.rdp-day {
+  color: white !important;
+}
+
+.goal-display-header-container {
+  background-color: var(--color-bg);
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.goal-display-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 10px;
+}
+
+.bp5-input,
+.bp5-html-select select:hover,
+.bp5-html-select select,
+.bp5-html-select option {
+  background-color: var(--color-bg);
+  color: white;
+  border: none !important;
+  box-shadow: unset;
+}
+
+.bp5-popover .bp5-popover-content {
+  background-color: var(--color-bg-light);
+}
+
+.bp5-control {
+  margin-bottom: 0px;
+}
+
+.bp5-switch {
+  align-self: start;
+}
+
+.goal-display-container .goals-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  flex-direction: row;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.goal-display-container .goal-header-preview {
+  margin-left: 3px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: gray;
+}
+
+.goal-display-container .goal-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: start;
+  align-self: start;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.edit-goal-button {
+  margin-left: auto;
+  display: flex;
+  font-size: 10px;
+  min-width: 21px;
+  min-height: 12px;
+  margin-right: 0px;
+  padding-right: 2px;
+  padding-top: 4px;
+  padding-left: 4px;
+}
+
+.edit-goal-button .bp5-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.goal-display-container .goals-container .goal-item {
+  width: 30%;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
   box-shadow: 0 2px 4px var(--color-shadow);
-    }
+  height: 90px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  padding: 0px;
+}
+
+.goal-display-container .goals-container .goal-tasks {
+  display: flex;
+  justify-content: center;
+  align-self: center;
+  margin-top: 10px;
+}
+
+/* Scrollbar size */
+::-webkit-scrollbar {
+  width: 2px;
+  /* To change vertical scrollbar width */
+  height: 2px;
+  /* To change horizontal scrollbar height */
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 2px;
+  background-color: #7f7f7f;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background-color: #5d5d5d;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #868686;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}

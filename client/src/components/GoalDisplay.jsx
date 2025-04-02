@@ -6,54 +6,59 @@ const GoalItem = ({ goal, onEdit }) => {
     <Card
       className="goal-item"
       elevation={Elevation.TWO}
-      style={{
-        marginBottom: "10px",
-        padding: "10px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
     >
-      <div>
+      <div className="goal-header">
         {goal.header && goal.header.trim() !== "" && (
-          <h4 className="goal-header-preview">{goal.header}</h4>
+          <div className="goal-header-preview">{goal.header}</div>
         )}
-        <div className="goal-tasks">
-          {goal.tasks &&
-            goal.tasks.map((t) => {
-              // Instead of displaying the full path, display only the final segment.
-              const displayName =
-                t.path && t.path.length > 0
-                  ? t.path[t.path.length - 1]
-                  : "";
-              return (
-                <div
-                  key={t.task_id}
-                  className="goal-task"
-                  style={{
-                    marginBottom: "5px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <Tag minimal intent='primary'>{displayName}</Tag>
-                  {t.target ? (
-                    <span>
-                      ({t.progress || 0}/{t.target})
-                    </span>
-                  ) : null}
-                </div>
-              );
-            })}
-        </div>
+        <Button
+          icon="cog"
+          minimal
+          className="edit-goal-button"
+          onClick={() => onEdit(goal)}
+        />
       </div>
-      <Button
-        icon="cog"
-        minimal
-        className="edit-goal-button"
-        onClick={() => onEdit(goal)}
-      />
+      <div className="goal-tasks">
+        {goal.tasks &&
+          goal.tasks.map((t) => {
+            const displayName =
+              t.path && t.path.length > 0 ? t.path[t.path.length - 1] : "";
+
+            const current = t.progress || 0;
+            const target = t.target || 0;
+            const operator = t.operator || "=";
+
+            const isComplete =
+              (operator === "=" && current === target) ||
+              (operator === ">" && current > target) ||
+              (operator === ">=" && current >= target) ||
+              (operator === "<" && current < target) ||
+              (operator === "<=" && current <= target);
+
+            const intent = isComplete ? "success" : "danger";
+
+            return (
+              <div
+                key={t.task_id}
+                className="goal-task"
+                style={{
+                  marginBottom: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <Tag minimal intent="primary">{displayName}</Tag>
+                {t.target ? (
+                  <Tag minimal intent={intent}>
+                    {current}/{target}
+                  </Tag>
+                ) : null}
+              </div>
+            );
+          })}
+      </div>
+
     </Card>
   );
 };
@@ -77,13 +82,13 @@ const GoalDisplay = ({ goals, onEditGoal }) => {
         />
       </div>
       <div className="goals-container">
-      {goals && goals.length > 0 ? (
-        goals.map((goal) => (
-          <GoalItem key={goal._id || goal.id} goal={goal} onEdit={onEditGoal} />
-        ))
-      ) : (
-        <div>No goals yet</div>
-      )}
+        {goals && goals.length > 0 ? (
+          goals.map((goal) => (
+            <GoalItem key={goal._id || goal.id} goal={goal} onEdit={onEditGoal} />
+          ))
+        ) : (
+          <div>No goals yet</div>
+        )}
       </div>
     </div>
   );
