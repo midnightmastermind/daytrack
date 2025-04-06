@@ -17,7 +17,7 @@
   .goal-form .goal-actual,
   .goal-form .goal-preview {
     background-color: #1A2129;
-    border: 1px solid #ddd;
+    border: 1px solid #30363D;
     border-radius: 4px;
     padding: 10px;
   }
@@ -90,7 +90,7 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: 2px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #30363D;
   }
 
   .goal-actual .add-task-button {

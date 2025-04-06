@@ -36,7 +36,7 @@ const TaskCard = ({ task, index, onEditTask, onOpenDrawer, onTaskUpdate }) => {
                 );
             } else {
                 return (
-                    <Tag elevation={Elevation.FOUR} key={child._id} intent={'primary'} className="child-task" minimal>
+                    <Tag elevation={Elevation.FOUR} key={child._id} intent={'primary'} className="child-task" minimal={!child.values?.checkbox}>
                         {child.properties && child.properties.checkbox && (
                             <Checkbox
                                 checked={child.values?.checkbox ?? false}

@@ -48,9 +48,9 @@ const GoalItem = ({ goal, onEdit }) => {
                   gap: "5px",
                 }}
               >
-                <Tag minimal intent="primary">{displayName}</Tag>
+                <Tag minimal={false} intent="primary">{displayName}</Tag>
                 {t.target ? (
-                  <Tag minimal intent={intent}>
+                  <Tag minimal={!isComplete} intent={intent}>
                     {current}/{target}
                   </Tag>
                 ) : null}
@@ -65,15 +65,11 @@ const GoalItem = ({ goal, onEdit }) => {
 
 const GoalDisplay = ({ goals, onEditGoal }) => {
   return (
-    <div className="goal-display-container" style={{ padding: "10px" }}>
+    <div className="goal-display-container">
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        className="goal-display-header"
       >
-        <h3>Goals / Habits</h3>
+        <div className="section-header">Goals / Habits</div>
         <Button
           icon="plus"
           text="New Goal"

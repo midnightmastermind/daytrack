@@ -1,4 +1,3 @@
-// ✅ App.jsx with optimistic updates using addPendingProgress and clearPendingProgress
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { DragDropContext } from "react-beautiful-dnd";
@@ -19,35 +18,47 @@ import GoalDisplay from "./components/GoalDisplay";
 import NewTaskForm from "./NewTaskForm.jsx";
 import GoalForm from "./GoalForm.jsx";
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
-import { getTaskDifferences } from "./utils/getTaskDifferences";
-import store from './store/store'
+
 const AppToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
 function App() {
   const dispatch = useDispatch();
-
   const { tasks } = useSelector((state) => state.tasks);
   const { dayplans } = useSelector((state) => state.dayplans);
   const { goals } = useSelector((state) => state.goals);
-  const progressRecords = useSelector((state) => state.goalProgress?.progressRecords || []);
+
+  console.log("[App] tasks:", tasks);
+  console.log("[App] dayplans:", dayplans);
+  console.log("[App] goals:", goals);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  console.log("[App] selectedDate:", selectedDate);
 
-  const goalsWithProgressSelector = useMemo(
-    () => makeSelectGoalsWithProgress(selectedDate),
-    [selectedDate]
-  );
+  const goalsWithProgressSelector = useMemo(() => {
+    console.log("[App] makeSelectGoalsWithProgress - selectedDate:", selectedDate);
+    return makeSelectGoalsWithProgress(selectedDate);
+  }, [selectedDate]);
 
   const goalsWithProgress = useSelector(goalsWithProgressSelector);
+  console.log("[App] goalsWithProgress:", goalsWithProgress);
+
+  const [assignments, setAssignments] = useState({ actual: {}, preview: {} });
+  const [lastSavedAssignments, setLastSavedAssignments] = useState({ actual: {}, preview: {} });
   const [tasksState, setTasksState] = useState([]);
   const [dayPlansState, setDayPlansState] = useState([]);
-  const [assignments, setAssignments] = useState({});
-  const [lastSavedAssignments, setLastSavedAssignments] = useState({});
-  const [planDirty, setPlanDirty] = useState(false);
   const [task, setTask] = useState(null);
+  const [editingGoal, setEditingGoal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null);
+  const [planDirty, setPlanDirty] = useState(false);
+  const [currentTime, setCurrentTime] = useState(DateTime.local().toFormat("HH:mm:ss"));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(DateTime.local().toFormat("HH:mm:ss"));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const generateTimeSlots = () => {
     let slots = [];
@@ -57,6 +68,7 @@ function App() {
       slots.push(startTime.toFormat("h:mm a"));
       startTime = startTime.plus({ minutes: 30 });
     }
+    console.log("[generateTimeSlots] timeSlots:", slots);
     return slots;
   };
   const timeSlots = generateTimeSlots();
@@ -68,158 +80,217 @@ function App() {
     dispatch(fetchGoalProgress());
   }, [dispatch]);
 
-  useEffect(() => setTasksState(tasks || []), [tasks]);
-  useEffect(() => setDayPlansState(dayplans || []), [dayplans]);
+  useEffect(() => {
+    console.log("[useEffect] tasks:", tasks);
+    setTasksState(tasks || []);
+  }, [tasks]);
 
   useEffect(() => {
-    const found = dayPlansState.find(
-      (plan) => new Date(plan.date).toDateString() === selectedDate.toDateString()
-    );
-    if (found && found.result) {
-      const newAssignments = {};
+    console.log("[useEffect] dayplans:", dayplans);
+    setDayPlansState(dayplans || []);
+  }, [dayplans]);
+
+  useEffect(() => {
+    const found = dayPlansState.find((plan) => new Date(plan.date).toDateString() === selectedDate.toDateString());
+    console.log("[useEffect] found plan:", found);
+
+    if (found) {
+      const actual = {};
+      const preview = {};
       (found.result || []).forEach((entry) => {
-        newAssignments[entry.timeSlot] = entry.assignedTasks || [];
+        actual[entry.timeSlot] = entry.assignedTasks || [];
       });
-      setAssignments(newAssignments);
-      setLastSavedAssignments(newAssignments);
+      (found.plan || []).forEach((entry) => {
+        preview[entry.timeSlot] = entry.assignedTasks || [];
+      });
+      console.log("[useEffect] actual:", actual);
+      console.log("[useEffect] preview:", preview);
+      setAssignments({ actual, preview });
+      setLastSavedAssignments({ actual, preview });
     } else {
-      setAssignments({});
-      setLastSavedAssignments({});
+      setAssignments({ actual: {}, preview: {} });
+      setLastSavedAssignments({ actual: {}, preview: {} });
     }
     setPlanDirty(false);
   }, [selectedDate, dayPlansState]);
 
-  const handleTaskUpdate = (updatedTask) => {
-    setTasksState((prevTasks) =>
-      prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task))
-    );
-  };
-
   const flattenGoalTaskIds = (goal) => {
     const ids = new Set();
-  
     const walk = (task) => {
       if (task.checked !== false) {
         const id = (task.task_id || task._id || task.id)?.toString();
         if (id) ids.add(id);
       }
-  
-      if (Array.isArray(task.children)) {
-        for (const child of task.children) {
-          walk(child);
-        }
-      }
+      (task.children || []).forEach(walk);
     };
-  
-    for (const task of goal.tasks || []) {
-      walk(task);
-    }
-  
+    (goal.tasks || []).forEach(walk);
+    console.log("[flattenGoalTaskIds] ids for goal", goal._id || goal.tempId, ":", ids);
     return ids;
   };
-  
-  const saveDayPlan = async (assignmentsToSave) => {
-    const resultArray = Object.entries(assignmentsToSave).map(([timeSlot, assignedTasks]) => ({
+
+  const saveDayPlan = async (assignmentsToSave, type = "actual") => {
+    console.log("[saveDayPlan] assignmentsToSave:", assignmentsToSave);
+    console.log("[saveDayPlan] type:", type);
+
+    const resultArray = Object.entries(assignmentsToSave[type]).map(([timeSlot, assignedTasks]) => ({
       timeSlot,
       assignedTasks,
     }));
 
-    const dayPlanData = { date: selectedDate, plan: resultArray, result: resultArray };
+    console.log("[saveDayPlan] resultArray:", resultArray);
+
     const existingPlan = dayPlansState.find(
       (plan) => new Date(plan.date).toDateString() === selectedDate.toDateString()
     );
 
-    console.log("💾 Saving day plan for", selectedDate.toDateString());
-    console.log("🗂 Day plan payload:", dayPlanData);
-    const { added, removed } = getTaskDifferences(lastSavedAssignments, assignmentsToSave);
+    console.log("[saveDayPlan] existingPlan:", existingPlan);
+
+    const payload = {
+      date: selectedDate,
+      plan: type === "preview" ? resultArray : existingPlan?.plan || [],
+      result: type === "actual" ? resultArray : existingPlan?.result || [],
+    };
+
+    const countTasks = (assignments) => {
+      const countMap = {};
+      for (const slotTasks of Object.values(assignments)) {
+        for (const task of slotTasks) {
+          const id = task.originalId;
+          if (id) countMap[id] = (countMap[id] || 0) + 1;
+        }
+      }
+      return countMap;
+    };
+
+    const currentCount = countTasks(lastSavedAssignments[type]);
+    const nextCount = countTasks(assignmentsToSave[type]);
+    console.log("[saveDayPlan] currentCount:", currentCount);
+    console.log("[saveDayPlan] nextCount:", nextCount);
+
+    const allIds = new Set([...Object.keys(currentCount), ...Object.keys(nextCount)]);
     const date = selectedDate.toISOString();
 
-    for (const { id, count } of [...added, ...removed.map(r => ({ ...r, count: -r.count }))]) {
-      const relatedGoals = goals.filter((goal) =>
-        flattenGoalTaskIds(goal).has(id.toString())
-      );
-      
-      for (const goal of relatedGoals) {
+    if (type === "actual") {
+      for (const id of allIds) {
+        const oldVal = currentCount[id] || 0;
+        const newVal = nextCount[id] || 0;
+        const diff = newVal - oldVal;
+        console.log(`[saveDayPlan] id: ${id}, oldVal: ${oldVal}, newVal: ${newVal}, diff: ${diff}`);
 
-        const taskIdStr = id.toString();
-        const goalId = goal._id?.toString();
-        const tempId = goalId || goal.tempId || `temp_${goal.header || Math.random().toString(36).slice(2, 10)}`;
-        const dateStr = date;
-        console.log("🚀 Dispatching addPendingProgress", {
-          goalId,
-          date,
-          taskId: taskIdStr,
-          diff: count,
-        });
-        dispatch(addPendingProgress({
-          goalId,
-          date,
-          taskId: taskIdStr,
-          diff: count,
-        }));
-        dispatch(createGoalProgress({
-          goalId,
-          tempId: goal.tempId || (goal._id ? undefined : tempId),
-          date: dateStr,
-          taskId: taskIdStr,
-          increment: count,
-        }));
+        if (diff !== 0) {
+          const relatedGoals = goals.filter((goal) => flattenGoalTaskIds(goal).has(id.toString()));
+          console.log("[saveDayPlan] relatedGoals:", relatedGoals);
+
+          for (const goal of relatedGoals) {
+            const goalId = goal._id?.toString();
+            const tempId = goalId || goal.tempId || `temp_${goal.header || Math.random().toString(36).slice(2, 10)}`;
+
+            dispatch(addPendingProgress({ goalId, date, taskId: id.toString(), diff }));
+            dispatch(createGoalProgress({
+              goalId,
+              tempId: goal._id ? undefined : tempId,
+              date,
+              taskId: id.toString(),
+              increment: nextCount[id],
+            }));
+          }
+        }
       }
     }
 
+    const nextSaved = { ...lastSavedAssignments, [type]: assignmentsToSave[type] };
+    console.log("[saveDayPlan] nextSaved:", nextSaved);
+    setLastSavedAssignments(nextSaved);
 
-    const toastMsg = existingPlan ? "Day plan updated" : "Day plan created";
     const response = existingPlan
-      ? await dispatch(updateDayPlan({ id: existingPlan._id, dayPlanData }))
-      : await dispatch(createDayPlan(dayPlanData));
+      ? await dispatch(updateDayPlan({ id: existingPlan._id, dayPlanData: payload }))
+      : await dispatch(createDayPlan({ ...payload }));
+
+    console.log("[saveDayPlan] response:", response);
 
     if (response?.payload) {
-      setLastSavedAssignments(assignmentsToSave);
-      AppToaster.show({ message: toastMsg, intent: Intent.SUCCESS });
+      AppToaster.show({ message: `✅ ${type} schedule saved!`, intent: Intent.SUCCESS });
     } else {
-      AppToaster.show({ message: "Failed to save day plan", intent: Intent.DANGER });
+      AppToaster.show({ message: `❌ Failed to save ${type} schedule`, intent: Intent.DANGER });
     }
   };
 
   const onDragEnd = (result) => {
+    console.log("[onDragEnd] result:", result);
+
     const { source, destination, draggableId } = result;
     if (!destination || !source || typeof source.index !== "number" || typeof destination.index !== "number") return;
 
-    let updatedAssignments = { ...assignments };
     const fromTaskBank = source.droppableId === "taskBank";
-    let movedTask;
+    const whichSchedule = destination.droppableId.includes("preview") ? "preview" : "actual";
+    const slotKey = destination.droppableId.replace("preview_", "").replace("actual_", "");
 
-    console.log("🟢 DRAG END EVENT");
-    console.log("Source:", source);
-    console.log("Destination:", destination);
-    console.log("Dragged Task ID:", draggableId);
+    console.log("[onDragEnd] fromTaskBank:", fromTaskBank);
+    console.log("[onDragEnd] whichSchedule:", whichSchedule);
+    console.log("[onDragEnd] slotKey:", slotKey);
+
+    const updated = { ...assignments };
+    const destSlot = updated[whichSchedule][slotKey] || [];
+
     if (fromTaskBank) {
-      const taskFromBank = tasksState.find((task) => task._id.toString() === draggableId);
+      const taskFromBank = tasksState.find((task) => task._id?.toString() === draggableId);
       if (!taskFromBank) return;
-      const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
-      movedTask = {
-        ...deepClone(taskFromBank),
-        id: taskFromBank._id.toString(),
-        originalId: taskFromBank._id.toString(),
-        assignmentId: `${taskFromBank._id}-${Date.now()}-${Math.random()}`,
-        parent_id: null,
+
+      const selectedLeaves = [];
+      let foundChecked = false;
+
+      const walk = (node, ancestry = []) => {
+        const isChecked = (node.properties?.checkbox && node.values?.checkbox) ||
+                          (node.properties?.input && node.values?.input?.trim() !== "");
+
+        const current = {
+          _id: node._id,
+          name: node.name,
+          properties: node.properties || {},
+          values: node.values || {},
+        };
+
+        const nextAncestry = [...ancestry, current];
+
+        if (isChecked && (!node.children || node.children.length === 0)) {
+          foundChecked = true;
+          selectedLeaves.push({
+            ...node,
+            id: node._id?.toString(),
+            originalId: node._id?.toString(),
+            assignmentId: `${node._id}-${Date.now()}-${Math.random()}`,
+            assignmentAncestry: nextAncestry,
+          });
+        }
+
+        (node.children || []).forEach((child) => walk(child, nextAncestry));
       };
-    } else {
-      const sourceTasks = [...(assignments[source.droppableId] || [])];
-      movedTask = sourceTasks[source.index];
-      sourceTasks.splice(source.index, 1);
-      updatedAssignments[source.droppableId] = sourceTasks;
+
+      walk(taskFromBank);
+
+      if (!foundChecked && taskFromBank.properties?.card) {
+        selectedLeaves.push({
+          ...taskFromBank,
+          id: taskFromBank._id?.toString(),
+          originalId: taskFromBank._id?.toString(),
+          assignmentId: `${taskFromBank._id}-${Date.now()}-${Math.random()}`,
+          assignmentAncestry: [{
+            _id: taskFromBank._id,
+            name: taskFromBank.name,
+            properties: taskFromBank.properties || {},
+            values: taskFromBank.values || {},
+          }],
+        });
+      }
+
+      updated[whichSchedule][slotKey] = [...destSlot, ...selectedLeaves];
     }
 
-    const destTasks = [...(assignments[destination.droppableId] || [])];
-    destTasks.splice(destination.index, 0, movedTask);
-    updatedAssignments[destination.droppableId] = destTasks;
-
-    setAssignments(updatedAssignments);
-    console.log("📥 New assignments to save:", updatedAssignments);
-    saveDayPlan(updatedAssignments);
+    setAssignments(updated);
+    saveDayPlan(updated, whichSchedule);
   };
 
+  const currentDate = DateTime.fromJSDate(new Date()).toFormat("M/d/yyyy");
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="container">
@@ -227,72 +298,83 @@ function App() {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           planDirty={planDirty}
-          onSaveDayPlan={() => saveDayPlan(assignments)}
-          onOpenDrawer={() => {
-            setTask(null);
-            setIsDrawerOpen(true);
-          }}
+          onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
         />
         <div className="main-content">
-          <div className="left-side">
-            <div className="task-bank-container">
-              <div className="task-bank-header">Task Bank</div>
+          <div className="time-header">
+            <div className="selected-date">
+              DayPlan: {DateTime.fromJSDate(selectedDate).toFormat("M/d/yyyy")}
+            </div>
+            <div className="current-time">
+              <div className="live-time">current time: {currentDate} {currentTime}</div>
+            </div>
+          </div>
+          <div className="content">
+            <div className="left-side">
               <TaskBank
                 tasks={tasksState}
                 onEditTask={(task) => setTask(task)}
                 onOpenDrawer={() => setIsDrawerOpen(true)}
-                onTaskUpdate={handleTaskUpdate}
+                onTaskUpdate={(t) =>
+                  setTasksState((prev) => prev.map((tk) => (tk._id === t._id ? t : tk)))
+                }
               />
+              <div className="schedule-container dual">
+                <div className="schedule-header"><div className="plan-header">Plan</div><div className="agenda-header">Agenda</div></div>
+                <div className="schedules-scroll-wrapper">
+                  <div className="schedules">
+                    <Schedule
+                      label="Plan"
+                      timeSlots={timeSlots}
+                      assignments={assignments.preview}
+                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                      setPlanDirty={setPlanDirty}
+                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                    />
+                    <Schedule
+                      label="Agenda"
+                      timeSlots={timeSlots}
+                      assignments={assignments.actual}
+                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
+                      setPlanDirty={setPlanDirty}
+                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="schedule-container">
-              <Schedule
-                timeSlots={timeSlots}
-                assignments={assignments}
-                setAssignments={setAssignments}
-                setPlanDirty={setPlanDirty}
-                onAssignmentsChange={saveDayPlan} // ✅ Add this
+            <div className="right-side">
+              <GoalDisplay
+                key={selectedDate.toISOString()}
+                goals={goalsWithProgress}
+                onEditGoal={(goal) => {
+                  setEditingGoal(goal);
+                  setGoalDrawerOpen(true);
+                }}
               />
+              <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
             </div>
-          </div>
-          <div className="right-side">
-            <GoalDisplay
-
-              key={selectedDate.toISOString()}
-              goals={goalsWithProgress} onEditGoal={(goal) => {
-                setEditingGoal(goal);
-                setGoalDrawerOpen(true);
-              }}
-            />
-            <TaskDisplay timeSlots={timeSlots} assignments={assignments} />
           </div>
         </div>
 
         <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.SMALL} position={Position.LEFT} title="Create / Edit Task">
-          <NewTaskForm
-            task={task}
-            onSave={(newTask) => {
-              setTasksState((prev) => [...prev, newTask]);
-              setIsDrawerOpen(false);
-            }}
-          />
+          <NewTaskForm task={task} onSave={(newTask) => {
+            setTasksState((prev) => [...prev, newTask]);
+            setIsDrawerOpen(false);
+          }} />
         </Drawer>
-
         <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal">
           <GoalForm
             goal={editingGoal}
             tasks={tasksState}
             onSave={(newGoal) => {
-              if (editingGoal && editingGoal._id) {
-                dispatch(updateGoal({ id: editingGoal._id, goalData: newGoal }));
-              } else {
-                dispatch(createGoal(newGoal));
-              }
+              editingGoal && editingGoal._id
+                ? dispatch(updateGoal({ id: editingGoal._id, goalData: newGoal }))
+                : dispatch(createGoal(newGoal));
               setGoalDrawerOpen(false);
             }}
             onDelete={(goalToDelete) => {
-              if (goalToDelete && goalToDelete._id) {
-                dispatch(deleteGoal(goalToDelete._id));
-              }
+              goalToDelete && goalToDelete._id && dispatch(deleteGoal(goalToDelete._id));
               setGoalDrawerOpen(false);
             }}
           />

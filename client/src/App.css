@@ -59,6 +59,9 @@
   --gradient-bg: linear-gradient(135deg, #0D1117, #161B22);
 }
 
+:focus {
+  outline: unset !important;
+}
 /* Example usage */
 body {
   background-color: var(--color-bg);
@@ -109,6 +112,14 @@ h1 {
 p {
   font-size: 18px;
 }
+.app-logo-container {
+  border-bottom: 1px solid var(--color-border);
+}
+.app-logo-container svg {
+  height: 50px;
+  width: 50px;
+  color: gray;
+}
 
 .bg-container {
   background-color: var(--color-bg);
@@ -145,10 +156,14 @@ p {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  padding-left: 10px;
+  padding-left: 5px;
   background-color: var(--color-bg-secondary);
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+}
+
+.container .content {
+  display: flex;
 }
 
 /* Make the Navbar vertical */
@@ -158,12 +173,15 @@ p {
   /* Stack items vertically */
   height: 100%;
   /* Full height */
-  width: 50px;
+  width: 60px;
   /* Set the width */
   background-color: var(--color-bg);
   /* Light background color */
-  padding-top: 10px;
+  padding-top: 5px;
   border: 1px solid var(--color-border);
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px;
 }
 
 /* Make sure navbar items are aligned correctly */
@@ -175,9 +193,9 @@ p {
 }
 
 /* Optional: Adjust button styles inside the navbar */
-.container .tool-bar .bp3-button {
-  margin: 10px 0;
-  /* Space buttons vertically */
+.container .tool-bar .bp5-button svg {
+  height: 25px;
+  width: 25px;
 }
 
 .container .left-side {
@@ -238,12 +256,49 @@ p {
   justify-content: center;
   flex-direction: column;
   margin-left: 10px;
+  color: gray;
+  font-size: 12px;
 }
 
+.container .main-content-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--color-bg-secondary);
+}
+
+.time-header {
+  height: 25px;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  width: 314px;
+  margin-bottom: 3px;
+  margin-left: 2px;
+  margin-top: 2px;
+}
+
+.selected-date {
+  color: white;
+  width: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: start;
+}
+.current-time {
+  display: flex;
+  justify-content: space-between;
+  color: gray;
+  width: 50%;
+  font-size: 11px;
+}
 .container .main-content .task-bank {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding: 0px 2px;
   overflow-y: scroll;
   background-color: var(--color-bg);
 }
@@ -254,7 +309,8 @@ p {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
+  font-size: 13px;
+  color: #FBFFFF;
   font-weight: 500;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
@@ -276,14 +332,13 @@ p {
   background-color: var(--color-surface);
   box-shadow: unset;
 }
+.container .task-header-left .bp5-button .bp5-icon {
+  color: #FBFFFF;
+}
 
 .container .task-header-right {
   justify-content: end;
   padding-right: 10px;
-}
-
-.container .task-bank .task-header .task-name {
-  margin-left: 10px;
 }
 
 .container .task-bank .task-header .bp5-icon-dot {
@@ -325,10 +380,12 @@ p {
 .container .task-bank .category-container .bp5-collapse {
   width: 100%;
   padding: 0px 5px;
+  background-color: var(--color-surface-light);
+
 }
 .container .task-bank .category-container {
   height: 100%;
-  margin-right: 10px;
+  margin: 0px 3px;
   display: flex;
   flex-direction: column;
   align-items: start;
@@ -340,7 +397,8 @@ p {
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  background-color: var(--color-bg-light);
 }
 
 .container .task-bank .category {
@@ -368,9 +426,10 @@ p {
 }
 .container .task-bank .child-task {
   font-size: 11px;
-  font-weight: 600;
   margin: 3px;
   padding: 3px;
+  min-width: unset;
+  color: white;
 }
 
 .container .task-bank .child-task .bp5-fill {
@@ -411,24 +470,53 @@ p {
   height: 100%;
   background-color: var(--color-bg);
   width: 100%;
-  min-width: 315px;
+  min-width: 615px;
   border: 1px solid var(--color-border);
   padding: 1px;
-  max-width: 315px;
+  max-width: 615px;
+  flex: 1;            /* let it grow with layout */
+  min-height: 0;      /* important for scroll to calculate properly */
+}
+
+.container .schedule-container .schedules {
+  display: flex;
+  height: auto;
+  width: 100%;
+  padding: 0px 2px;
+}
+.container .schedule-container .schedules-scroll-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  max-height: calc(100vh - 30px); /* adjust for your layout */
+}
+.container .Plan-schedule-container {
+  opacity: .7;
+  height: 100%;
+}
+
+.container .Plan-schedule-container .tag-container {
+  flex-direction: row-reverse;
+}
+  .container .schedule-header {
+  min-height: 30px;
+  display: flex;
+  font-size: 12px;
+  color: gray;
+  align-items: center;
+  background-color: var(--color-bg);
+}
+.container .plan-header {
+  border-right: 1px solid var(--color-border);
+}
+.container .agenda-header,
+.container .plan-header {
+  width: 50%;
 }
 
 .container .schedule {
   background-color: var(--color-bg);
-  overflow-x: hidden;
-}
-
-.container .schedule-container .boundary-card {
-  display: flex;
-  flex-direction: column;
-  padding: 0px;
-  min-height: 18px;
-  text-align: center;
-  width: 100%;
+  height: auto;
+  overflow-y: hidden;
 }
 
 /* .container .schedule-container .droppable-card:nth-child(2n):not(.boundary-card) {
@@ -438,21 +526,24 @@ p {
 
 .container .schedule-container .timeslot {
   width: 100%;
-  height: 41px;
+  height: 44px;
   min-height: unset;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  padding: 0px;
   margin-bottom: 2px;
   background-color: var(--color-surface-light);
 }
 
-.container .schedule-container .timeslot:hover {
-  background-color: var(--color-surface-light);
+.container .Plan-schedule-container .timeslot {
+  flex-direction: row-reverse;
 }
 
-
+.container .schedule-container .timeslot:hover {
+  background-color: var(--color-bg-secondary);
+}
 
 .container .schedule .bp5-card .assigned-task {
   width: 100%;
@@ -480,21 +571,22 @@ p {
 .container .display-header {
   background-color: var(--color-bg);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: start;
+  align-items: center;
   border-bottom: 1px solid var(--color-border);
   height: 30px;
+  color: gray;
+  font-size: 12px;
+  padding-left: 10px;
 }
 
 .container .display-card {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
+  margin-bottom: 5px;
   background-color: var(--color-surface-light);
-}
-
-.container .display-card>div {
-  width: 33%;
+  border-bottom: 2px solid var(--color-border);
 }
 
 .elegant-text {
@@ -557,13 +649,6 @@ p {
   display: flex;
   justify-content: space-between;
   border-bottom: 1px solid var(--color-border);
-}
-
-.goal-display-header {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin-left: 10px;
 }
 
 .bp5-input,
@@ -644,11 +729,15 @@ p {
 
 .goal-display-container .goals-container .goal-tasks {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-self: center;
   margin-top: 10px;
 }
 
+.goal-display-container .goal-task {
+  justify-content: space-between;
+}
 /* Scrollbar size */
 ::-webkit-scrollbar {
   width: 2px;
@@ -673,4 +762,79 @@ p {
 
 ::-webkit-scrollbar-corner {
   background-color: transparent;
+}
+
+
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 75%;
+  height: 100%;
+  border-left: 1px solid var(--color-border);
+  padding-left: 2px;
+  flex-direction: row;
+  padding-top: 2px;
+  align-items: start;
+}
+
+.task-tag {
+  display: flex;
+  align-items: center;
+  padding-right: 0;
+  min-height: 15px;
+  min-width: 12px;
+}
+
+.task-tag .bp5-button {
+  min-height: 15px;
+  min-width: 12px;
+}
+
+.tag-wrapper {
+  display: flex;
+  align-items: center;
+  margin-right: 3px;
+}
+
+.task-tags-completed {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.tag-chain {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tag-chain .bp5-minimal {
+  color: gray !important;
+}
+.timeslot-title-container {
+  height: 100%;
+  width: 25%;
+  display: flex;
+  align-items: center;
+  background-color: var(--color-bg-light);
+
+}
+
+.timeslot-title {
+  color: gray;
+  font-size: 11px;
+  padding-left: 5px;
+}
+
+.goal-display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section-header {
+  color: gray;
+  font-size: 12px;
+  padding-left: 10px;
 }

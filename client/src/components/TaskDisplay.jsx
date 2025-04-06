@@ -1,94 +1,122 @@
 import React from "react";
-import { Card, CardList, Elevation, Icon } from "@blueprintjs/core";
+import { Card, CardList, Elevation, Tag } from "@blueprintjs/core";
 
-const renderTaskTree = (task, isTopLevel = false) => {
-  // For leaf nodes, "selected" means:
-  // - if it's a checkbox, its value is true, or
-  // - if it's an input, its value is non-empty.
-  const isLeafSelected =
-    (task.properties?.checkbox && task.values?.checkbox) ||
-    (task.properties?.input && task.values?.input.trim() !== "");
+const extractChains = (task) => {
+  const ancestry = task.assignmentAncestry;
+  console.log(ancestry);
+  // ✅ Prioritize assignmentAncestry if present and has length
+  if (Array.isArray(ancestry) && ancestry.length > 0) {
+    const chain = ancestry.map((node, index, arr) => {
+      const isInput = node.properties?.input && node.values?.input?.trim() !== "";
+      console.log(node);
+      const label = isInput
+        ? `${node.name}: ${node.values.input.trim()}`
+        : node.name || "(unnamed)";
 
-  let renderedChildren = [];
-  if (task.children && task.children.length > 0) {
-    renderedChildren = task.children
-      .map(child => renderTaskTree(child))
-      .filter(childJSX => childJSX !== null);
+      return {
+        key: node._id || node.id || label,
+        name: label,
+        intent: index === arr.length - 1 ? "primary" : "none",
+        minimal: index !== arr.length - 1,
+      };
+    });
+
+    // ✅ If ancestry exists, skip fallback
+    return chain.length > 0 ? [chain] : [];
   }
 
-  // If the node is marked as a category and it's not top-level,
-  // then only render if it has at least one child.
-  if (task.properties?.category && !isTopLevel) {
-    if (renderedChildren.length === 0) return null;
-    return (
-      <div key={task._id || task.id} className="display-task category" style={{ marginLeft: "10px" }}>
-        <div className="display-task-name" style={{ fontWeight: "bold" }}>
-          {task.name}
-        </div>
-        <div className="display-task-children">
-          {renderedChildren}
-        </div>
-      </div>
-    );
+  // ⛔ Skip fallback logic if already handled
+  // 🧪 Fallback: use raw task structure if no ancestry
+  const isInput = task.properties?.input && task.values?.input?.trim() !== "";
+  const isCheckbox = task.properties?.checkbox && task.values?.checkbox;
+  const isCard = task.properties?.card;
+  const isSelected = isInput || isCheckbox || isCard;
+
+  if (!isSelected) return [];
+
+  const label = isInput
+    ? `${task.name}: ${task.values.input.trim()}`
+    : task.name || "(unnamed)";
+
+  return [[{
+    key: task._id || task.id || label,
+    name: label,
+    intent: "primary",
+    minimal: false,
+  }]];
+};
+
+// 🧠 Groups tags by ancestry path (so common parents only show once)
+const groupChains = (chains) => {
+  const grouped = {};
+
+  for (const chain of chains) {
+    const ancestorKey = chain.slice(0, -1).map((n) => n.key).join(">");
+    if (!grouped[ancestorKey]) {
+      grouped[ancestorKey] = {
+        ancestors: chain.slice(0, -1),
+        leaves: [],
+      };
+    }
+    grouped[ancestorKey].leaves.push(chain[chain.length - 1]);
   }
 
-  // For top-level tasks or leaf nodes:
-  if (task.properties?.card || task.properties?.category) {
-    // Top-level tasks should always be rendered
-    return (
-      <div key={task._id || task.id} className="display-task" style={{ marginLeft: "10px" }}>
-        <div className="display-task-name" style={{ fontWeight: isTopLevel ? "bold" : "normal" }}>
-          {task.name}
-        </div>
-        {renderedChildren.length > 0 && (
-          <div className="display-task-children">
-            {renderedChildren}
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    // For a leaf node that isn't top-level, only render if selected.
-    if (!isLeafSelected) return null;
-    return (
-      <div key={task._id || task.id} className="display-task leaf" style={{ marginLeft: "10px", fontSize: "12px" }}>
-        <span className="display-task-name">{task.name}</span>
-        {task.properties?.checkbox && task.values?.checkbox && (
-          <Icon icon="tick" style={{ marginLeft: "5px" }} />
-        )}
-        {task.properties?.input && task.values?.input && (
-          <span className="display-task-input" style={{ marginLeft: "5px" }}>
-            {task.values.input}
-          </span>
-        )}
-      </div>
-    );
-  }
+  return Object.values(grouped);
 };
 
 const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
   return (
     <div className="display-container">
-      <div className="display-header">
-        Completed Tasks
-      </div>
+      <div className="display-header">Completed Tasks</div>
       <CardList className="display">
         {timeSlots.map((timeSlot) => {
           const tasksForSlot = assignments[timeSlot] || [];
-          const renderedTasks = tasksForSlot
-            .map(task => renderTaskTree(task, task.properties?.card))
-            .filter(taskJSX => taskJSX !== null);
-          if (renderedTasks.length === 0) return null;
+
+          const flatChains = tasksForSlot
+            .flatMap(extractChains)
+            .filter((chain) => chain.length > 0);
+
+          if (flatChains.length === 0) return null;
+
+          const grouped = groupChains(flatChains);
+
           return (
             <Card key={timeSlot} elevation={Elevation.FOUR} className="display-card">
               <div className="timeslot">
                 <strong>{timeSlot}</strong>
               </div>
-              {renderedTasks.map((taskJSX, idx) => (
-                <div key={idx} className="task-option">
-                  {taskJSX}
-                </div>
-              ))}
+              <div className="task-tags-completed">
+                {grouped.map(({ ancestors, leaves }, index) => (
+                  <div key={index} className="tag-chain">
+                    {ancestors.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2px" }}>
+                        {ancestors.map((tag) => (
+                          <Tag
+                            key={tag.key}
+                            minimal
+                            intent={tag.intent}
+                            style={{ marginRight: "5px", marginBottom: "5px" }}
+                          >
+                            {tag.name}
+                          </Tag>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", flexDirection: "column", flexWrap: "wrap" }}>
+                      {leaves.map((leaf) => (
+                        <Tag
+                          key={leaf.key}
+                          intent={leaf.intent}
+                          minimal={false}
+                          style={{ marginRight: "5px", marginBottom: "8px" }}
+                        >
+                          {leaf.name}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Card>
           );
         })}

@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing goalId, taskId, or increment' });
     }
 
-    const update = { $inc: { [`progress.${taskId}`]: increment } };
+    const update = { $set: { [`progress.${taskId}`]: increment } };
     const filter = { goal_id: goalId, date: new Date(date) };
 
     const updated = await GoalProgress.findOneAndUpdate(filter, update, {
