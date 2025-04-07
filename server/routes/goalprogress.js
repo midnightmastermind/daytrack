@@ -11,18 +11,26 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST create or increment progress for a task within a goal
 router.post('/', async (req, res) => {
   try {
-    const { taskId, goalId, date, increment } = req.body;
+    const { taskId, goalId, date, count } = req.body;
 
-    if (!goalId || !taskId || typeof increment !== 'number') {
-      return res.status(400).json({ error: 'Missing goalId, taskId, or increment' });
+    if (!goalId || !taskId || typeof count !== 'number') {
+      return res.status(400).json({ error: 'Missing goalId, taskId, or count' });
     }
 
-    const update = { $set: { [`progress.${taskId}`]: increment } };
-    const filter = { goal_id: goalId, date: new Date(date) };
+    const normalizeDate = (d) => {
+      const dt = new Date(d);
+      dt.setUTCHours(0, 0, 0, 0);
+      return dt;
+    };
+
+    const filter = {
+      goal_id: goalId,
+      date: normalizeDate(date),
+    };
+
+    const update = { $set: { [`progress.${taskId}`]: count } };
 
     const updated = await GoalProgress.findOneAndUpdate(filter, update, {
       upsert: true,
@@ -34,6 +42,7 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
 
 // PUT replace a full goal progress record by ID
 router.put('/:id', async (req, res) => {

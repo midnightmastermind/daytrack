@@ -92,7 +92,7 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
                       <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2px" }}>
                         {ancestors.map((tag) => (
                           <Tag
-                            key={tag.key}
+                            key={`${tag.key}-${index}`}
                             minimal
                             intent={tag.intent}
                             style={{ marginRight: "5px", marginBottom: "5px" }}
@@ -105,7 +105,7 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
                     <div style={{ display: "flex", flexDirection: "column", flexWrap: "wrap" }}>
                       {leaves.map((leaf) => (
                         <Tag
-                          key={leaf.key}
+                          key={`${leaf.key}-${timeSlot}-${index}`}
                           intent={leaf.intent}
                           minimal={false}
                           style={{ marginRight: "5px", marginBottom: "8px" }}

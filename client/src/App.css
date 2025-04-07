@@ -487,7 +487,7 @@ p {
 .container .schedule-container .schedules-scroll-wrapper {
   height: 100%;
   overflow-y: auto;
-  max-height: calc(100vh - 30px); /* adjust for your layout */
+  max-height: calc(100vh - 53px); /* adjust for your layout */
 }
 .container .Plan-schedule-container {
   opacity: .7;
@@ -680,6 +680,7 @@ p {
   flex-direction: row;
   height: 100%;
   overflow-y: scroll;
+  margin: 5px;
 }
 
 .goal-display-container .goal-header-preview {
@@ -721,7 +722,8 @@ p {
   border: 1px solid var(--color-border);
   box-shadow: 0 2px 4px var(--color-shadow);
   height: 90px;
-  margin: 10px;
+  margin-right: 5px;
+  margin-bottom: 5px;
   display: flex;
   flex-direction: column;
   padding: 0px;
@@ -730,9 +732,8 @@ p {
 .goal-display-container .goals-container .goal-tasks {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-self: center;
-  margin-top: 10px;
+  justify-content: start;
+  margin: 10px;
 }
 
 .goal-display-container .goal-task {

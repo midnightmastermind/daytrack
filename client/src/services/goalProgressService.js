@@ -5,12 +5,12 @@ const API_URL = 'http://localhost:5000/api/goalprogress/';
 // Expect destructured props to enforce camelCase usage
 const getGoalProgress = () => axios.get(API_URL);
 
-const createGoalProgress = ({ goalId, taskId, date, increment }) => {
+const createGoalProgress = ({ goalId, taskId, date, count }) => {
   return axios.post(API_URL, {
     goalId,     // ✅ Explicit camelCase keys
     taskId,
     date,
-    increment,
+    count,
   });
 };
 

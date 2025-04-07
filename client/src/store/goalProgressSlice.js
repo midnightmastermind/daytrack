@@ -7,18 +7,17 @@ export const fetchGoalProgress = createAsyncThunk('goalProgress/fetchGoalProgres
 });
 
 export const createGoalProgress = createAsyncThunk('goalProgress/createGoalProgress', async (data, { dispatch }) => {
-  const { goalId, date, taskId, increment, tempId } = data;
+  const { goalId, date, taskId, count, tempId } = data;
 
   const progressDoc = await goalProgressService.createGoalProgress({
-    goalId: goalId,
+    goalId,
     date,
-    increment,
+    count,
     taskId,
   });
 
-  dispatch(clearPendingProgress({ goalId, date, taskId, diff: increment }));
+  dispatch(clearPendingProgress({ goalId, date }));
 
-  // If this was a temp goal, sync it by replacing tempId
   if (tempId) {
     dispatch(syncTempGoalId({ tempId, realId: progressDoc.data.goal_id }));
   }
@@ -36,43 +35,41 @@ const goalProgressSlice = createSlice({
   },
   reducers: {
     addPendingProgress: (state, action) => {
-      const { goalId, date, taskId, diff } = action.payload;
+      const { goalId, date, taskId, count } = action.payload;
       const dateStr = new Date(date).toISOString().slice(0, 10);
-    
-      console.log("🧩 ADD PENDING PROGRESS", { goalId, dateStr, taskId, diff });
-    
-      let record = state.progressRecords.find(
+      const key = `${goalId}_${dateStr}`;
+
+      if (!state.pendingProgressUpdates[key]) {
+        state.pendingProgressUpdates[key] = {};
+      }
+
+      state.pendingProgressUpdates[key][taskId] = count;
+
+      // Also update progressRecords optimistically so selector reflects it instantly
+      const record = state.progressRecords.find(
         (r) =>
           (r.goal_id?.toString?.() === goalId || r.tempId === goalId) &&
           new Date(r.date).toISOString().slice(0, 10) === dateStr
       );
-    
-      if (!record) {
-        console.log("🆕 No existing record found, creating temporary");
-        record = {
+
+      if (record) {
+        record.progress[taskId] = count;
+      } else {
+        state.progressRecords.push({
           goal_id: goalId,
           date,
-          progress: {},
-        };
-        state.progressRecords.push(record);
+          progress: { [taskId]: count },
+        });
       }
-    
-      const taskKey = taskId.toString();
-      record.progress[taskKey] = (record.progress[taskKey] || 0) + diff;
-      console.log("✅ Updated local progress:", record.progress);
-    },    
+
+      console.log("🧩 SET PENDING PROGRESS + local record:", key, taskId, count);
+    },
+
     clearPendingProgress: (state, action) => {
-      const { goalId, date, taskId, diff } = action.payload;
+      const { goalId, date } = action.payload;
       const key = `${goalId}_${new Date(date).toISOString().slice(0, 10)}`;
-      if (state.pendingProgressUpdates[key]?.[taskId]) {
-        state.pendingProgressUpdates[key][taskId] -= diff;
-        if (state.pendingProgressUpdates[key][taskId] === 0) {
-          delete state.pendingProgressUpdates[key][taskId];
-        }
-        if (Object.keys(state.pendingProgressUpdates[key]).length === 0) {
-          delete state.pendingProgressUpdates[key];
-        }
-      }
+      delete state.pendingProgressUpdates[key];
+      console.log("🧹 Cleared pending progress for", key);
     },
 
     syncTempGoalId: (state, action) => {
@@ -81,7 +78,7 @@ const goalProgressSlice = createSlice({
         if (record.tempId === tempId) {
           record.goal_id = realId;
           delete record.tempId;
-          console.log(`🔁 Synced tempId "${tempId}" → "${realId}" in progressRecords`);
+          console.log(`🔁 Synced tempId "${tempId}" → "${realId}"`);
         }
       }
     },
@@ -102,7 +99,10 @@ const goalProgressSlice = createSlice({
       })
       .addCase(createGoalProgress.fulfilled, (state, action) => {
         const updated = action.payload;
-        const index = state.progressRecords.findIndex(r => r._id === updated._id);
+        const index = state.progressRecords.findIndex(r =>
+          r.goal_id?.toString?.() === updated.goal_id?.toString?.() &&
+          new Date(r.date).toISOString().slice(0, 10) === new Date(updated.date).toISOString().slice(0, 10)
+        );
         if (index !== -1) {
           state.progressRecords[index] = updated;
         } else {
