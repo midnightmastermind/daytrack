@@ -10,9 +10,16 @@ import {
   Tooltip
 } from "@blueprintjs/core";
 import "./GoalForm.css";
+import { useDispatch } from "react-redux";
+import {
+  updateGoal,
+  updateGoalOptimistic,
+  createGoal,
+  addGoalOptimistic,
+} from "../store/goalSlice";
+import { v4 as uuidv4 } from "uuid";
 
-// Helper function to generate a flat list of task options with full paths.
-// We default tasks to an empty array if undefined.
+// Helper to flatten task paths
 const getTaskPaths = (tasks = [], prefix = []) => {
   let result = [];
   tasks.forEach((task) => {
@@ -49,9 +56,8 @@ const ActualPanel = ({
     const selected = taskOptions.find((t) => t.id === selectedTaskId);
     if (selected && !selectedTasks.find((t) => t.id === selected.id)) {
       const goalItem = {
-        // Set up the goal item with defaults
         task_id: selected.id,
-        path: selected.pathArray, // full path array for display
+        path: selected.pathArray,
         target: 0,
         operator: "=",
         valueType: "integer",
@@ -73,11 +79,7 @@ const ActualPanel = ({
   };
 
   return (
-    <Card
-      className="goal-actual"
-      elevation={2}
-      style={{ margin: "10px", padding: "10px", width: "100%" }}
-    >
+    <Card className="goal-actual" elevation={2} style={{ margin: "10px", padding: "10px", width: "100%" }}>
       <h4>Actual</h4>
       <div className="header-section" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Switch
@@ -116,25 +118,12 @@ const ActualPanel = ({
           isOpen={isPopoverOpen}
           onClose={() => setIsPopoverOpen(false)}
         >
-          <Button
-            icon="plus"
-            intent="primary"
-            text="Add Task"
-            onClick={() => setIsPopoverOpen(true)}
-          />
+          <Button icon="plus" intent="primary" text="Add Task" onClick={() => setIsPopoverOpen(true)} />
         </Popover>
       </div>
       <div className="goal-tasks-actual" style={{ marginTop: "10px" }}>
         {(selectedTasks || []).map((t, idx) => (
-          <div
-            key={`${t.id}-${idx}`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              marginBottom: "5px",
-            }}
-          >
+          <div key={`${t.id}-${idx}`} style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "5px" }}>
             <div className="goal-tags">
               {t.path &&
                 t.path.map((segment, i) => (
@@ -178,13 +167,9 @@ const ActualPanel = ({
                 <option value="overall">Overall</option>
               </HTMLSelect>
             </div>
-            <Button
-              icon="cross"
-              minimal
-              onClick={() =>
-                setSelectedTasks((prev) => prev.filter((item) => item.id !== t.id))
-              }
-            />
+            <Button icon="cross" minimal onClick={() =>
+              setSelectedTasks((prev) => prev.filter((item) => item.id !== t.id))
+            } />
           </div>
         ))}
       </div>
@@ -193,21 +178,14 @@ const ActualPanel = ({
 };
 
 const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
-  <Card
-    className="goal-preview"
-    elevation={2}
-    style={{ margin: "10px", padding: "10px", width: "100%" }}
-  >
+  <Card className="goal-preview" elevation={2} style={{ margin: "10px", padding: "10px", width: "100%" }}>
     <h4>Preview</h4>
     {headerEnabled && headerName && (
       <div className="goal-header-preview">{headerName}</div>
     )}
     <div className="goal-tasks-preview">
       {(selectedTasks || []).map((t, idx) => {
-        const displayName =
-          t.path && t.path.length > 0
-            ? t.path[t.path.length - 1]
-            : "";
+        const displayName = t.path?.[t.path.length - 1] || "";
         return (
           <div key={`${t.id}-${idx}`}>
             {displayName} {t.target ? `(${t.progress || 0}/${t.target})` : ""}
@@ -219,13 +197,14 @@ const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
 );
 
 const GoalForm = ({ goal, tasks, onSave, onClose }) => {
+  const dispatch = useDispatch();
+
   const [headerName, setHeaderName] = useState("");
   const [headerEnabled, setHeaderEnabled] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
 
-  // Build task options safely with default empty array
   const taskOptions = getTaskPaths(tasks || []);
 
   useEffect(() => {
@@ -245,7 +224,17 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
       header: headerEnabled ? headerName : "",
       tasks: selectedTasks,
     };
-    onSave(newGoal);
+
+    if (goal && goal._id) {
+      dispatch(updateGoalOptimistic({ id: goal._id, updates: newGoal }));
+      dispatch(updateGoal({ id: goal._id, goalData: newGoal }));
+    } else {
+      const tempId = `temp_${uuidv4()}`;
+      dispatch(addGoalOptimistic({ ...newGoal, tempId }));
+      dispatch(createGoal({ ...newGoal, tempId }));
+    }
+
+    onSave?.(newGoal);
   };
 
   return (
@@ -273,6 +262,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
       </div>
       <div style={{ marginTop: 20 }}>
         <Button onClick={handleSaveGoal} text="Save Goal" intent="primary" />
+        {onClose && <Button onClick={onClose} style={{ marginLeft: 10 }} text="Cancel" />}
       </div>
     </div>
   );

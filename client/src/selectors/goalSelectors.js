@@ -1,42 +1,48 @@
-import { createSelector } from "reselect";
+import { createSelector } from 'reselect';
+
+// Base selectors
+const selectGoalsState = (state) => state.goals;
+const selectGoalProgressState = (state) => state.goalProgress;
+
+// Select all goals (combined with pending optimistic ones if needed)
+export const selectAllGoals = createSelector(
+  [selectGoalsState],
+  (goalsState) => goalsState.goals
+);
+
+// Select all goal progress records
+export const selectGoalProgressRecords = createSelector(
+  [selectGoalProgressState],
+  (progressState) => progressState.progressRecords
+);
+
+// Select pending progress updates (not yet confirmed)
+export const selectPendingProgress = createSelector(
+  [selectGoalProgressState],
+  (progressState) => progressState.pendingProgressUpdates
+);
+
+// Memoized selector to combine goal progress with pending values
 export const makeSelectGoalsWithProgress = (selectedDate) =>
   createSelector(
-    [
-      (state) => state.goals?.goals || [],
-      (state) => state.goalProgress?.progressRecords || [],
-      (state) => state.goalProgress?.pendingProgressUpdates || {},
-    ],
-    (goals, progressData, pendingProgressUpdates) => {
+    [selectAllGoals, selectGoalProgressRecords, selectPendingProgress],
+    (goals, records, pending) => {
       const dateStr = new Date(selectedDate).toISOString().slice(0, 10);
-
-      return goals.map((goal) => {
-        const goalIdStr = goal._id?.toString?.() || goal.tempId;
-        const goalProgressForDate =
-          progressData.find((gp) =>
-            (gp.goal_id?.toString?.() === goalIdStr || gp.tempId === goalIdStr) &&
-            new Date(gp.date).toISOString().slice(0, 10) === dateStr
-          ) || {
-            goal_id: goalIdStr,
-            date: selectedDate,
-            progress: {},
-          };
-
-        const baseProgress = { ...(goalProgressForDate.progress || {}) };
-
-        // Overwrite with any pending counts
-        const pendingKey = `${goalIdStr}_${dateStr}`;
-        const pending = pendingProgressUpdates[pendingKey] || {};
-        for (const [taskId, count] of Object.entries(pending)) {
-          baseProgress[taskId] = count;
-        }
-
+      const withProgress = goals.map((goal) => {
+        const goalId = goal._id?.toString() || goal.tempId;
+        const key = `${goalId}_${dateStr}`;
+        const server = records.find(
+          (r) => r.goal_id?.toString?.() === goalId && new Date(r.date).toISOString().slice(0, 10) === dateStr
+        );
+        const pendingForDate = pending?.[key] || {};
         return {
           ...goal,
-          tasks: goal.tasks.map((task) => {
-            const taskIdStr = task.task_id?.toString?.() || task._id?.toString?.() || task.id?.toString?.();
-            return { ...task, progress: baseProgress[taskIdStr] || 0 };
-          }),
+          progress: {
+            ...(server?.progress || {}),
+            ...pendingForDate,
+          },
         };
       });
+      return withProgress;
     }
   );
