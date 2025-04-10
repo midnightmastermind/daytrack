@@ -1,8 +1,9 @@
+// store/dayPlanSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import dayPlanService from "../services/dayPlanService";
 
 export const fetchAllDayPlans = createAsyncThunk("dayplans/fetchAll", async () => {
-  const response = await dayPlanService.getDayPlans();
+  const response = await dayPlanService.getAllDayPlans();
   return response.data;
 });
 
@@ -32,7 +33,9 @@ const dayPlanSlice = createSlice({
         state.dayplans = action.payload;
       })
       .addCase(createDayPlan.fulfilled, (state, action) => {
-        state.dayplans.push(action.payload);
+        const idx = state.dayplans.findIndex((dp) => dp.date === action.payload.date);
+        if (idx === -1) state.dayplans.push(action.payload);
+        else state.dayplans[idx] = action.payload;
       })
       .addCase(updateDayPlan.fulfilled, (state, action) => {
         const idx = state.dayplans.findIndex((dp) => dp._id === action.payload._id);

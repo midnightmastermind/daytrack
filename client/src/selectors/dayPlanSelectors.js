@@ -1,16 +1,7 @@
-import { createSelector } from 'reselect';
+// selectors/dayPlanSelectors.js
+export const selectDayPlans = (state) => state.dayplans?.dayplans || [];
 
-const selectDayPlanState = (state) => state.dayplans;
-
-export const selectAllDayPlans = createSelector(
-  [selectDayPlanState],
-  (planState) => planState.dayplans
-);
-
-// Optional: get plan by selected date
-export const makeSelectPlanForDate = (selectedDate) =>
-  createSelector([selectAllDayPlans], (plans) => {
-    return plans.find(
-      (plan) => new Date(plan.date).toDateString() === selectedDate.toDateString()
-    );
-  });
+export const makeSelectDayPlanByDate = (date) => (state) => {
+  const dayPlans = state.dayplans?.dayplans || [];
+  return dayPlans.find((dp) => new Date(dp.date).toDateString() === new Date(date).toDateString()) || null;
+};

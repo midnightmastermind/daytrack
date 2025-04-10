@@ -4,10 +4,7 @@ import { Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 
 const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
-  // Only display top-level tasks (properties.card true)
-  const topLevelTasks = tasks.filter(
-    (task) => task.properties && task.properties.card
-  );
+  const topLevelTasks = tasks.filter((task) => task.properties?.card);
 
   return (
     <div className="task-bank-container">
@@ -15,7 +12,7 @@ const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
         <div className="task-bank-header">Task Bank</div>
         <Button icon="plus" text="New Task" minimal onClick={onOpenDrawer} />
       </div>
-      <Droppable droppableId="taskBank" isDropDisabled={true}>
+      <Droppable droppableId="taskBank" isDropDisabled>
         {(provided) => (
           <CardList
             className="task-bank"
@@ -24,21 +21,19 @@ const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
           >
             {topLevelTasks.map((task, index) => (
               <TaskCard
-                key={task._id}
+                key={task._id || task.tempId}
                 task={task}
                 index={index}
                 onEditTask={onEditTask}
                 onOpenDrawer={onOpenDrawer}
                 onTaskUpdate={onTaskUpdate}
               />
-
             ))}
             {provided.placeholder}
           </CardList>
         )}
       </Droppable>
     </div>
-
   );
 };
 

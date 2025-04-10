@@ -1,73 +1,434 @@
-.category-editor {
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.task-form {
     display: flex;
-    overflow-y: scroll;
-    width: 300px;
-}
-
-.category {
-    min-width: 150px;
-    width: 150px;
-    padding: 0px 10px;
-    margin: 10px 0px;
-    border-right: 1px solid #ccc;
-    border-radius: 4px;
-    min-height: 200px;
-}
-
-.new-category-button {
+    gap: 20px;
+    padding: 20px;
+    color: white;
+  }
+  
+  .task-form-edit-panel {
+    flex: 1;
     display: flex;
-    height: 200px;
-    min-width: 150px;
-    width: 150px;
-    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .task-form-preview-panel {
+    flex: 1;
+    background-color: #1c1e26;
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #2b2f3a;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: fit-content;
+    min-width: 280px;
+  }
+  
+  .task-form-preview-panel h4 {
+    margin: 0 0 10px;
+    font-weight: bold;
+    color: #ddd;
+    text-align: center;
+  }
+  
+  .task-form .preview-taskbank-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .task-form .preview-taskbank,
+  .task-form .preview-schedule {
+    background-color: #131417;
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid #2b2f3a;
+  }
+  
+  .task-form .preview-taskbank .task-form .task-card,
+  .task-form .preview-schedule .task-form .schedule-card {
+    background-color: #1e1f24;
+    border-radius: 4px;
+    padding: 0;
+    font-size: 0.task-form .9rem;
+  }
+  
+  /* Reuse schedule task box look */
+  .task-form .preview-schedule .task-form .schedule-slot {
+    display: flex;
     align-items: center;
-}
-
-.category-header input {
-    font-size: 12px;
-}
-
-.category-header {
+    justify-content: space-between;
+    background-color: #181a1f;
+    border-radius: 4px;
+    padding: 6px 12px;
+    border: 1px solid #2b2f3a;
+    color: #ddd;
+  }
+  
+  /* Ensure spacing for TaskCard Preview */
+  .task-form .preview-taskbank .task-form .task-card {
+    margin-bottom: 0;
+  }
+  
+  .task-form .task-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* ← fix spacing between children */
+    background-color: #1c1e26;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #2b2f3a;
+  }
+  
+  .task-form .task-card.task-form .preview {
+    background-color: #121418;
+  }
+  
+  .task-form .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .task-form .task-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .task-form .task-name {
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .task-form .task-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .task-form .task-children {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 4px;
+  }
+  
+  .task-form .child-task {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background-color: #101214;
+    border-radius: 4px;
+    font-size: 0.task-form .85rem;
+    color: #ccc;
+  }
+  
+  .task-form .child-task-name {
+    color: #ddd;
+    font-size: 0.task-form .9rem;
+  }
+  
+  /* --- Category (grouped children) --- */
+  .task-form .category-container {
+    margin-top: 6px;
+  }
+  
+  .task-form .category-name {
+    margin-bottom: 4px;
+  }
+  
+  .task-form .category-collapse {
+    padding-left: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  /* Hide the settings cog if asked */
+  .task-form .task-card-settings.task-form .hidden {
+    display: none !important;
+  }
+  
+  /* === CHILD EDITOR STYLES === */
+  .task-form .child-editor {
+    border-left: 2px solid #333;
+    margin-top: 10px;
+    padding-left: 10px;
+  }
+  
+  .task-form .child-editor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+  
+  .task-form .child-input {
+    flex: 1;
+    min-width: 150px;
+  }
+  
+  .task-form .nested-button {
+    margin: 4px 0 4px 22px;
+  }
+  
+  /* .task-form .nested-children {
+    margin-left: 20px;
+    border-left: 1px dashed #444;
+    padding-left: 10px;
+  }
+  
+  .task-form-children-section {
+    margin-top: 20px;
+  }
+  
+  .task-form-children-list {
+    margin-top: 10px;
+  }
+  
+  .task-form-actions {
+    margin-top: 20px;
+  }
+   */
+  /* Redundant but visually helpful fallback class */
+  /* .task-form .task-card-preview {
+    background-color: #121418;
+    border: 1px solid #2b2f3a;
+    padding: 8px 12px;
+    border-radius: 6px;
+  } */
+  
+  .task-form .preview-taskbank .bp5-card {
+    padding: 0px;
+    flex-direction: column;
+    align-items: start;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    min-height: unset;
+    margin-bottom: 2px;
+  }
+  
+  .task-form .preview-taskbank {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0px 2px;
+    overflow-y: scroll;
+    background-color: var(--color-bg);
+  }
+  
+  .task-form .preview-taskbank-container {
+    height: 100%;
+    width: 315px;
+    background-color: var(--color-bg);
+    margin-right: 10px;
+    border: 1px solid var(--color-border);
+    padding: 1px;
+  }
+  
+  .task-form .preview-taskbank .task-header {
+    width: 100%;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    font-size: 13px;
+    color: #FBFFFF;
+    font-weight: 500;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    height: 40px;
   }
   
-  .container {
-    height: 100vh;
+  .task-form .task-header-left,
+  .task-form .task-header-right {
+    display: flex;
+    align-items: center;
+  }
+  
+  .task-form .task-header-left {
+    justify-content: start;
+    padding-left: 3px;
+  }
+  
+  .task-form .task-header-left .bp5-button {
+    background-color: var(--color-surface);
+    box-shadow: unset;
+  }
+  .task-form .task-header-left .bp5-button .bp5-icon {
+    color: #FBFFFF;
+  }
+  
+  .task-form .task-header-right {
+    justify-content: end;
+    padding-right: 10px;
+  }
+  
+  .task-form .preview-taskbank .task-header .bp5-icon-dot {
+    margin-left: 7px;
+    margin-right: 5px;
+  }
+  
+  .task-form .preview-taskbank .task-options {
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Task Children Section */
+  .task-form .preview-taskbank .task-children {
+    width: 100%;
     display: flex;
     flex-direction: row;
-    align-items: center;
     justify-content: start;
+    align-items: start;
+    padding: 5px;
+    background-color: var(--color-surface-light);
   }
-
-  .child-editor .child-header {
-    height: 40px;
-    border-top: 1px solid #30363D;
+  
+  .task-form .preview-taskbank .task-children-collapse {
+    width: 100%;
   }
-.child-editor .bp5-checkbox input {
-    left: 5px;
-}
-
-.child-editor .bp5-control-indicator {
-    margin-inline-end: 0px;
-    margin-inline-start: 0px;
-}
-.child-editor .bp5-checkbox {
-    padding-inline-start: 0px;
-    margin-bottom: 0px;
-    margin-top: 3px;
+  
+  .task-form .preview-taskbank .task-children-collapse > .bp5-collapse-body {
+    width: 100%;
     display: flex;
     flex-direction: column;
+    align-items: start;
+  }
+  
+  .task-form .preview-taskbank .task-children-header .bp5-fill {
+    color: white;
+    font-size: 10px;
+  }
+  
+  /* Category containers */
+  .task-form .preview-taskbank .category-container {
+    height: 100%;
+    margin: 0px 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    border: 1px solid var(--color-border);
+    width: 100%;
+  }
+  
+  .task-form .preview-taskbank .category-container .bp5-collapse {
+    width: 100%;
+    padding: 0px 5px;
+    background-color: var(--color-surface-light);
+  }
+  
+  .task-form .preview-taskbank .category-collapse {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--color-bg-light);
+  }
+  
+  .task-form .preview-taskbank .category {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: start;
+  }
+  
+  .task-form .preview-taskbank .category-container .category-name {
+    width: 100%;
+  }
+  
+  .task-form .preview-taskbank .category-container .category-name .bp5-tag {
+    color: gray;
+    width: 100%;
+    font-size: 11px;
+    text-align: center;
+    padding-left: 10px;
+    background-color: var(--color-bg-secondary);
+  }
+  
+  .task-form .preview-taskbank .category-container .category-name .bp5-tag span {
+    flex-grow: 0;
+  }
+  
+  /* Leaf tasks (child-task) */
+  .task-form .preview-taskbank .child-task {
+    font-size: 11px;
+    margin: 3px;
+    padding: 3px;
+    min-width: unset;
+    color: white;
+  }
+  
+  .task-form .preview-taskbank .child-task .bp5-fill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .task-form .preview-taskbank .child-task .bp5-checkbox {
+    margin-bottom: 0px;
+    padding-inline-start: 0px;
+  }
+  
+  .task-form .preview-taskbank .child-task .child-task-name {
+    display: flex;
+    margin-left: 2px;
+  }
+  
+  .task-form .preview-taskbank .child-task .bp5-control-indicator {
+    margin-inline-start: 0px;
+    margin-inline-end: 3px;
+  }
+  
+  .task-form .preview-taskbank .child-task .child-task-input .bp5-input {
+    height: 14px;
+    font-size: 12px;
+    max-width: 150px;
+  }
+  
+  .task-form .preview-schedule .timeslot {
+    width: 100%;
+    height: 44px;
+    min-height: unset;
+    display: flex;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
-    padding-left: 10px;
-    border-left: 1px solid #30363D;
-}
-.child-editor .child-property-selection {
-    font-size: 10px;
-}
+    padding: 0px;
+    margin-bottom: 2px;
+    background-color: var(--color-surface-light);
+  }
+  
+  .task-form .preview-schedule  .timeslot {
+    flex-direction: row-reverse;
+  }
+  
+  .task-form .preview-schedule .timeslot:hover {
+    background-color: var(--color-bg-secondary);
+  }
+  
+  .task-form .preview-schedule .bp5-card .assigned-task {
+    width: 100%;
+    height: 29px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .timeslot-title-container {
+    height: 100%;
+    width: 25%;
+    display: flex;
+    align-items: center;
+    background-color: var(--color-bg-light);
+  }
+  
+  .timeslot-title {
+    color: gray;
+    font-size: 11px;
+    padding-left: 5px;
+  }
+  

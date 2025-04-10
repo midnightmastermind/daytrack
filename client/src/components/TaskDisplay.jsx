@@ -1,17 +1,14 @@
+// === TaskDisplay.jsx ===
 import React from "react";
 import { Card, CardList, Elevation, Tag } from "@blueprintjs/core";
+import { useSelector } from "react-redux";
 
 const extractChains = (task) => {
   const ancestry = task.assignmentAncestry;
-  console.log(ancestry);
-  // ✅ Prioritize assignmentAncestry if present and has length
   if (Array.isArray(ancestry) && ancestry.length > 0) {
     const chain = ancestry.map((node, index, arr) => {
       const isInput = node.properties?.input && node.values?.input?.trim() !== "";
-      console.log(node);
-      const label = isInput
-        ? `${node.name}: ${node.values.input.trim()}`
-        : node.name || "(unnamed)";
+      const label = isInput ? `${node.name}: ${node.values.input.trim()}` : node.name || "(unnamed)";
 
       return {
         key: node._id || node.id || label,
@@ -20,13 +17,9 @@ const extractChains = (task) => {
         minimal: index !== arr.length - 1,
       };
     });
-
-    // ✅ If ancestry exists, skip fallback
     return chain.length > 0 ? [chain] : [];
   }
 
-  // ⛔ Skip fallback logic if already handled
-  // 🧪 Fallback: use raw task structure if no ancestry
   const isInput = task.properties?.input && task.values?.input?.trim() !== "";
   const isCheckbox = task.properties?.checkbox && task.values?.checkbox;
   const isCard = task.properties?.card;
@@ -34,9 +27,7 @@ const extractChains = (task) => {
 
   if (!isSelected) return [];
 
-  const label = isInput
-    ? `${task.name}: ${task.values.input.trim()}`
-    : task.name || "(unnamed)";
+  const label = isInput ? `${task.name}: ${task.values.input.trim()}` : task.name || "(unnamed)";
 
   return [[{
     key: task._id || task.id || label,
@@ -46,10 +37,8 @@ const extractChains = (task) => {
   }]];
 };
 
-// 🧠 Groups tags by ancestry path (so common parents only show once)
 const groupChains = (chains) => {
   const grouped = {};
-
   for (const chain of chains) {
     const ancestorKey = chain.slice(0, -1).map((n) => n.key).join(">");
     if (!grouped[ancestorKey]) {
@@ -60,7 +49,6 @@ const groupChains = (chains) => {
     }
     grouped[ancestorKey].leaves.push(chain[chain.length - 1]);
   }
-
   return Object.values(grouped);
 };
 
@@ -71,11 +59,7 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
       <CardList className="display">
         {timeSlots.map((timeSlot) => {
           const tasksForSlot = assignments[timeSlot] || [];
-
-          const flatChains = tasksForSlot
-            .flatMap(extractChains)
-            .filter((chain) => chain.length > 0);
-
+          const flatChains = tasksForSlot.flatMap(extractChains).filter((chain) => chain.length > 0);
           if (flatChains.length === 0) return null;
 
           const grouped = groupChains(flatChains);

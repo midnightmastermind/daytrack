@@ -1,3 +1,4 @@
+// === GoalForm.jsx ===
 import React, { useState, useEffect } from "react";
 import {
   Button,
@@ -16,16 +17,15 @@ import {
   updateGoalOptimistic,
   createGoal,
   addGoalOptimistic,
-} from "../store/goalSlice";
+} from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
 
-// Helper to flatten task paths
 const getTaskPaths = (tasks = [], prefix = []) => {
   let result = [];
   tasks.forEach((task) => {
     const currentPath = [...prefix, task.name];
     result.push({
-      id: task._id || task.id,
+      id: task._id || task.tempId || task.id,
       pathArray: currentPath,
       hasInput: task.properties?.input || false,
     });
@@ -54,7 +54,7 @@ const ActualPanel = ({
 }) => {
   const addTaskToGoal = () => {
     const selected = taskOptions.find((t) => t.id === selectedTaskId);
-    if (selected && !selectedTasks.find((t) => t.id === selected.id)) {
+    if (selected && !selectedTasks.find((t) => t.task_id === selected.id)) {
       const goalItem = {
         task_id: selected.id,
         path: selected.pathArray,
@@ -74,7 +74,7 @@ const ActualPanel = ({
 
   const updateGoalItem = (itemId, key, value) => {
     setSelectedTasks((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, [key]: value } : item))
+      prev.map((item) => (item.task_id === itemId ? { ...item, [key]: value } : item))
     );
   };
 
@@ -123,11 +123,11 @@ const ActualPanel = ({
       </div>
       <div className="goal-tasks-actual" style={{ marginTop: "10px" }}>
         {(selectedTasks || []).map((t, idx) => (
-          <div key={`${t.id}-${idx}`} style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "5px" }}>
+          <div key={`${t.task_id}-${idx}`} style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "5px" }}>
             <div className="goal-tags">
               {t.path &&
                 t.path.map((segment, i) => (
-                  <Tag key={`${t.id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
+                  <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
                     {segment}
                   </Tag>
                 ))}
@@ -136,7 +136,7 @@ const ActualPanel = ({
               <Tooltip content="Toggle between count-based and dynamic (input-based) tracking">
                 <Switch
                   checked={t.useInput}
-                  onChange={(e) => updateGoalItem(t.id, "useInput", e.target.checked)}
+                  onChange={(e) => updateGoalItem(t.task_id, "useInput", e.target.checked)}
                   disabled={!t.hasInput}
                   innerLabelChecked="dynamic"
                   innerLabel="count"
@@ -144,22 +144,22 @@ const ActualPanel = ({
               </Tooltip>
               <HTMLSelect
                 value={t.operator}
-                onChange={(e) => updateGoalItem(t.id, "operator", e.target.value)}
+                onChange={(e) => updateGoalItem(t.task_id, "operator", e.target.value)}
                 style={{ width: 60 }}
               >
                 <option value="=">=</option>
-                <option value=">">{'>'}</option>
-                <option value="<">{'<'}</option>
+                <option value=">">{">"}</option>
+                <option value="<">{"<"}</option>
               </HTMLSelect>
               <InputGroup
                 placeholder="Target"
                 value={t.target || ""}
-                onChange={(e) => updateGoalItem(t.id, "target", Number(e.target.value))}
+                onChange={(e) => updateGoalItem(t.task_id, "target", Number(e.target.value))}
                 style={{ width: 80 }}
               />
               <HTMLSelect
                 value={t.timeScale}
-                onChange={(e) => updateGoalItem(t.id, "timeScale", e.target.value)}
+                onChange={(e) => updateGoalItem(t.task_id, "timeScale", e.target.value)}
                 style={{ width: 80 }}
               >
                 <option value="daily">Daily</option>
@@ -168,7 +168,7 @@ const ActualPanel = ({
               </HTMLSelect>
             </div>
             <Button icon="cross" minimal onClick={() =>
-              setSelectedTasks((prev) => prev.filter((item) => item.id !== t.id))
+              setSelectedTasks((prev) => prev.filter((item) => item.task_id !== t.task_id))
             } />
           </div>
         ))}
@@ -187,7 +187,7 @@ const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
       {(selectedTasks || []).map((t, idx) => {
         const displayName = t.path?.[t.path.length - 1] || "";
         return (
-          <div key={`${t.id}-${idx}`}>
+          <div key={`${t.task_id}-${idx}`}>
             {displayName} {t.target ? `(${t.progress || 0}/${t.target})` : ""}
           </div>
         );
@@ -198,7 +198,6 @@ const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
 
 const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const dispatch = useDispatch();
-
   const [headerName, setHeaderName] = useState("");
   const [headerEnabled, setHeaderEnabled] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
