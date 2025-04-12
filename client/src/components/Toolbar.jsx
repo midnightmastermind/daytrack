@@ -14,28 +14,7 @@ const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan }) =>
           dangerouslySetInnerHTML={{ __html: appLogo }}
         />
       </div>
-      <div className="tool-bar-datepicker">
-        {/* Date Picker Popover */}
-        <Popover
-          content={
-            <DatePicker3
-              value={selectedDate}
-              onChange={(newDate) => {
-                console.log("DatePicker changed date to:", newDate);
-                setSelectedDate(newDate);
-              }}
-            />
-          }
-          interactionKind="click"
-        >
-          <Button icon="calendar" minimal />
-        </Popover>
 
-        {/* Formatted Date */}
-        <div style={{ fontSize: "12px", fontWeight: "bold" }}>
-          {DateTime.fromJSDate(selectedDate).toFormat("M/d/yyyy")}
-        </div>
-      </div>
       {/* Save Button
         <Button
           icon="floppy-disk"

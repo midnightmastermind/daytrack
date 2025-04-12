@@ -8,7 +8,7 @@ import {
   HTMLSelect,
   Card,
   Tag,
-  Tooltip
+  Tooltip,
 } from "@blueprintjs/core";
 import "./GoalForm.css";
 import { useDispatch } from "react-redux";
@@ -19,6 +19,7 @@ import {
   addGoalOptimistic,
 } from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
+import GoalItem from "./components/GoalItem";
 
 const getTaskPaths = (tasks = [], prefix = []) => {
   let result = [];
@@ -79,9 +80,10 @@ const ActualPanel = ({
   };
 
   return (
-    <Card className="goal-actual" elevation={2} style={{ margin: "10px", padding: "10px", width: "100%" }}>
-      <h4>Actual</h4>
-      <div className="header-section" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <Card className="goal-actual" elevation={2}>
+      <div className="goal-actual-header">Goal Editor</div>
+
+      <div className="header-section">
         <Switch
           innerLabel="Header"
           alignIndicator="right"
@@ -96,10 +98,11 @@ const ActualPanel = ({
           />
         )}
       </div>
-      <div className="add-task-button" style={{ marginTop: "10px" }}>
+
+      <div className="add-task-button">
         <Popover
           content={
-            <div style={{ padding: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div className="add-task-popover">
               <HTMLSelect
                 value={selectedTaskId}
                 onChange={(e) => setSelectedTaskId(e.target.value)}
@@ -121,16 +124,16 @@ const ActualPanel = ({
           <Button icon="plus" intent="primary" text="Add Task" onClick={() => setIsPopoverOpen(true)} />
         </Popover>
       </div>
-      <div className="goal-tasks-actual" style={{ marginTop: "10px" }}>
+
+      <div className="goal-tasks-actual">
         {(selectedTasks || []).map((t, idx) => (
-          <div key={`${t.task_id}-${idx}`} style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "5px" }}>
+          <div key={`${t.task_id}-${idx}`} className="goal-task-row">
             <div className="goal-tags">
-              {t.path &&
-                t.path.map((segment, i) => (
-                  <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
-                    {segment}
-                  </Tag>
-                ))}
+              {t.path?.map((segment, i) => (
+                <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
+                  {segment}
+                </Tag>
+              ))}
             </div>
             <div className="condition-container">
               <Tooltip content="Toggle between count-based and dynamic (input-based) tracking">
@@ -145,7 +148,6 @@ const ActualPanel = ({
               <HTMLSelect
                 value={t.operator}
                 onChange={(e) => updateGoalItem(t.task_id, "operator", e.target.value)}
-                style={{ width: 60 }}
               >
                 <option value="=">=</option>
                 <option value=">">{">"}</option>
@@ -155,21 +157,23 @@ const ActualPanel = ({
                 placeholder="Target"
                 value={t.target || ""}
                 onChange={(e) => updateGoalItem(t.task_id, "target", Number(e.target.value))}
-                style={{ width: 80 }}
               />
               <HTMLSelect
                 value={t.timeScale}
                 onChange={(e) => updateGoalItem(t.task_id, "timeScale", e.target.value)}
-                style={{ width: 80 }}
               >
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="overall">Overall</option>
               </HTMLSelect>
             </div>
-            <Button icon="cross" minimal onClick={() =>
-              setSelectedTasks((prev) => prev.filter((item) => item.task_id !== t.task_id))
-            } />
+            <Button
+              icon="cross"
+              minimal
+              onClick={() =>
+                setSelectedTasks((prev) => prev.filter((item) => item.task_id !== t.task_id))
+              }
+            />
           </div>
         ))}
       </div>
@@ -178,22 +182,13 @@ const ActualPanel = ({
 };
 
 const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
-  <Card className="goal-preview" elevation={2} style={{ margin: "10px", padding: "10px", width: "100%" }}>
-    <h4>Preview</h4>
-    {headerEnabled && headerName && (
-      <div className="goal-header-preview">{headerName}</div>
-    )}
-    <div className="goal-tasks-preview">
-      {(selectedTasks || []).map((t, idx) => {
-        const displayName = t.path?.[t.path.length - 1] || "";
-        return (
-          <div key={`${t.task_id}-${idx}`}>
-            {displayName} {t.target ? `(${t.progress || 0}/${t.target})` : ""}
-          </div>
-        );
-      })}
-    </div>
-  </Card>
+  <div className="goal-preview">
+    <div className="goal-preview-header">Preview</div>
+    <GoalItem
+      goal={{ header: headerEnabled ? headerName : "", tasks: selectedTasks }}
+      showEditButton={false}
+    />
+  </div>
 );
 
 const GoalForm = ({ goal, tasks, onSave, onClose }) => {
@@ -237,9 +232,8 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   };
 
   return (
-    <div className="goal-form" style={{ padding: 20 }}>
-      <h3>Create/Edit Goal</h3>
-      <div style={{ display: "flex", gap: 20 }}>
+    <div className="goal-form">
+      <div className="goal-form-section-container">
         <ActualPanel
           headerName={headerName}
           setHeaderName={setHeaderName}
@@ -259,9 +253,9 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           selectedTasks={selectedTasks}
         />
       </div>
-      <div style={{ marginTop: 20 }}>
+      <div className="goal-form-actions">
         <Button onClick={handleSaveGoal} text="Save Goal" intent="primary" />
-        {onClose && <Button onClick={onClose} style={{ marginLeft: 10 }} text="Cancel" />}
+        {onClose && <Button onClick={onClose} className="cancel-button" text="Cancel" />}
       </div>
     </div>
   );

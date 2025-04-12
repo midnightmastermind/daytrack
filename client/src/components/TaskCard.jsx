@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+// TaskCard.jsx
+import React, { useEffect, useRef, useState } from "react";
 import {
   Card,
   Button,
   Collapse,
   Icon,
-  Checkbox,
   InputGroup,
   Tag,
   Elevation,
+  Checkbox,
 } from "@blueprintjs/core";
 import { Draggable } from "react-beautiful-dnd";
 
@@ -21,13 +22,8 @@ const TaskCard = ({
 }) => {
   if (!task) return null;
 
+  const taskStateRef = useRef(task);
   const [isOpen, setIsOpen] = useState(false);
-  const [taskState, setTaskState] = useState(task);
-  const taskStateRef = useRef(taskState);
-
-  useEffect(() => {
-    taskStateRef.current = taskState;
-  }, [taskState]);
 
   const toggleCollapse = () => setIsOpen(!isOpen);
 
@@ -48,12 +44,17 @@ const TaskCard = ({
   };
 
   const handleChildChange = (childId, key, newValue) => {
-    setTaskState((prev) => {
-      const updatedChildren = updateChildValue(prev.children, childId, key, newValue);
-      const updatedTask = { ...prev, children: updatedChildren };
-      if (onTaskUpdate) onTaskUpdate(updatedTask);
-      return updatedTask;
-    });
+    const updatedChildren = updateChildValue(
+      taskStateRef.current.children || [],
+      childId,
+      key,
+      newValue
+    );
+    taskStateRef.current = {
+      ...taskStateRef.current,
+      children: updatedChildren,
+    };
+    if (onTaskUpdate) onTaskUpdate(taskStateRef.current);
   };
 
   const renderChildren = (childrenArray) =>
@@ -88,7 +89,9 @@ const TaskCard = ({
           {child.properties?.checkbox && (
             <Checkbox
               checked={child.values?.checkbox ?? false}
-              onChange={(e) => handleChildChange(childKey, "checkbox", e.target.checked)}
+              onChange={(e) =>
+                handleChildChange(childKey, "checkbox", e.target.checked)
+              }
             />
           )}
           <div className="child-task-name">{child.name}</div>
@@ -96,15 +99,17 @@ const TaskCard = ({
             <InputGroup
               placeholder={`Enter ${child.name}`}
               value={child.values?.input ?? ""}
-              onChange={(e) => handleChildChange(childKey, "input", e.target.value)}
+              onChange={(e) =>
+                handleChildChange(childKey, "input", e.target.value)
+              }
             />
           )}
         </Tag>
       );
     });
 
-  const taskId = (task._id || task.tempId || task.id || "unknown-task").toString();
-  const draggableId = preview ? `preview-${taskId}` : taskId;
+  const taskId =
+    (task._id || task.tempId || task.id || "unknown-task").toString();
 
   const cardContent = (
     <Card
@@ -117,7 +122,7 @@ const TaskCard = ({
     >
       <div className="task-header">
         <div className="task-header-left">
-          {taskState.children?.length > 0 ? (
+          {task.children?.length > 0 ? (
             <Button
               icon={isOpen ? "caret-down" : "caret-right"}
               onClick={toggleCollapse}
@@ -126,7 +131,7 @@ const TaskCard = ({
           ) : (
             <Icon icon="dot" />
           )}
-          <div className="task-name">{taskState.name}</div>
+          <div className="task-name">{task.name}</div>
         </div>
 
         {!preview && (
@@ -136,7 +141,7 @@ const TaskCard = ({
               className="edit-task-button"
               minimal
               onClick={() => {
-                onEditTask(taskState);
+                onEditTask(task);
                 onOpenDrawer();
               }}
             />
@@ -145,26 +150,32 @@ const TaskCard = ({
         )}
       </div>
 
-      {taskState.children?.length > 0 && (
+      {task.children?.length > 0 && (
         <Collapse
           className="task-children-collapse"
           isOpen={isOpen}
           keepChildrenMounted
         >
-          <div className="task-children">{renderChildren(taskState.children)}</div>
+          <div className="task-children">
+            {renderChildren(taskStateRef.current.children || [])}
+          </div>
         </Collapse>
       )}
     </Card>
   );
 
-  return (
-    <Draggable draggableId={draggableId} index={index}>
+  return preview ? (
+    cardContent
+  ) : (
+    <Draggable draggableId={taskId} index={index}>
       {(provided, snapshot) =>
         React.cloneElement(cardContent, {
           ref: provided.innerRef,
           ...provided.draggableProps,
           ...provided.dragHandleProps,
-          className: `task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`,
+          className: `task-card${preview ? " preview" : ""}${
+            snapshot.isDragging ? " dragging" : ""
+          }`,
           style: {
             ...provided.draggableProps.style,
             cursor: snapshot.isDragging ? "grabbing" : "grab",
@@ -173,7 +184,7 @@ const TaskCard = ({
         })
       }
     </Draggable>
-  );  
+  );
 };
 
 export default TaskCard;

@@ -9,19 +9,24 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    background-color: #1A2129;
+    border: 1px solid #30363D;
+    border-radius: 4px;
+    padding: 10px;
   }
   
   .task-form-preview-panel {
     flex: 1;
-    background-color: #1c1e26;
-    border-radius: 6px;
-    padding: 10px;
-    border: 1px solid #2b2f3a;
     display: flex;
     flex-direction: column;
+    background-color: #1A2129;
+    border: 1px solid #30363D;
+    border-radius: 4px;
+    padding: 10px;
     justify-content: flex-start;
-    height: fit-content;
+    height: 100%;
     min-width: 280px;
+
   }
   
   .task-form-preview-panel h4 {
@@ -40,7 +45,7 @@
   .task-form .preview-taskbank,
   .task-form .preview-schedule {
     background-color: #131417;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 8px;
     border: 1px solid #2b2f3a;
   }
@@ -213,10 +218,11 @@
   .task-form .preview-taskbank {
     display: flex;
     flex-direction: column;
-    height: 100%;
     padding: 0px 2px;
     overflow-y: scroll;
     background-color: var(--color-bg);
+    margin-bottom: 20px;
+    margin-top: 20px;
   }
   
   .task-form .preview-taskbank-container {

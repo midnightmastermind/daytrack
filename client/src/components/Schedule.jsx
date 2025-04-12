@@ -2,6 +2,8 @@
 import React from "react";
 import { CardList } from "@blueprintjs/core";
 import ScheduleCard from "./ScheduleCard";
+import CurrentTimeIndicator from "./CurrentTimeIndicator";
+import useCurrentTime from "../hooks/useCurrentTime";
 
 const Schedule = ({
   label,
@@ -12,6 +14,7 @@ const Schedule = ({
 }) => {
   return (
     <CardList className={`schedule ${label}-schedule-container`}>
+      <CurrentTimeIndicator />
       {timeSlots.map((slot) => (
         <ScheduleCard
           key={slot}

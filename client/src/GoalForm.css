@@ -27,6 +27,7 @@
 
   .goal-form .goal-preview {
     flex: 1;
+    margin-left: 10px;
   }
 
   .goal-form .goal-actual h4,
@@ -120,3 +121,117 @@
     gap: 5px;
     flex: 1.2;
   }
+
+  .goal-form .goal-preview .goal-item {
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    height: 90px;
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    padding: 0px;
+  }
+  
+  .goal-form .goal-preview .goal-tasks {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    margin: 10px;
+  }
+  
+  .goal-form .goal-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: start;
+    align-self: start;
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .goal-form .goal-header-preview {
+    margin-left: 3px;
+    margin-top: 3px;
+    font-size: 11px;
+    color: gray;
+  }
+  
+  .edit-goal-button {
+    margin-left: auto;
+    display: flex;
+    font-size: 10px;
+    min-width: 21px;
+    min-height: 12px;
+    margin-right: 0px;
+    padding-right: 2px;
+    padding-top: 4px;
+    padding-left: 4px;
+  }
+  
+  .edit-goal-button .bp5-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .goal-form .goal-task {
+    justify-content: space-between;
+  }
+
+  .goal-form .goal-form-actions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: start;
+  }
+  .goal-form .goal-actual-header,
+  .goal-form .goal-preview-header {
+    font-size: 12px;
+    color: gray;
+    display: flex;
+    margin-bottom: 10px;
+  }
+
+  .goal-form .bp5-input-group {
+    max-width: 100px;
+  }
+
+  .goal-form-section-container {
+    display: flex;
+  }
+
+  .goal-form .header-section .bp5-control {
+    align-self: unset;
+  }
+
+  .goal-actual {
+    padding: 10px;
+    width: 100%;
+  }
+  
+  .goal-actual .header-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .goal-actual .add-task-popover {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .goal-actual .add-task-button {
+    margin-top: 10px;
+  }
+  
+  .goal-actual .goal-tasks-actual {
+    margin-top: 10px;
+  }
+  
+  .goal-actual .goal-task-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+  }
+  

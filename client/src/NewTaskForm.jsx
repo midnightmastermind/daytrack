@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, FormGroup, InputGroup, Checkbox } from "@blueprintjs/core";
+import { Button, FormGroup, InputGroup, Switch } from "@blueprintjs/core";
 import TaskCard from "./components/TaskCard";
 import ScheduleCard from "./components/ScheduleCard";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
@@ -37,8 +37,10 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
           onChange={(e) => updateField("name", e.target.value)}
           className="child-input"
         />
-        <Checkbox
-          label="Checkbox"
+        <Switch
+          large
+          innerLabel="Checkbox"
+          innerLabelChecked="Checkbox"
           checked={child.properties?.checkbox || false}
           onChange={(e) =>
             updateField("properties", {
@@ -46,9 +48,12 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               checkbox: e.target.checked,
             })
           }
+          label=""
         />
-        <Checkbox
-          label="Input"
+        <Switch
+          large
+          innerLabel="Input"
+          innerLabelChecked="Input"
           checked={child.properties?.input || false}
           onChange={(e) =>
             updateField("properties", {
@@ -56,9 +61,12 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               input: e.target.checked,
             })
           }
+          label=""
         />
-        <Checkbox
-          label="Category"
+        <Switch
+          large
+          innerLabel="Category"
+          innerLabelChecked="Category"
           checked={child.properties?.category || false}
           onChange={(e) =>
             updateField("properties", {
@@ -66,6 +74,7 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               category: e.target.checked,
             })
           }
+          label=""
         />
         <Button icon="cross" minimal onClick={onDelete} />
       </div>
@@ -112,7 +121,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
       <DragDropContext onDragEnd={handlePreviewDrop}>
         <div className="preview-bank-schedule">
           <div className="preview-taskbank">
-            <Droppable droppableId="preview-bank">
+            <Droppable className={'droppable-container'} droppableId="preview-bank" ignoreContainerClipping={true}>
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
                   {previewTask && (

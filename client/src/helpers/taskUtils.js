@@ -123,6 +123,18 @@ export function getSelectedLeaves(task) {
 }
 
 
+export function buildScheduleAssignmentsFromTask(task) {
+  const selected = getSelectedLeaves(task);
+
+  return selected.map((leaf) => ({
+    ...leaf,
+    id: leaf._id?.toString() || leaf.tempId || leaf.id,
+    originalId: leaf._id?.toString() || leaf.tempId || leaf.id,
+    assignmentId: `${leaf._id || leaf.tempId || uuidv4()}-${Date.now()}-${Math.random()}`,
+    assignmentAncestry: leaf.assignmentAncestry || [],
+  }));
+}
+
 
 export const getTaskAncestryByIdDeep = (taskTree = [], taskId, ancestry = []) => {
   for (const task of taskTree) {
@@ -158,4 +170,15 @@ export function mergeCheckboxSelections(task, selections) {
 
 export const getTaskKey = (task) => {
   return (task?.id || task?._id || uuidv4()).toString();
+};
+
+export const countTasks = (assignments) => {
+  const countMap = {};
+  for (const slotTasks of Object.values(assignments)) {
+    for (const task of slotTasks) {
+      const id = task.originalId;
+      if (id) countMap[id] = (countMap[id] || 0) + 1;
+    }
+  }
+  return countMap;
 };

@@ -12,27 +12,29 @@ const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
         <div className="task-bank-header">Task Bank</div>
         <Button icon="plus" text="New Task" minimal onClick={onOpenDrawer} />
       </div>
-      <Droppable droppableId="taskBank" isDropDisabled>
-        {(provided) => (
-          <CardList
-            className="task-bank"
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-          >
-            {topLevelTasks.map((task, index) => (
-              <TaskCard
-                key={task._id || task.tempId}
-                task={task}
-                index={index}
-                onEditTask={onEditTask}
-                onOpenDrawer={onOpenDrawer}
-                onTaskUpdate={onTaskUpdate}
-              />
-            ))}
-            {provided.placeholder}
-          </CardList>
-        )}
-      </Droppable>
+      <div className={'task-bank-scroll-wrapper'}>
+        <Droppable className={'droppable-container'} droppableId="taskBank" isDropDisabled={true} ignoreContainerClipping={true}>
+          {(provided) => (
+            <CardList
+              className="task-bank"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {topLevelTasks.map((task, index) => (
+                <TaskCard
+                  key={task._id || task.tempId}
+                  task={task}
+                  index={index}
+                  onEditTask={onEditTask}
+                  onOpenDrawer={onOpenDrawer}
+                  onTaskUpdate={onTaskUpdate}
+                />
+              ))}
+              {provided.placeholder}
+            </CardList>
+          )}
+        </Droppable>
+      </div>
     </div>
   );
 };

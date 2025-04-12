@@ -1,137 +1,189 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Card, Button, Collapse, Icon, Checkbox, InputGroup, Tag } from "@blueprintjs/core";
-import { useDrag } from "react-dnd";
+// TaskCard.jsx
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Card,
+  Button,
+  Collapse,
+  Icon,
+  InputGroup,
+  Tag,
+  Elevation,
+  Checkbox,
+} from "@blueprintjs/core";
+import { Draggable } from "react-beautiful-dnd";
 
-const ItemTypes = { TASK: "task" };
+const TaskCard = ({
+  task,
+  index,
+  onEditTask,
+  onOpenDrawer,
+  onTaskUpdate,
+  preview = false,
+}) => {
+  if (!task) return null;
 
-const updateChildValue = (childrenArray, childId, key, newValue) => {
-  return childrenArray.map(child => {
-    if (child._id.toString() === childId.toString()) {
-      return { ...child, values: { ...child.values, [key]: newValue } };
-    } else if (child.children && child.children.length > 0) {
-      return { ...child, children: updateChildValue(child.children, childId, key, newValue) };
-    }
-    return child;
-  });
-};
+  const taskStateRef = useRef(task);
+  const [isOpen, setIsOpen] = useState(false);
 
-const TaskCard = ({ task, onEditTask, onOpenDrawer }) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [taskState, setTaskState] = useState(task);
-  const taskStateRef = useRef(taskState);
+  const toggleCollapse = () => setIsOpen(!isOpen);
 
-  // Always keep the ref in sync with state.
-  useEffect(() => {
-    taskStateRef.current = taskState;
-  }, [taskState]);
-
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.TASK,
-    item: () => {
-      console.log("Dragging task with current state:", taskStateRef.current);
-      return { ...taskStateRef.current, id: taskStateRef.current._id, parent_id: null };
-    },
-    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-  }));
-
-  const handleCaretClick = () => {
-    console.log("Toggling collapse for task:", taskState.name);
-    setIsOpen(!isOpen);
-  };
-
-  // Recursive function to render nested children.
-  const renderChildren = (childrenArray) => {
+  const updateChildValue = (childrenArray, childId, key, newValue) => {
     return childrenArray.map((child) => {
-      if (child.properties && child.properties.category) {
-        return (
-          <Tag className="category-container" key={child._id}>
-            <div className="category-name">{child.name}</div>
-            {child.children && child.children.length > 0 && (
-              <Collapse isOpen={true} keepChildrenMounted>
-                <div className="collapse">
-                  {renderChildren(child.children)}
-                </div>
-              </Collapse>
-            )}
-          </Tag>
-        );
-      } else {
-        
-        return (
-          <Tag className="child-task" key={child._id} minimal>
-            {child.properties && child.properties.checkbox && (
-            <div className="checkbox-container">
-              <Checkbox
-                checked={child.values?.checkbox ?? false}
-                onChange={(e) =>
-                  handleChildChange(child._id, "checkbox", e.target.checked)
-                }
-              />
-              </div>
-            )}
-            <div className="child-task-name">{child.name}</div>
-            {child.properties && child.properties.input && (
-             <div className="input-container">
-              <InputGroup
-                placeholder={``}
-                className="child-task-input"
-                value={child.values?.input ?? ""}
-                onChange={(e) =>
-                  handleChildChange(child._id, "input", e.target.value)
-                }
-              />
-              </div>
-            )}
-          </Tag>
-        );
+      const childKey = child._id || child.tempId || child.id;
+      if (childKey?.toString() === childId?.toString()) {
+        const updatedValues = { ...(child.values || {}), [key]: newValue };
+        return { ...child, values: updatedValues };
+      } else if (child.children && child.children.length > 0) {
+        return {
+          ...child,
+          children: updateChildValue(child.children, childId, key, newValue),
+        };
       }
+      return child;
     });
   };
 
   const handleChildChange = (childId, key, newValue) => {
-    console.log(`Updating child with id ${childId} key ${key} to:`, newValue);
-    setTaskState((prev) => {
-      const updatedChildren = updateChildValue(prev.children, childId, key, newValue);
-      const updatedTask = { ...prev, children: updatedChildren };
-      console.log("Updated task state:", updatedTask);
-      return updatedTask;
-    });
+    const updatedChildren = updateChildValue(
+      taskStateRef.current.children || [],
+      childId,
+      key,
+      newValue
+    );
+    taskStateRef.current = {
+      ...taskStateRef.current,
+      children: updatedChildren,
+    };
+    if (onTaskUpdate) onTaskUpdate(taskStateRef.current);
   };
 
-  return (
+  const renderChildren = (childrenArray) =>
+    childrenArray.map((child) => {
+      const childKey = child._id || child.tempId || child.id;
+
+      if (child.properties?.category) {
+        return (
+          <div key={childKey} className="category-container">
+            <div className="category-name">
+              <Tag minimal>{child.name}</Tag>
+            </div>
+            {child.children?.length > 0 && (
+              <Collapse isOpen keepChildrenMounted>
+                <div className="category-collapse">
+                  {renderChildren(child.children)}
+                </div>
+              </Collapse>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <Tag
+          key={childKey}
+          className="child-task"
+          intent="primary"
+          elevation={Elevation.FOUR}
+          minimal={!child.values?.checkbox}
+        >
+          {child.properties?.checkbox && (
+            <Checkbox
+              checked={child.values?.checkbox ?? false}
+              onChange={(e) =>
+                handleChildChange(childKey, "checkbox", e.target.checked)
+              }
+            />
+          )}
+          <div className="child-task-name">{child.name}</div>
+          {child.properties?.input && (
+            <InputGroup
+              placeholder={`Enter ${child.name}`}
+              value={child.values?.input ?? ""}
+              onChange={(e) =>
+                handleChildChange(childKey, "input", e.target.value)
+              }
+            />
+          )}
+        </Tag>
+      );
+    });
+
+  const taskId =
+    (task._id || task.tempId || task.id || "unknown-task").toString();
+
+  const cardContent = (
     <Card
-      className="task-card"
-      ref={drag}
       elevation={2}
+      className={`task-card${preview ? " preview" : ""}`}
       style={{
-        cursor: isDragging ? "grabbing" : "grab",
-        opacity: isDragging ? 0.5 : 1,
+        cursor: preview ? "default" : "grab",
+        opacity: preview ? 1 : undefined,
       }}
     >
-      <div className="task-header" style={{ display: "flex", alignItems: "center" }}>
-        {taskState.children && taskState.children.length > 0 ? (
-          <Button icon={isOpen ? "caret-down" : "caret-right"} onClick={handleCaretClick} />
-        ) : (
-          <Icon icon="dot" />
+      <div className="task-header">
+        <div className="task-header-left">
+          {task.children?.length > 0 ? (
+            <Button
+              icon={isOpen ? "caret-down" : "caret-right"}
+              onClick={toggleCollapse}
+              minimal
+            />
+          ) : (
+            <Icon icon="dot" />
+          )}
+          <div className="task-name">{task.name}</div>
+        </div>
+
+        {!preview && (
+          <div className="task-header-right">
+            <Button
+              icon="cog"
+              className="edit-task-button"
+              minimal
+              onClick={() => {
+                onEditTask(task);
+                onOpenDrawer();
+              }}
+            />
+            <Icon className="drag-icon" icon="horizontal-inbetween" />
+          </div>
         )}
-        <div className="task-name" style={{ flex: 1 }}>{taskState.name}</div>
-        <Button
-          icon="cog"
-          minimal
-          onClick={() => {
-            console.log("Editing task:", taskState.name);
-            onEditTask(taskState);
-            onOpenDrawer();
-          }}
-        />
-        <Icon icon="horizontal-inbetween" />
       </div>
-      {taskState.children && taskState.children.length > 0 && (
-        <Collapse isOpen={isOpen} keepChildrenMounted className="task-options">
-          <div className="task-children">{renderChildren(taskState.children)}</div>
+
+      {task.children?.length > 0 && (
+        <Collapse
+          className="task-children-collapse"
+          isOpen={isOpen}
+          keepChildrenMounted
+        >
+          <div className="task-children">
+            {renderChildren(taskStateRef.current.children || [])}
+          </div>
         </Collapse>
       )}
     </Card>
+  );
+
+  return preview ? (
+    cardContent
+  ) : (
+    <Draggable draggableId={taskId} index={index}>
+      {(provided, snapshot) =>
+        React.cloneElement(cardContent, {
+          ref: provided.innerRef,
+          ...provided.draggableProps,
+          ...provided.dragHandleProps,
+          className: `task-card${preview ? " preview" : ""}${
+            snapshot.isDragging ? " dragging" : ""
+          }`,
+          style: {
+            ...provided.draggableProps.style,
+            cursor: snapshot.isDragging ? "grabbing" : "grab",
+            opacity: snapshot.isDragging ? 0.5 : 1,
+          },
+        })
+      }
+    </Draggable>
   );
 };
 

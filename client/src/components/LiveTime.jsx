@@ -1,22 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { DateTime } from "luxon";
+import useCurrentTime from "../hooks/useCurrentTime";
 
 const LiveTime = () => {
-  const [currentTime, setCurrentTime] = useState(DateTime.local().toFormat("HH:mm:ss"));
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(DateTime.local().toFormat("HH:mm:ss"));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const currentDate = DateTime.local().toFormat("M/d/yyyy");
+  const time = useCurrentTime();
 
   return (
     <div className="live-time">
-      current time: {currentDate} {currentTime}
+      {time.toFormat("hh:mm:ss a")}
     </div>
   );
 };

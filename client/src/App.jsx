@@ -4,7 +4,7 @@ import { DragDropContext } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
-
+import { buildScheduleAssignmentsFromTask, countTasks } from './helpers/taskUtils.js'
 import {
   fetchTasks,
   createTask,
@@ -47,6 +47,7 @@ import GoalForm from "./GoalForm";
 import LiveTime from "./components/LiveTime";
 
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
+import DatePickerPopover from "./components/DatePickerPopover.jsx";
 
 const AppToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
@@ -126,56 +127,72 @@ function App() {
     return ids;
   };
 
-  const countTasks = (assignments) => {
-    const countMap = {};
-    for (const slotTasks of Object.values(assignments)) {
-      for (const task of slotTasks) {
-        const id = task.originalId;
-        if (id) countMap[id] = (countMap[id] || 0) + 1;
-      }
-    }
-    return countMap;
-  };
-
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
-    const resultArray = Object.entries(assignmentsToSave[type]).map(([timeSlot, assignedTasks]) => ({
-      timeSlot,
-      assignedTasks,
-    }));
-    const existing = dayplans.find((p) => new Date(p.date).toDateString() === selectedDate.toDateString());
+    const resultArray = Object.entries(assignmentsToSave[type]).map(
+      ([timeSlot, assignedTasks]) => ({
+        timeSlot,
+        assignedTasks,
+      })
+    );
+
+    const existing = dayplans.find(
+      (p) => new Date(p.date).toDateString() === selectedDate.toDateString()
+    );
+
     const payload = {
       date: selectedDate,
       plan: type === "preview" ? resultArray : existing?.plan || [],
       result: type === "actual" ? resultArray : existing?.result || [],
     };
-    const prevCount = countTasks(lastSavedAssignments[type]);
-    const nextCount = countTasks(assignmentsToSave[type]);
-    const allTaskIds = new Set([...Object.keys(prevCount), ...Object.keys(nextCount)]);
-    const date = selectedDate.toISOString();
 
     if (type === "actual") {
+      const date = selectedDate.toISOString();
+      const prevCount = countTasks(lastSavedAssignments[type]);
+      const nextCount = countTasks(assignmentsToSave[type]);
+
+
+      const allTaskIds = new Set([
+        ...Object.keys(prevCount),
+        ...Object.keys(nextCount),
+      ]);
+
       for (const taskId of allTaskIds) {
+        const oldVal = prevCount[taskId];
         const count = nextCount[taskId] || 0;
-        const relatedGoals = goals.filter((g) => flattenGoalTaskIds(g).has(taskId));
+
+        const relatedGoals = goals.filter((g) =>
+          flattenGoalTaskIds(g).has(taskId)
+        );
+
         for (const goal of relatedGoals) {
           const goalId = goal._id?.toString() || goal.tempId;
           dispatch(addPendingProgress({ goalId, date, taskId, count }));
-          await dispatch(createGoalProgress({ goalId, date, taskId, count }));
+          dispatch(createGoalProgress({ goalId, date, taskId, count }));
         }
       }
     }
 
-    setLastSavedAssignments({ ...lastSavedAssignments, [type]: assignmentsToSave[type] });
+    setLastSavedAssignments({
+      ...lastSavedAssignments,
+      [type]: assignmentsToSave[type],
+    }); setLastSavedAssignments({
+      ...lastSavedAssignments,
+      [type]: assignmentsToSave[type],
+    });
 
     const response = existing
       ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: payload }))
       : await dispatch(createDayPlan({ ...payload }));
 
     AppToaster.show({
-      message: response?.payload ? `✅ ${type} schedule saved!` : `❌ Failed to save ${type} schedule`,
+      message: response?.payload
+        ? `✅ ${type} schedule saved!`
+        : `❌ Failed to save ${type} schedule`,
       intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
     });
   };
+
+
 
   const onDragEnd = (result) => {
     const { source, destination, draggableId } = result;
@@ -191,30 +208,10 @@ function App() {
       const taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
       if (!taskFromBank) return;
 
-      const selectedLeaves = [];
-      let foundChecked = false;
+      const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
 
-      const walk = (node, ancestry = []) => {
-        const isChecked = (node.properties?.checkbox && node.values?.checkbox) ||
-          (node.properties?.input && node.values?.input?.trim() !== "");
 
-        const nextAncestry = [...ancestry, node];
-        if (isChecked && (!node.children || node.children.length === 0)) {
-          foundChecked = true;
-          selectedLeaves.push({
-            ...node,
-            id: node._id?.toString(),
-            originalId: node._id?.toString(),
-            assignmentId: `${node._id}-${Date.now()}-${Math.random()}`,
-            assignmentAncestry: nextAncestry,
-          });
-        }
-        (node.children || []).forEach((child) => walk(child, nextAncestry));
-      };
-
-      walk(taskFromBank);
-
-      if (!foundChecked && taskFromBank.properties?.card) {
+      if (!selectedLeaves.length && taskFromBank.properties?.card) {
         selectedLeaves.push({
           ...taskFromBank,
           id: taskFromBank._id?.toString(),
@@ -224,7 +221,16 @@ function App() {
         });
       }
 
-      updated[type][slotKey] = [...destSlot, ...selectedLeaves];
+      const currentIds = new Set(destSlot.map(t => t.assignmentId));
+      const newTasks = selectedLeaves.filter(t => !currentIds.has(t.assignmentId));
+      if (newTasks.length < selectedLeaves.length) {
+        AppToaster.show({
+          message: "That task is already scheduled at this time.",
+          intent: Intent.WARNING,
+        });
+      }
+      updated[type][slotKey] = [...destSlot, ...newTasks];
+
     }
 
     setAssignments(updated);
@@ -241,10 +247,6 @@ function App() {
           onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
         />
         <div className="main-content">
-          <div className="time-header">
-            <div className="selected-date">DayPlan: {DateTime.fromJSDate(selectedDate).toFormat("M/d/yyyy")}</div>
-            <div className="current-time"><LiveTime /></div>
-          </div>
           <div className="content">
             <div className="left-side">
               <TaskBank
@@ -260,29 +262,39 @@ function App() {
                 }}
               />
               <div className="schedule-container dual">
+                <div className="time-header">
+                  <div className="selected-date">
+                    <DatePickerPopover
+                      selectedDate={selectedDate}
+                      setSelectedDate={setSelectedDate}
+                    />
+                  </div>
+                  <div className="current-time">
+                    <LiveTime />
+                  </div>
+                  <div className="time-divider" />
+                </div>
                 <div className="schedule-header">
                   <div className="plan-header">Plan</div>
                   <div className="agenda-header">Agenda</div>
                 </div>
                 <div className="schedules-scroll-wrapper">
-                  <div className="schedules">
-                    <Schedule
-                      label="Plan"
-                      timeSlots={timeSlots}
-                      assignments={assignments.preview}
-                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
-                      setPlanDirty={setPlanDirty}
-                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
-                    />
-                    <Schedule
-                      label="Agenda"
-                      timeSlots={timeSlots}
-                      assignments={assignments.actual}
-                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
-                      setPlanDirty={setPlanDirty}
-                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
-                    />
-                  </div>
+                  <Schedule
+                    label="Plan"
+                    timeSlots={timeSlots}
+                    assignments={assignments.preview}
+                    setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                    setPlanDirty={setPlanDirty}
+                    onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                  />
+                  <Schedule
+                    label="Agenda"
+                    timeSlots={timeSlots}
+                    assignments={assignments.actual}
+                    setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
+                    setPlanDirty={setPlanDirty}
+                    onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
+                  />
                 </div>
               </div>
             </div>

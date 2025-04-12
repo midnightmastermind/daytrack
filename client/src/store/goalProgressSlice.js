@@ -39,9 +39,12 @@ const goalProgressSlice = createSlice({
     addPendingProgress: (state, action) => {
       const { goalId, date, taskId, count } = action.payload;
       const key = `${goalId}_${date.slice(0, 10)}`;
+    
       if (!state.pendingProgressUpdates[key]) {
         state.pendingProgressUpdates[key] = {};
       }
+    
+      // const prevCount = state.pendingProgressUpdates[key][taskId] || 0;
       state.pendingProgressUpdates[key][taskId] = count;
     },
     clearPendingProgress: (state, action) => {

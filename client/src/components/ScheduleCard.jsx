@@ -1,6 +1,8 @@
 import React from "react";
 import { Card, Elevation, Tag, Button } from "@blueprintjs/core";
 import { Droppable, Draggable } from "react-beautiful-dnd";
+import { DateTime } from "luxon";
+import useCurrentTime from "../hooks/useCurrentTime";
 
 const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
@@ -14,11 +16,18 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
     onAssignmentsChange?.(updated);
   };
 
+  const now = useCurrentTime(); // updates live
+
+  const slotStart = DateTime.fromFormat(timeSlot, "h:mm a");
+  const slotEnd = slotStart.plus({ minutes: 30 });
+  const isPast = slotEnd <= now;
+
   return (
-    <Droppable droppableId={`${label}_${timeSlot}`}>
+    <Droppable className={'droppable-container'} droppableId={`${label}_${timeSlot}`} ignoreContainerClipping={true}>
       {(provided, snapshot) => (
         <Card
-          className="timeslot"
+          className={`timeslot${isPast ? " past" : ""}`}
+
           elevation={Elevation.FOUR}
           interactive
           ref={provided.innerRef}
