@@ -1,6 +1,6 @@
 import React from "react";
 import { DateTime } from "luxon";
-import useCurrentTime from "../hooks/useCurrentTime";
+import { useCurrentTime } from "../context/TimeProvider"
 
 const LiveTime = () => {
   const time = useCurrentTime();

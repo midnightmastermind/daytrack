@@ -926,3 +926,134 @@ p {
   font-size: 12px;
   padding-left: 10px;
 }
+
+.grouped-category {
+  flex-direction: column;
+}
+
+.grouped-category .bp5-text-overflow-ellipsis {
+  justify-content: start !important;
+  align-content: center;
+}
+
+.preset-values {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  max-height: 60px;
+  margin-left: 5px;
+  align-content: end;
+  line-height: 11px;
+  
+}
+.preset-values .bp5-tag {
+  color: white !important;
+  font-size: 10px;
+  max-width: 100px;
+  display: flex;
+  justify-content: space-between;
+  margin: 3px;
+}
+
+.preset-unit .bp5-text-overflow-ellipsis {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: start !important;
+}
+
+.new-entry {
+  background-color: rgba(45, 114, 210, 0.1);
+}
+
+.new-entry .bp5-text-overflow-ellipsis {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start !important;
+}
+
+.new-entry .preset-input {
+  height: 30px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: end;
+}
+
+.new-entry .preset-inputs {
+  align-self: end;
+}
+.preset-input .bp5-tag {
+  color: white !important;
+  font-size: 10px;
+  min-width: 65px;
+  width: auto;
+}
+
+.grouping-unit-row .bp5-tag .bp5-fill {
+  font-size: 11px;
+}
+.new-entry .preset-input .bp5-numeric-input {
+  max-width: 50px;
+}
+
+.new-entry .preset-input .bp5-input-group input, 
+.new-entry .preset-name-input input{
+  height: 20px;
+  font-size: 11px;
+}
+
+.new-entry .preset-save {
+  align-self: end;
+}
+
+.preset-input .bp5-switch {
+  padding-inline-start: unset !important;
+  margin-left: 5px;
+  align-self: center;
+}
+
+.new-entry-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.control-inputs {
+  width: 75px;
+  display: flex;
+}
+
+.control-inputs .bp5-checkbox {
+  padding-top: 2px;
+}
+
+.preset-save-container {
+  display: flex;
+  width: 21px;
+  align-self: flex-end;
+  margin-right: 2px;
+}
+
+.preset-save-container button {
+  min-height: unset;
+  min-width: unset;
+}
+
+.preset-save-container svg {
+  height: 11px;
+}
+
+.grouped-category .child-task-name {
+  font-size: 11px;
+}
+
+.increased-value {
+  color: green;
+}
+
+.child-task .bp5-input {
+  height: 20px;
+  font-size: 11px;
+}

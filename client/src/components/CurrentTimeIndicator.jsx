@@ -1,5 +1,5 @@
 import React from "react";
-import useCurrentTime from "../hooks/useCurrentTime"; // adjust path as needed
+import { useCurrentTime } from "../context/TimeProvider";
 
 const SLOT_HEIGHT = 50; // px per 30min block
 const START_HOUR = 7;   // Schedule starts at 7:00 AM

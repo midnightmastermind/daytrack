@@ -1,12 +1,19 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, Elevation, Tag, Button } from "@blueprintjs/core";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
-import useCurrentTime from "../hooks/useCurrentTime";
+import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurrentTime
 
 const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
-
+  const cutoff = useCurrentCutoff(); 
+  
+  const isPast = useMemo(() => {
+    const slotStart = DateTime.fromFormat(timeSlot, "h:mm a");
+    const slotEnd = slotStart.plus({ minutes: 30 });
+    return slotEnd <= cutoff;
+  }, [cutoff, timeSlot]); 
+  
   const removeTask = (index) => {
     const updated = { ...assignments };
     const updatedTasks = [...(updated[timeSlot] || [])];
@@ -15,12 +22,6 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
     setAssignments(updated);
     onAssignmentsChange?.(updated);
   };
-
-  const now = useCurrentTime(); // updates live
-
-  const slotStart = DateTime.fromFormat(timeSlot, "h:mm a");
-  const slotEnd = slotStart.plus({ minutes: 30 });
-  const isPast = slotEnd <= now;
 
   return (
     <Droppable className={'droppable-container'} droppableId={`${label}_${timeSlot}`} ignoreContainerClipping={true}>
@@ -39,34 +40,43 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
         >
           <div className="timeslot-title">{timeSlot}</div>
           <div className="tag-container">
-            {tasksForSlot.map((task, index) => (
-              <Draggable key={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} draggableId={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} index={index}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className="tag-wrapper"
-                  >
-                    <Tag
-                      minimal={false}
-                      intent="primary"
-                      className="task-tag"
-                      rightIcon={
-                        <Button
-                          icon="cross"
-                          minimal
-                          small
-                          onClick={() => removeTask(index)}
-                        />
-                      }
+            {tasksForSlot.map((task, index) => {
+              let taskDisplay = task.name;
+
+              if (task?.values?.input) {
+                taskDisplay = `${taskDisplay}: ${task.values.input}`;
+              }
+              console.log("taskDisplay: ", taskDisplay);
+              return (
+                <Draggable key={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} draggableId={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className="tag-wrapper"
                     >
-                      {task.name}
-                    </Tag>
-                  </div>
-                )}
-              </Draggable>
-            ))}
+                      <Tag
+                        minimal={false}
+                        intent="primary"
+                        className="task-tag"
+                        rightIcon={
+                          <Button
+                            icon="cross"
+                            minimal
+                            small
+                            onClick={() => removeTask(index)}
+                          />
+                        }
+                      >
+                        {taskDisplay}
+                      </Tag>
+                    </div>
+                  )}
+                </Draggable>
+              )
+            }
+            )}
             {provided.placeholder}
           </div>
         </Card>
@@ -75,4 +85,4 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
   );
 };
 
-export default ScheduleCard;
+export default React.memo(ScheduleCard);

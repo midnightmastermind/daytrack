@@ -2,24 +2,30 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 
-// GET all tasks
+function buildDeepPopulate(levels = 4) {
+  let root = { path: "children" };
+  let current = root;
+
+  for (let i = 1; i < levels; i++) {
+    current.populate = { path: "children" };
+    current = current.populate;
+  }
+
+  return root;
+}
+
+// GET all top-level card tasks with deeply populated children
 router.get('/', async (req, res) => {
   try {
-    Task.find({ "properties.card": true })
-    .populate({
-      path: "children",
-      populate: {
-        path: "children",
-        populate: { path: "children" } // Extend further if needed
-      }
-    })
-    .then(tasks => res.json(tasks))
-    .catch(err => res.status(500).json({ error: err.message }));
+    const tasks = await Task.find({ "properties.card": true })
+      .populate(buildDeepPopulate(6)); // adjust depth here if needed
+
+    res.json(tasks);
   } catch (err) {
+    console.error("Fetch error:", err);
     res.status(500).json({ error: 'Server error' });
   }
 });
-
 // POST a new task
 router.post('/', async (req, res) => {
   try {

@@ -4,6 +4,7 @@ import { DragDropContext } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
+import { TimeProvider } from "./context/TimeProvider";
 import { buildScheduleAssignmentsFromTask, countTasks } from './helpers/taskUtils.js'
 import {
   fetchTasks,
@@ -237,122 +238,125 @@ function App() {
     saveDayPlan(updated, type);
   };
 
+  console.log(tasks);
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="container">
-        <Toolbar
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          planDirty={planDirty}
-          onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
-        />
-        <div className="main-content">
-          <div className="content">
-            <div className="left-side">
-              <TaskBank
-                tasks={tasks}
-                onEditTask={(task) => setTask(task)}
-                onOpenDrawer={() => setIsDrawerOpen(true)}
-                onTaskUpdate={(updatedTask) => {
-                  const newSnapshot = taskSnapshotRef.current.map((t) =>
-                    t._id === updatedTask._id ? updatedTask : t
-                  );
-                  taskSnapshotRef.current = newSnapshot;
-                  setTaskSnapshot(newSnapshot);
-                }}
-              />
-              <div className="schedule-container dual">
-                <div className="time-header">
-                  <div className="selected-date">
-                    <DatePickerPopover
-                      selectedDate={selectedDate}
-                      setSelectedDate={setSelectedDate}
+    <TimeProvider>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="container">
+          <Toolbar
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            planDirty={planDirty}
+            onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
+          />
+          <div className="main-content">
+            <div className="content">
+              <div className="left-side">
+                <TaskBank
+                  tasks={tasks}
+                  onEditTask={(task) => setTask(task)}
+                  onOpenDrawer={() => setIsDrawerOpen(true)}
+                  onTaskUpdate={(updatedTask) => {
+                    const newSnapshot = taskSnapshotRef.current.map((t) =>
+                      t._id === updatedTask._id ? updatedTask : t
+                    );
+                    taskSnapshotRef.current = newSnapshot;
+                    setTaskSnapshot(newSnapshot);
+                  }}
+                />
+                <div className="schedule-container dual">
+                  <div className="time-header">
+                    <div className="selected-date">
+                      <DatePickerPopover
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                      />
+                    </div>
+                    <div className="current-time">
+                      <LiveTime />
+                    </div>
+                    <div className="time-divider" />
+                  </div>
+                  <div className="schedule-header">
+                    <div className="plan-header">Plan</div>
+                    <div className="agenda-header">Agenda</div>
+                  </div>
+                  <div className="schedules-scroll-wrapper">
+                    <Schedule
+                      label="Plan"
+                      timeSlots={timeSlots}
+                      assignments={assignments.preview}
+                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                      setPlanDirty={setPlanDirty}
+                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                    />
+                    <Schedule
+                      label="Agenda"
+                      timeSlots={timeSlots}
+                      assignments={assignments.actual}
+                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
+                      setPlanDirty={setPlanDirty}
+                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
                     />
                   </div>
-                  <div className="current-time">
-                    <LiveTime />
-                  </div>
-                  <div className="time-divider" />
-                </div>
-                <div className="schedule-header">
-                  <div className="plan-header">Plan</div>
-                  <div className="agenda-header">Agenda</div>
-                </div>
-                <div className="schedules-scroll-wrapper">
-                  <Schedule
-                    label="Plan"
-                    timeSlots={timeSlots}
-                    assignments={assignments.preview}
-                    setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
-                    setPlanDirty={setPlanDirty}
-                    onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
-                  />
-                  <Schedule
-                    label="Agenda"
-                    timeSlots={timeSlots}
-                    assignments={assignments.actual}
-                    setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
-                    setPlanDirty={setPlanDirty}
-                    onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
-                  />
                 </div>
               </div>
-            </div>
-            <div className="right-side">
-              <GoalDisplay
-                key={selectedDate.toISOString()}
-                goals={goalsWithProgress}
-                onEditGoal={(goal) => {
-                  setEditingGoal(goal);
-                  setGoalDrawerOpen(true);
-                }}
-              />
-              <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+              <div className="right-side">
+                <GoalDisplay
+                  key={selectedDate.toISOString()}
+                  goals={goalsWithProgress}
+                  onEditGoal={(goal) => {
+                    setEditingGoal(goal);
+                    setGoalDrawerOpen(true);
+                  }}
+                />
+                <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+              </div>
             </div>
           </div>
+
+          <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task">
+            <NewTaskForm
+              task={task}
+              onSave={(taskData) => {
+                const tempId = `temp_${Date.now()}`;
+                dispatch(addTaskOptimistic({ ...taskData, tempId }));
+                dispatch(createTask({ ...taskData, tempId }));
+                setIsDrawerOpen(false);
+              }}
+              onDelete={(t) => {
+                dispatch(deleteTaskOptimistic(t._id));
+                dispatch(deleteTask(t._id));
+                setIsDrawerOpen(false);
+              }}
+            />
+          </Drawer>
+
+          <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal">
+            <GoalForm
+              goal={editingGoal}
+              tasks={tasks}
+              onSave={(goalData) => {
+                const tempId = `temp_${Date.now()}`;
+                if (editingGoal && editingGoal._id) {
+                  dispatch(updateGoalOptimistic({ id: editingGoal._id, updates: goalData }));
+                  dispatch(updateGoal({ id: editingGoal._id, goalData }));
+                } else {
+                  dispatch(addGoalOptimistic({ ...goalData, tempId }));
+                  dispatch(createGoal({ ...goalData, tempId }));
+                }
+                setGoalDrawerOpen(false);
+              }}
+              onDelete={(g) => {
+                dispatch(deleteGoalOptimistic(g._id));
+                dispatch(deleteGoal(g._id));
+                setGoalDrawerOpen(false);
+              }}
+            />
+          </Drawer>
         </div>
-
-        <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task">
-          <NewTaskForm
-            task={task}
-            onSave={(taskData) => {
-              const tempId = `temp_${Date.now()}`;
-              dispatch(addTaskOptimistic({ ...taskData, tempId }));
-              dispatch(createTask({ ...taskData, tempId }));
-              setIsDrawerOpen(false);
-            }}
-            onDelete={(t) => {
-              dispatch(deleteTaskOptimistic(t._id));
-              dispatch(deleteTask(t._id));
-              setIsDrawerOpen(false);
-            }}
-          />
-        </Drawer>
-
-        <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal">
-          <GoalForm
-            goal={editingGoal}
-            tasks={tasks}
-            onSave={(goalData) => {
-              const tempId = `temp_${Date.now()}`;
-              if (editingGoal && editingGoal._id) {
-                dispatch(updateGoalOptimistic({ id: editingGoal._id, updates: goalData }));
-                dispatch(updateGoal({ id: editingGoal._id, goalData }));
-              } else {
-                dispatch(addGoalOptimistic({ ...goalData, tempId }));
-                dispatch(createGoal({ ...goalData, tempId }));
-              }
-              setGoalDrawerOpen(false);
-            }}
-            onDelete={(g) => {
-              dispatch(deleteGoalOptimistic(g._id));
-              dispatch(deleteGoal(g._id));
-              setGoalDrawerOpen(false);
-            }}
-          />
-        </Drawer>
-      </div>
-    </DragDropContext>
+      </DragDropContext>
+    </TimeProvider>
   );
 }
 
