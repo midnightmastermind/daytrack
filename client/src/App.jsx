@@ -5,7 +5,9 @@ import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
-import { buildScheduleAssignmentsFromTask, countTasks } from './helpers/taskUtils.js'
+import { buildScheduleAssignmentsFromTask, countTasks } from './helpers/taskUtils.js';
+import { buildCompoundKey } from "./helpers/goalUtils";
+
 import {
   fetchTasks,
   createTask,
@@ -117,17 +119,6 @@ function App() {
     setPlanDirty(false);
   }, [selectedDate, dayplans]);
 
-  const flattenGoalTaskIds = (goal) => {
-    const ids = new Set();
-    const walk = (task) => {
-      const id = task.task_id || task._id || task.id;
-      if (id) ids.add(id.toString());
-      (task.children || []).forEach(walk);
-    };
-    (goal.tasks || []).forEach(walk);
-    return ids;
-  };
-
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     const resultArray = Object.entries(assignmentsToSave[type]).map(
       ([timeSlot, assignedTasks]) => ({
@@ -135,56 +126,163 @@ function App() {
         assignedTasks,
       })
     );
-
+  
     const existing = dayplans.find(
       (p) => new Date(p.date).toDateString() === selectedDate.toDateString()
     );
-
+  
     const payload = {
       date: selectedDate,
       plan: type === "preview" ? resultArray : existing?.plan || [],
       result: type === "actual" ? resultArray : existing?.result || [],
     };
-
+  
     if (type === "actual") {
       const date = selectedDate.toISOString();
-      const prevCount = countTasks(lastSavedAssignments[type]);
-      const nextCount = countTasks(assignmentsToSave[type]);
+      const countMap = countTasks(assignmentsToSave[type]);
+      console.log("🧮 Final countMap:", countMap);
+  
+      for (const goal of goals) {
+        const goalId = goal._id?.toString?.() || goal.tempId;
+        const goalType = goal.type || "goal";
+        const goalFlowDir = goal.goalFlowDir || "any";
+  
+        for (const task of goal.tasks || []) {
+          const baseId = task.task_id?.toString?.();
+          if (!baseId) {
+            console.warn("⚠️ Task is missing task_id", task);
+            continue;
+          }
+  
+          // === CASE 1: Grouped task from GoalForm UI ===
+          if (task.grouping && task.units && task.unitSettings) {
+            for (const unit of task.units) {
+              if (unit.type === "text") continue;
+              const unitKey = unit.key;
+              const compoundKey = buildCompoundKey(baseId, unitKey);
+              const count = countMap[compoundKey] || 0;
+              const flow = task.unitSettings?.[unitKey]?.flow || "in";
+  
+              const unitSettings = task.unitSettings?.[unitKey] || {};
 
-
-      const allTaskIds = new Set([
-        ...Object.keys(prevCount),
-        ...Object.keys(nextCount),
-      ]);
-
-      for (const taskId of allTaskIds) {
-        const oldVal = prevCount[taskId];
-        const count = nextCount[taskId] || 0;
-
-        const relatedGoals = goals.filter((g) =>
-          flattenGoalTaskIds(g).has(taskId)
-        );
-
-        for (const goal of relatedGoals) {
-          const goalId = goal._id?.toString() || goal.tempId;
-          dispatch(addPendingProgress({ goalId, date, taskId, count }));
-          dispatch(createGoalProgress({ goalId, date, taskId, count }));
+              const payload = {
+                goalId,
+                goal_id: goalId,
+                date,
+                taskId: compoundKey,
+                count,
+                flow,
+                goalFlowDir,
+                inputFlow: flow,
+                reverseFlow: unitSettings.reverseFlow ?? false,
+                hasTarget: unitSettings.hasTarget ?? true,
+                useInput: unitSettings.useInput ?? true,
+                starting: unitSettings.starting || 0
+              };
+  
+              if (!payload.taskId || payload.taskId === "undefined") {
+                console.warn("❌ Skipping invalid taskId in grouped UI", payload);
+                continue;
+              }
+  
+              if (goalType === "goal" && count === 0) {
+                console.log("🛑 Skipping zero-count grouped UI", compoundKey);
+                continue;
+              }
+  
+              console.log(`🔁 [Grouped UI ${goalType}]`, compoundKey, "→", count);
+              dispatch(addPendingProgress(payload));
+              dispatch(createGoalProgress(payload));
+            }
+            continue;
+          }
+          console.log(task);
+          // === CASE 2: Grouped task from DB (flattened structure) ===
+          if (task.grouping && task.unit) {
+            const compoundKey = buildCompoundKey(baseId, task.unit);
+            if (!compoundKey) {
+              console.warn("⚠️ Skipping invalid compoundKey", task);
+              continue;
+            }            const count = countMap[compoundKey] || 0;
+            const flow = task.flow || "in";
+  
+            const payload = {
+              goalId,
+              goal_id: goalId,
+              date,
+              taskId: compoundKey,
+              count,
+              flow,
+              goalFlowDir,
+              inputFlow: flow,
+              reverseFlow: task.reverseFlow ?? false,
+              hasTarget: task.hasTarget ?? true,
+              useInput: task.useInput ?? true,
+              starting: task.starting || 0
+            };
+            
+  
+            if (!payload.taskId || payload.taskId === "undefined") {
+              console.warn("❌ Skipping invalid taskId in grouped DB", payload);
+              continue;
+            }
+  
+            if (goalType === "goal" && count === 0) {
+              console.log("🛑 Skipping zero-count grouped DB", compoundKey);
+              continue;
+            }
+  
+            console.log(`🔁 [Grouped DB ${goalType}]`, compoundKey, "→", count);
+            dispatch(addPendingProgress(payload));
+            dispatch(createGoalProgress(payload));
+            continue;
+          }
+  
+          // === CASE 3: Regular goal or tracker ===
+          const count = countMap[baseId] || 0;
+          const flow = task.flow || "in";
+  
+          const payload = {
+            goalId,
+            goal_id: goalId,
+            date,
+            taskId: baseId,
+            count,
+            flow,
+            goalFlowDir,
+            inputFlow: flow,
+            reverseFlow: task.reverseFlow ?? false,
+            hasTarget: task.hasTarget ?? true,
+            useInput: task.useInput ?? true,
+            starting: task.starting || 0
+          };
+  
+          if (!payload.taskId || payload.taskId === "undefined") {
+            console.warn("❌ Skipping invalid regular taskId", payload);
+            continue;
+          }
+  
+          if (goalType === "goal" && count === 0) {
+            console.log("🛑 Skipping zero-count regular task", baseId);
+            continue;
+          }
+  
+          console.log(`📌 [Regular ${goalType}]`, baseId, "→", count);
+          dispatch(addPendingProgress(payload));
+          dispatch(createGoalProgress(payload));
         }
       }
     }
-
+  
     setLastSavedAssignments({
       ...lastSavedAssignments,
       [type]: assignmentsToSave[type],
-    }); setLastSavedAssignments({
-      ...lastSavedAssignments,
-      [type]: assignmentsToSave[type],
     });
-
+  
     const response = existing
       ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: payload }))
       : await dispatch(createDayPlan({ ...payload }));
-
+  
     AppToaster.show({
       message: response?.payload
         ? `✅ ${type} schedule saved!`
@@ -192,9 +290,9 @@ function App() {
       intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
     });
   };
-
-
-
+  
+  console.log(goals);
+  console.log(tasks);
   const onDragEnd = (result) => {
     const { source, destination, draggableId } = result;
     if (!destination || !source) return;
@@ -209,8 +307,9 @@ function App() {
       const taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
       if (!taskFromBank) return;
 
+      console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
-
+      console.log("[🌿 buildScheduleAssignmentsFromTask] Selected leaves:", selectedLeaves.map(t => t.name));
 
       if (!selectedLeaves.length && taskFromBank.properties?.card) {
         selectedLeaves.push({
@@ -230,15 +329,14 @@ function App() {
           intent: Intent.WARNING,
         });
       }
-      updated[type][slotKey] = [...destSlot, ...newTasks];
 
+      updated[type][slotKey] = [...destSlot, ...newTasks];
     }
 
     setAssignments(updated);
     saveDayPlan(updated, type);
   };
 
-  console.log(tasks);
   return (
     <TimeProvider>
       <DragDropContext onDragEnd={onDragEnd}>
@@ -315,7 +413,7 @@ function App() {
             </div>
           </div>
 
-          <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task">
+          <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task" className="task-form-drawer">
             <NewTaskForm
               task={task}
               onSave={(taskData) => {
@@ -332,19 +430,11 @@ function App() {
             />
           </Drawer>
 
-          <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal">
+          <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal" className="goal-form-drawer">
             <GoalForm
               goal={editingGoal}
               tasks={tasks}
-              onSave={(goalData) => {
-                const tempId = `temp_${Date.now()}`;
-                if (editingGoal && editingGoal._id) {
-                  dispatch(updateGoalOptimistic({ id: editingGoal._id, updates: goalData }));
-                  dispatch(updateGoal({ id: editingGoal._id, goalData }));
-                } else {
-                  dispatch(addGoalOptimistic({ ...goalData, tempId }));
-                  dispatch(createGoal({ ...goalData, tempId }));
-                }
+              onSave={() => {
                 setGoalDrawerOpen(false);
               }}
               onDelete={(g) => {

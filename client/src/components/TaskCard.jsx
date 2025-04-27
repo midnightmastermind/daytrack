@@ -401,17 +401,18 @@ const TaskCard = ({
     </Card>
   );
 
-  return preview ? (
-    cardContent
-  ) : (
-    <Draggable draggableId={taskId} index={index}>
+  return (
+    <Draggable
+      draggableId={taskId}
+      index={index}
+      isDragDisabled={false}
+    >
       {(provided, snapshot) =>
         React.cloneElement(cardContent, {
           ref: provided.innerRef,
           ...provided.draggableProps,
           ...provided.dragHandleProps,
-          className: `task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""
-            }`,
+          className: `task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`,
           style: {
             ...provided.draggableProps.style,
             cursor: snapshot.isDragging ? "grabbing" : "grab",
@@ -421,6 +422,5 @@ const TaskCard = ({
       }
     </Draggable>
   );
-};
-
+}
 export default TaskCard;

@@ -12,7 +12,7 @@ import TaskCard from "./components/TaskCard";
 import ScheduleCard from "./components/ScheduleCard";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { v4 as uuidv4 } from "uuid";
-import { getSelectedLeaves, getTaskKey } from "./helpers/taskUtils";
+import { getSelectedLeaves, getTaskKey, buildScheduleAssignmentsFromTask, getTaskAncestryByIdDeep } from "./helpers/taskUtils";
 import "./NewTaskForm.css";
 
 const ChildEditor = ({ child, onChange, onDelete }) => {
@@ -305,8 +305,8 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               />
             ))}
             <div className="nested-button">
-            <Button icon="plus" minimal onClick={addNestedChild} />
-          </div>
+              <Button icon="plus" minimal onClick={addNestedChild} />
+            </div>
           </div>
         </div>
       )}
@@ -315,33 +315,91 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
 };
 
 const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, onTaskUpdate }) => {
+  const [selectedLeaves, setSelectedLeaves] = useState([]);
+
+  useEffect(() => {
+    if (previewTask) {
+      setSelectedLeaves(getSelectedLeaves(previewTask) || []);
+    }
+  }, [previewTask]);
+
   const handlePreviewDrop = (result) => {
-    if (!result.destination) return;
-
-    const leaves = getSelectedLeaves(previewTask);
-
-    if (leaves?.length) {
-      setPreviewAssignments({ "7:30 AM": leaves });
+    if (!result.destination || !result.source) return;
+    const { destination, draggableId } = result;
+  
+    if (destination.droppableId !== "preview_7:30 AM") return;
+  
+    const freshLeaves = getSelectedLeaves(previewTask) || [];
+    const parentId = (previewTask._id || previewTask.tempId || previewTask.id || "").toString();
+    console.log(draggableId == parentId);
+  
+    if (draggableId === parentId) {
+      if (freshLeaves.length > 0) {
+        // ✅ Some children checked — insert them
+        const assignmentLeaves = freshLeaves.map((leaf) => ({
+          ...leaf,
+          id: leaf.id || leaf._id || leaf.tempId,
+          assignmentId: `${leaf.id || leaf.tempId}-${Date.now()}-${Math.random()}`,
+          assignmentAncestry: getTaskAncestryByIdDeep(previewTask?.children || [], leaf._id || leaf.tempId || leaf.id),
+        }));
+  
+        console.log("handlePreviewDrop result: ", result);
+        console.log("handlePreviewDrop assignmentLeaves: ", assignmentLeaves);
+        console.log("handlePreviewDrop parentId: ", parentId);
+        console.log("handlePreviewDrop freshLeaves: ", freshLeaves);
+  
+        setPreviewAssignments((prev) => ({
+          ...prev,
+          "7:30 AM": [...(prev["7:30 AM"] || []), ...assignmentLeaves],
+        }));
+      } else {
+        // 🧠 No children selected — fallback to inserting the parent itself
+        const assignmentReadyLeaf = {
+          ...previewTask,
+          id: previewTask.id || previewTask._id || previewTask.tempId,
+          assignmentId: `${previewTask.id || previewTask.tempId}-${Date.now()}-${Math.random()}`,
+          assignmentAncestry: [],
+        };
+  
+        console.log("handlePreviewDrop result (parent fallback): ", result);
+        console.log("handlePreviewDrop assignmentReadyLeaf (parent): ", assignmentReadyLeaf);
+        console.log("handlePreviewDrop parentId: ", parentId);
+        console.log("handlePreviewDrop freshLeaves: ", freshLeaves);
+  
+        setPreviewAssignments((prev) => ({
+          ...prev,
+          "7:30 AM": [...(prev["7:30 AM"] || []), assignmentReadyLeaf],
+        }));
+      }
     }
   };
+  
+
+  const handleTaskUpdate = (updatedTask) => {
+    // 🔥 Every time you check a box or input something, refresh the selectedLeaves
+    setSelectedLeaves(getSelectedLeaves(updatedTask) || []);
+    onTaskUpdate(updatedTask);
+  };
+
   return (
     <div className="task-form-preview-panel">
       <h4>Preview</h4>
       <DragDropContext onDragEnd={handlePreviewDrop}>
         <div className="preview-bank-schedule">
           <div className="preview-taskbank">
-            <Droppable className={'droppable-container'} droppableId="preview-bank" ignoreContainerClipping={true}>
+            <Droppable droppableId="preview-bank">
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
+                  {/* Always render the full parent task for editing */}
                   {previewTask && (
                     <TaskCard
+                      key={previewTask._id || previewTask.tempId || previewTask.id}
                       task={previewTask}
                       index={0}
-                      onEditTask={() => { }}
-                      onOpenDrawer={() => { }}
-                      onTaskUpdate={onTaskUpdate}
-                      preview={true}
-                      hideSettings={true}
+                      preview
+                      onEditTask={() => {}}
+                      onOpenDrawer={() => {}}
+                      onTaskUpdate={handleTaskUpdate} // 🔥 use the new live handler
                     />
                   )}
                   {provided.placeholder}
@@ -356,7 +414,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
               timeSlot="7:30 AM"
               assignments={previewAssignments}
               setAssignments={setPreviewAssignments}
-              onAssignmentsChange={() => { }}
+              onAssignmentsChange={() => {}}
             />
           </div>
         </div>
@@ -364,7 +422,6 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
     </div>
   );
 };
-
 const NewTaskForm = ({ task, onSave, onDelete }) => {
   const [taskName, setTaskName] = useState("");
   const [children, setChildren] = useState([]);
@@ -457,7 +514,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
         <div className="task-form-children-section">
           <div className="form-section-header">
             <div className="children-header">Children</div>
-            <Button intent="primary" icon="plus" onClick={addChild} />
+            <Button intent="primary" icon="plus" text="Add Subtask" onClick={addChild} />
           </div>
           <div className="task-form-children-list">
             {children.map((child) => (

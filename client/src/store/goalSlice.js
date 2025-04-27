@@ -1,4 +1,3 @@
-// store/goalSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import goalService from "../services/goalService";
 
@@ -9,8 +8,10 @@ export const fetchGoals = createAsyncThunk("goals/fetch", async () => {
 });
 
 export const createGoal = createAsyncThunk("goals/create", async (goalData) => {
+  console.log("🚀 createGoal thunk called with:", goalData);
   const res = await goalService.createGoal(goalData);
-  return res.data;
+  console.log("✅ createGoal API response:", res.data);
+  return { ...res.data, tempId: goalData.tempId };
 });
 
 export const updateGoal = createAsyncThunk("goals/update", async ({ id, goalData }) => {
@@ -67,11 +68,16 @@ const goalSlice = createSlice({
 
       .addCase(createGoal.fulfilled, (state, action) => {
         const serverGoal = action.payload;
-        const tempId = action.meta.arg.tempId;
+        const tempId = serverGoal.tempId;
+      
+        console.log("📥 createGoal.fulfilled", serverGoal);
+      
         const idx = state.goals.findIndex((g) => g.tempId === tempId);
         if (idx !== -1) {
+          console.log("🔁 Merging serverGoal into optimistic goal at idx:", idx);
           state.goals[idx] = { ...state.goals[idx], ...serverGoal };
         } else {
+          console.log("➕ Pushing new serverGoal (not found by tempId)");
           state.goals.push(serverGoal);
         }
       })

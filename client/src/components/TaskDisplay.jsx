@@ -3,12 +3,25 @@ import React from "react";
 import { Card, CardList, Elevation, Tag } from "@blueprintjs/core";
 import { useSelector } from "react-redux";
 
+const getInputSummary = (input) => {
+  if (typeof input === "string") {
+    return input.trim();
+  }
+  if (typeof input === "object" && input !== null) {
+    return Object.entries(input)
+      .filter(([_, val]) => typeof val?.value !== "undefined")
+      .map(([key, val]) => `${key}: ${val.value}`)
+      .join(", ");
+  }
+  return "";
+};
+
 const extractChains = (task) => {
   const ancestry = task.assignmentAncestry;
   if (Array.isArray(ancestry) && ancestry.length > 0) {
     const chain = ancestry.map((node, index, arr) => {
-      const isInput = node.properties?.input && node.values?.input?.trim() !== "";
-      const label = isInput ? `${node.name}: ${node.values.input.trim()}` : node.name || "(unnamed)";
+      const summary = getInputSummary(node.values?.input);
+      const label = summary ? `${node.name}: ${summary}` : node.name || "(unnamed)";
 
       return {
         key: node._id || node.id || label,
@@ -20,14 +33,15 @@ const extractChains = (task) => {
     return chain.length > 0 ? [chain] : [];
   }
 
-  const isInput = task.properties?.input && task.values?.input?.trim() !== "";
+  const isInput = task.properties?.input && getInputSummary(task.values?.input) !== "";
   const isCheckbox = task.properties?.checkbox && task.values?.checkbox;
   const isCard = task.properties?.card;
   const isSelected = isInput || isCheckbox || isCard;
 
   if (!isSelected) return [];
 
-  const label = isInput ? `${task.name}: ${task.values.input.trim()}` : task.name || "(unnamed)";
+  const summary = getInputSummary(task.values?.input);
+  const label = summary ? `${task.name}: ${summary}` : task.name || "(unnamed)";
 
   return [[{
     key: task._id || task.id || label,
@@ -36,6 +50,7 @@ const extractChains = (task) => {
     minimal: false,
   }]];
 };
+
 
 const groupChains = (chains) => {
   const grouped = {};

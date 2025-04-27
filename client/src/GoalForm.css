@@ -28,6 +28,9 @@
   .goal-form .goal-preview {
     flex: 1;
     margin-left: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .goal-form .goal-actual h4,
@@ -89,7 +92,6 @@
   .goal-actual .header-section {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding-bottom: 2px;
     border-bottom: 1px solid #30363D;
   }
@@ -107,11 +109,11 @@
     display: flex;
     gap: 5;
     justify-content: start;
-    flex: 1;
   }
 
   .goal-form .goal-tags .bp5-tag {
     margin-right: 4px;
+    font-size: 11px;
   }
 
   .goal-form .condition-container {
@@ -120,6 +122,12 @@
     justify-content: start;
     gap: 5px;
     flex: 1.2;
+    align-self: start;
+    margin-left: 20px;
+  }
+
+  .condition-container .bp5-html-select select {
+    font-size: 11px !important;
   }
 
   .goal-form .goal-preview .goal-item {
@@ -127,10 +135,11 @@
     border: 1px solid var(--color-border);
     box-shadow: 0 2px 4px var(--color-shadow);
     height: 90px;
-    margin-top: 30px;
+    margin-top: 42px;
     display: flex;
     flex-direction: column;
-    padding: 0px;
+    width: 160px;
+    padding: 0px !important;
   }
   
   .goal-form .goal-preview .goal-tasks {
@@ -138,6 +147,7 @@
     flex-direction: column;
     justify-content: start;
     margin: 10px;
+    height: 100%;
   }
   
   .goal-form .goal-header {
@@ -188,10 +198,17 @@
     color: gray;
     display: flex;
     margin-bottom: 10px;
+    width: 100%;
   }
 
-  .goal-form .bp5-input-group {
-    max-width: 100px;
+  .header-section .bp5-input-group input {
+  color: white !important;
+  font-size: 11px;
+  width: 100px;
+
+}
+  .goal-tasks-actual .bp5-input-group {
+    max-width: 64px;
   }
 
   .goal-form-section-container {
@@ -222,6 +239,25 @@
   
   .goal-actual .add-task-button {
     margin-top: 10px;
+    width: 90px;
+  }
+
+  .goal-actual .add-task-button .bp5-button {
+    padding: 0px 5px !important;
+    min-height: 20px;
+  }
+
+  .goal-actual .add-task-button .bp5-button-text {
+    color: white !important;
+    font-size: 11px;
+    flex-grow: 0;
+    flex-shrink: 0;
+  }
+  
+  /* Optional: Adjust button styles inside the navbar */
+  .goal-actual .add-task-button svg {
+    height: 15px;
+    width: 15px;
   }
   
   .goal-actual .goal-tasks-actual {
@@ -230,8 +266,262 @@
   
   .goal-actual .goal-task-row {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 5px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #30363D;
+    padding: 10px;
   }
   
+  .goal-actual .goal-header-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #30363D;
+  }
+
+  .goal-actual .goal-type {
+    flex: 1;
+    display: flex;
+    align-content: center;
+    margin-top: 6px;
+  } 
+
+.grouped-unit-row .bp5-fill {
+  color: white !important;
+}
+
+.grouped-unit-row select,
+.grouped-unit-row input {
+  color: white !important;
+  font-size: 11px;
+}
+
+.grouped-unit-row .bp5-switch {
+  margin-top: 5px;
+}
+
+.grouped-unit-row .bp5-input:disabled::placeholder {
+  color: white;
+}
+
+.goal-task-settings .bp5-fill {
+  color: white !important;
+}
+
+.goal-task-settings select,
+.goal-task-settings input {
+  color: white !important;
+  font-size: 11px;
+}
+
+.goal-task-settings .bp5-switch {
+  margin-top: 5px;
+}
+
+.goal-task-settings .bp5-input:disabled::placeholder {
+  color: white;
+}
+
+
+.goal-form .unit-label {
+  min-width: 81px;
+}
+
+.grouped-unit-row select:hover {
+  background-color: rgba(211, 216, 222, 0.5);
+}
+
+.goal-task-settings select:hover {
+  background-color: rgba(211, 216, 222, 0.5);
+}
+
+.grouped-unit-row,
+.goal-task-settings {
+  width: 100%;
+  display: flex;
+  gap: 10px !important;
+}
+
+.grouped-units-container,
+.goal-task {
+  width: 100%;
+}
+
+.switch-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+}
+
+.switch-container .bp5-switch {
+  padding-inline-start: 46px !important;
+  margin-top: 0px !important;
+}
+
+.switch-container .bp5-control-indicator:nth-child(1) {
+  margin-left: unset !important;
+}
+
+.switch-container .bp5-control-indicator:nth-child(2) {
+  margin-right: unset !important;
+}
+
+.switch-container .bp5-switch-inner-text {
+  color: white !important;
+}
+
+.grouped-unit-control {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+}
+
+.grouped-unit-control .switch-container {
+  margin-top: 2px;
+}
+
+.flow-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  align-items: center;
+}
+
+.flow-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+  align-self: start;
+  width: 100%;
+}
+
+.flow-container .switch-container {
+  width: 82px;
+  margin-top: 2px;
+  height: 20px;
+}
+
+.flow-container .bp5-html-select {
+  max-width: 80px;
+  width: 100%;
+  margin-top: 2px;
+  margin-left: 4px;
+}
+
+.input-check {
+  display: flex;
+  max-width: 90px;
+  flex-direction: column;
+  justify-content: center;
+  width: auto;
+  height: 20px;
+  margin-top: 9px;
+}
+
+.starting-container {
+  max-width: 80px;
+  margin-top: 2px;
+  margin-left: 4px;
+}
+
+.starting-container .input-group {
+  max-width: 80px;
+}
+
+.target-container {
+  display: flex;
+  justify-content: start;
+  align-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 211px;
+}
+
+.input-check-container .input-check-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+}
+.input-check .bp5-switch {
+  display: flex;
+}
+
+.target-container .switch-container {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  justify-content: center;
+}
+
+.target-container .target-settings {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+}
+
+.target-container .target-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+  align-self: start;
+  width: 100%;
+}
+
+.target-settings .bp5-input-group {
+  padding-left: 5px;
+}
+
+
+
+.target-conditional {
+  display: flex;
+  margin-top: 2px;
+}
+.time-settings {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 3px;
+  align-items: center;
+}
+
+.time-settings-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+  align-self: start;
+  width: 100%;
+}
+
+.time-settings .bp5-html-select {
+  max-width: 66px;
+  width: 100%;
+  margin-top: 2px;
+  margin-left: 4px;
+}
+
+.grouped-unit-header,
+.goal-task-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+  align-self: start;
+  width: 100%;
+}

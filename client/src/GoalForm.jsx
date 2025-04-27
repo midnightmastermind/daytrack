@@ -1,4 +1,3 @@
-// === GoalForm.jsx ===
 import React, { useState, useEffect } from "react";
 import {
   Button,
@@ -20,6 +19,210 @@ import {
 } from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
 import GoalItem from "./components/GoalItem";
+import { findTaskByIdDeep } from "./helpers/taskUtils";
+import { flattenGoalTasksForSave } from "./helpers/goalUtils";
+
+/** Inline Components **/
+
+const GoalTaskRow = ({ task, updateGoalItem }) => {
+  return (
+    <div className="goal-task-row">
+      <div className="goal-header-container">
+          <div className="goal-tags">
+            {task.path?.map((segment, i) => (
+              <Tag key={`${task.task_id}-segment-${i}`} intent={i === task.path.length - 1 ? "primary" : undefined}>
+                {segment}
+              </Tag>
+            ))}
+          </div>
+        </div>
+      <div className="goal-task">
+        <div className="goal-task-settings">
+          <div className="time-settings">
+            <div className="time-settings-header">Time</div>
+            <HTMLSelect
+              value={task.timeScale}
+              onChange={(e) => updateGoalItem(task.task_id, "timeScale", e.target.value)}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="overall">Overall</option>
+            </HTMLSelect>
+            {/* STARTING AMOUNT (ALWAYS SHOWN) */}
+            <div className="starting-container">
+              <InputGroup
+                value={task.starting || ""}
+                onChange={(e) => updateGoalItem(task.task_id, "starting", e.target.value)}
+                placeholder="Starting"
+              />
+            </div>
+          </div>
+          {/* FLOW SETTINGS */}
+          <div className="flow-container">
+            <div className="flow-header">Flow</div>
+            <HTMLSelect
+              value={task.flow || "any"}
+              onChange={(e) => updateGoalItem(task.task_id, "flow", e.target.value)}
+            >
+              <option value="any">Any</option>
+              <option value="in">In</option>
+              <option value="out">Out</option>
+            </HTMLSelect>
+            <div className="switch-container">
+              <Switch
+                checked={task.reverseFlow ?? false}
+                onChange={(e) => updateGoalItem(task.task_id, "reverseFlow", e.target.checked)}
+                innerLabel="Reverse"
+              />
+            </div>
+          </div>
+          <div className="input-check-container">
+            <div className="input-check-header">Increment</div>
+            <div className="switch-container input-check">
+              <Switch
+                checked={task.useInput ?? true}
+                onChange={(e) => updateGoalItem(task.task_id, "useInput", e.target.checked)}
+                innerLabelChecked="Input"
+                innerLabel="Count"
+              />
+            </div>
+          </div>
+          {/* TARGET SETTINGS */}
+          <div className="target-container">
+            <div className="target-header">Target</div>
+            <div className="target-conditional">
+              <div className="switch-container">
+                <Switch
+                  checked={task.hasTarget ?? true}
+                  onChange={(e) => updateGoalItem(task.task_id, "hasTarget", e.target.checked)}
+                  innerLabel="Target Goal"
+                />
+              </div>
+              {task.hasTarget ?? true ? (
+                <div className="target-settings">
+                  <HTMLSelect
+                    value={task.operator}
+                    onChange={(e) => updateGoalItem(task.task_id, "operator", e.target.value)}
+                  >
+                    <option value="=">=</option>
+                    <option value=">">{" > "}</option>
+                    <option value="<">{" < "}</option>
+                  </HTMLSelect>
+                  <InputGroup
+                    value={task.target}
+                    onChange={(e) => updateGoalItem(task.task_id, "target", e.target.value)}
+                    placeholder="Target"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div >
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
+  if (!unit || unit.type === "text") return null;
+
+  return (
+    <div className="grouped-unit-row">
+      <div className="grouped-unit-control">
+        <div className="grouped-unit-header">Unit</div>
+        <div className="switch-container">
+          <Switch
+            checked={unitState.enabled ?? false}
+            onChange={(e) => updateUnitSettings(unitKey, "enabled", e.target.checked)}
+            innerLabelChecked="Enabled"
+            innerLabel="Disabled"
+          />
+        </div>
+        <Tag>{unit.label}</Tag>
+      </div>
+      <div className="time-settings">
+        <div className="time-settings-header">Time</div>
+        <HTMLSelect
+          value={unitState.timeScale || "daily"}
+          onChange={(e) => updateUnitSettings(unitKey, "timeScale", e.target.value)}
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="overall">Overall</option>
+        </HTMLSelect>
+        {/* ALWAYS RENDER STARTING */}
+        <div className="starting-container">
+          <InputGroup
+            value={unitState.starting || ""}
+            onChange={(e) => updateUnitSettings(unitKey, "starting", e.target.value)}
+            placeholder="Starting"
+          />
+        </div>
+      </div>
+      {/* FLOW SETTINGS */}
+      <div className="flow-container">
+        <div className="flow-header">Flow</div>
+        <HTMLSelect
+          value={unitState.flow || "any"}
+          onChange={(e) => updateUnitSettings(unitKey, "flow", e.target.value)}
+        >
+          <option value="any">Any</option>
+          <option value="in">In</option>
+          <option value="out">Out</option>
+        </HTMLSelect>
+        <div className="switch-container">
+          <Switch
+            checked={unitState.reverseFlow ?? false}
+            onChange={(e) => updateUnitSettings(unitKey, "reverseFlow", e.target.checked)}
+            innerLabel="Reverse"
+          />
+        </div>
+      </div>
+      <div className="input-check-container">
+        <div className="input-check-header">Increment</div>
+        <div className="switch-container input-check">
+          <Switch
+            checked={unitState.useInput ?? true}
+            onChange={(e) => updateUnitSettings(unitKey, "useInput", e.target.checked)}
+            innerLabelChecked="Input"
+            innerLabel="Count"
+          />
+        </div>
+      </div>
+      {/* TARGET SETTINGS */}
+      <div className="target-container">
+        <div className="target-header">Target</div>
+        <div className="target-conditional">
+          <div className="switch-container">
+            <Switch
+              checked={unitState.hasTarget ?? true}
+              onChange={(e) => updateUnitSettings(unitKey, "hasTarget", e.target.checked)}
+              innerLabel="Goal Target"
+            />
+          </div>
+          {unitState.hasTarget ?? true ? (
+            <div className="target-settings">
+              <HTMLSelect
+                value={unitState.operator || "="}
+                onChange={(e) => updateUnitSettings(unitKey, "operator", e.target.value)}
+              >
+                <option value="=">=</option>
+                <option value=">">{" > "}</option>
+                <option value="<">{" < "}</option>
+              </HTMLSelect>
+              <InputGroup
+                value={unitState.target || ""}
+                onChange={(e) => updateUnitSettings(unitKey, "target", e.target.value)}
+                placeholder="Target"
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const getTaskPaths = (tasks = [], prefix = []) => {
   let result = [];
@@ -45,6 +248,8 @@ const ActualPanel = ({
   setHeaderName,
   headerEnabled,
   setHeaderEnabled,
+  goalFlowDir,
+  setGoalFlowDir,
   selectedTasks,
   setSelectedTasks,
   taskOptions,
@@ -52,30 +257,46 @@ const ActualPanel = ({
   setSelectedTaskId,
   isPopoverOpen,
   setIsPopoverOpen,
+  tasks,
 }) => {
   const addTaskToGoal = () => {
     const selected = taskOptions.find((t) => t.id === selectedTaskId);
-    if (selected && !selectedTasks.find((t) => t.task_id === selected.id)) {
-      const goalItem = {
-        task_id: selected.id,
-        path: selected.pathArray,
-        target: 0,
-        operator: "=",
-        valueType: "integer",
-        timeScale: "daily",
-        progress: 0,
-        useInput: false,
-        incrementValue: 1,
-      };
-      setSelectedTasks((prev) => [...prev, goalItem]);
-    }
+    if (!selected || selectedTasks.find((t) => t.task_id === selected.id)) return;
+
+    const originalTask = findTaskByIdDeep(selected.id, tasks);
+    const groupingEnabled = originalTask?.properties?.grouping?.enabled;
+    const units = originalTask?.properties?.grouping?.units || [];
+
+    const goalItem = {
+      task_id: selected.id,
+      path: selected.pathArray,
+      target: 0,
+      operator: "=",
+      valueType: "integer",
+      timeScale: "daily",
+      progress: 0,
+      useInput: false,
+      incrementValue: 1,
+      hasTarget: true,
+      reverseFlow: false,
+      flow: "any",
+      ...(groupingEnabled && {
+        grouping: true,
+        units,
+        unitSettings: {},
+      }),
+    };
+
+    setSelectedTasks((prev) => [...prev, goalItem]);
     setSelectedTaskId("");
     setIsPopoverOpen(false);
   };
 
   const updateGoalItem = (itemId, key, value) => {
     setSelectedTasks((prev) =>
-      prev.map((item) => (item.task_id === itemId ? { ...item, [key]: value } : item))
+      prev.map((item) =>
+        item.task_id === itemId ? { ...item, [key]: value } : item
+      )
     );
   };
 
@@ -126,56 +347,51 @@ const ActualPanel = ({
       </div>
 
       <div className="goal-tasks-actual">
-        {(selectedTasks || []).map((t, idx) => (
-          <div key={`${t.task_id}-${idx}`} className="goal-task-row">
-            <div className="goal-tags">
-              {t.path?.map((segment, i) => (
-                <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
-                  {segment}
-                </Tag>
-              ))}
+        {(selectedTasks || []).map((t, idx) => {
+          return (
+            <div key={`${t.task_id}-${idx}`}>
+              {t.grouping && Array.isArray(t.units) ? (
+                <div className="goal-task-row">
+                  <div className="goal-header-container">
+                    <div className="goal-tags">
+                      {t.path?.map((segment, i) => (
+                        <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
+                          {segment}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grouped-units-container">
+                    {t.units.map((unit) => {
+                      const unitKey = unit.key;
+                      const unitState = t.unitSettings?.[unitKey] || {};
+                      return (
+                        <GroupedUnitRow
+                          key={unitKey}
+                          unit={unit}
+                          unitKey={unitKey}
+                          unitState={unitState}
+                          updateUnitSettings={(field, value) =>
+                            updateGoalItem(t.task_id, "unitSettings", {
+                              ...(t.unitSettings || {}),
+                              [unitKey]: {
+                                ...(t.unitSettings?.[unitKey] || {}),
+                                [field]: value,
+                              },
+                            })
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <GoalTaskRow task={t} updateGoalItem={updateGoalItem} />
+              )}
             </div>
-            <div className="condition-container">
-              <Tooltip content="Toggle between count-based and dynamic (input-based) tracking">
-                <Switch
-                  checked={t.useInput}
-                  onChange={(e) => updateGoalItem(t.task_id, "useInput", e.target.checked)}
-                  disabled={!t.hasInput}
-                  innerLabelChecked="dynamic"
-                  innerLabel="count"
-                />
-              </Tooltip>
-              <HTMLSelect
-                value={t.operator}
-                onChange={(e) => updateGoalItem(t.task_id, "operator", e.target.value)}
-              >
-                <option value="=">=</option>
-                <option value=">">{">"}</option>
-                <option value="<">{"<"}</option>
-              </HTMLSelect>
-              <InputGroup
-                placeholder="Target"
-                value={t.target || ""}
-                onChange={(e) => updateGoalItem(t.task_id, "target", Number(e.target.value))}
-              />
-              <HTMLSelect
-                value={t.timeScale}
-                onChange={(e) => updateGoalItem(t.task_id, "timeScale", e.target.value)}
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="overall">Overall</option>
-              </HTMLSelect>
-            </div>
-            <Button
-              icon="cross"
-              minimal
-              onClick={() =>
-                setSelectedTasks((prev) => prev.filter((item) => item.task_id !== t.task_id))
-              }
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
@@ -185,7 +401,10 @@ const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
   <div className="goal-preview">
     <div className="goal-preview-header">Preview</div>
     <GoalItem
-      goal={{ header: headerEnabled ? headerName : "", tasks: selectedTasks }}
+      goal={{
+        header: headerEnabled ? headerName : "",
+        tasks: selectedTasks,
+      }}
       showEditButton={false}
     />
   </div>
@@ -195,6 +414,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const dispatch = useDispatch();
   const [headerName, setHeaderName] = useState("");
   const [headerEnabled, setHeaderEnabled] = useState(false);
+  const [goalFlowDir, setGoalFlowDir] = useState("any");
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
@@ -202,33 +422,82 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const taskOptions = getTaskPaths(tasks || []);
 
   useEffect(() => {
-    if (goal) {
-      setHeaderName(goal.header || "");
-      setHeaderEnabled(!!goal.header);
-      setSelectedTasks(goal.tasks || []);
-    } else {
+    if (!goal) {
       setHeaderName("");
       setHeaderEnabled(false);
+      setGoalFlowDir("any");
       setSelectedTasks([]);
+      return;
     }
-  }, [goal]);
+
+    setHeaderName(goal.header || "");
+    setHeaderEnabled(!!goal.header);
+    setGoalFlowDir(goal.goalFlowDir || "any");
+
+    const groupedMap = {};
+    const regularTasks = [];
+
+    for (const task of goal.tasks || []) {
+      const taskId = task.task_id?.toString?.();
+      if (!taskId) continue;
+
+      const original = findTaskByIdDeep(taskId, tasks);
+
+      if (task.grouping && task.unit) {
+        const unitKey = task.unit;
+        const group = groupedMap[taskId] || {
+          task_id: taskId,
+          path: task.path || [],
+          grouping: true,
+          type: task.type || "goal",
+          units: original?.properties?.grouping?.units || task.units || [],
+          unitSettings: {},
+        };
+
+        group.unitSettings[unitKey] = {
+          enabled: true,
+          flow: task.flow || "any",
+          ...(task.hasTarget
+            ? {
+              operator: task.operator || "=",
+              target: task.target || 0,
+              timeScale: task.timeScale || "daily",
+            }
+            : {
+              starting: task.starting || 0,
+            }),
+        };
+
+        groupedMap[taskId] = group;
+      } else {
+        regularTasks.push(task);
+      }
+    }
+
+    const rehydrated = [...regularTasks, ...Object.values(groupedMap)];
+    setSelectedTasks(rehydrated);
+  }, [goal, tasks]);
 
   const handleSaveGoal = () => {
+    const flatTasks = flattenGoalTasksForSave(selectedTasks);
     const newGoal = {
       header: headerEnabled ? headerName : "",
-      tasks: selectedTasks,
+      goalFlowDir,
+      tasks: flatTasks,
     };
 
+    const tempId = goal?.tempId || `temp_${uuidv4()}`;
+    const fullGoal = { ...newGoal, tempId };
+
     if (goal && goal._id) {
-      dispatch(updateGoalOptimistic({ id: goal._id, updates: newGoal }));
-      dispatch(updateGoal({ id: goal._id, goalData: newGoal }));
+      dispatch(updateGoalOptimistic({ id: goal._id, updates: fullGoal }));
+      dispatch(updateGoal({ id: goal._id, goalData: fullGoal }));
     } else {
-      const tempId = `temp_${uuidv4()}`;
-      dispatch(addGoalOptimistic({ ...newGoal, tempId }));
-      dispatch(createGoal({ ...newGoal, tempId }));
+      dispatch(addGoalOptimistic(fullGoal));
+      dispatch(createGoal(fullGoal));
     }
 
-    onSave?.(newGoal);
+    onSave?.(fullGoal);
   };
 
   return (
@@ -239,6 +508,8 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           setHeaderName={setHeaderName}
           headerEnabled={headerEnabled}
           setHeaderEnabled={setHeaderEnabled}
+          goalFlowDir={goalFlowDir}
+          setGoalFlowDir={setGoalFlowDir}
           selectedTasks={selectedTasks}
           setSelectedTasks={setSelectedTasks}
           taskOptions={taskOptions}
@@ -246,6 +517,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           setSelectedTaskId={setSelectedTaskId}
           isPopoverOpen={isPopoverOpen}
           setIsPopoverOpen={setIsPopoverOpen}
+          tasks={tasks}
         />
         <PreviewPanel
           headerEnabled={headerEnabled}
@@ -255,7 +527,9 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
       </div>
       <div className="goal-form-actions">
         <Button onClick={handleSaveGoal} text="Save Goal" intent="primary" />
-        {onClose && <Button onClick={onClose} className="cancel-button" text="Cancel" />}
+        {onClose && (
+          <Button onClick={onClose} className="cancel-button" text="Cancel" />
+        )}
       </div>
     </div>
   );

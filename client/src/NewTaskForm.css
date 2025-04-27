@@ -78,7 +78,6 @@
 .task-form .task-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   /* ← fix spacing between children */
   background-color: #1c1e26;
   padding: 8px;
@@ -144,12 +143,12 @@
   margin-bottom: 4px;
 }
 
-.task-form .category-collapse {
+/* .task-form .category-collapse {
   padding-left: 10px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-}
+} */
 
 /* Hide the settings cog if asked */
 .task-form .task-card-settings.task-form .hidden {
@@ -157,11 +156,6 @@
 }
 
 /* === CHILD EDITOR STYLES === */
-.task-form .child-editor {
-  border-left: 2px solid #333;
-  padding-left: 10px;
-}
-
 .task-form .child-editor-row {
   display: flex;
   flex-direction: row;
@@ -214,7 +208,7 @@
     padding: 8px 12px;
     border-radius: 6px;
   } */
-  
+
   .task-form-actions {
     margin-top: 20px;
   }
@@ -326,7 +320,8 @@
 /* Category containers */
 .task-form .preview-taskbank .category-container {
   height: 100%;
-  margin: 0px 3px;
+  /* margin: 0px 3px; */
+  margin: 0px 0px;
   display: flex;
   flex-direction: column;
   align-items: start;
@@ -556,11 +551,14 @@
 .form-section-header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: end;  
+  border-bottom: 2px solid #30363D;
+  margin-bottom: 5px;
 }
 
 .form-section-header .bp5-button {
   font-size: 11px;
+  padding: 3px 3px !important;
 }
 
 .task-form .children-header {
@@ -582,7 +580,8 @@
 .task-form-children-list {
   overflow-y: scroll;
   height: 100%;
-  max-height: 70vh
+  max-height: 70vh;
+  margin: 3px;
 }
 
 .task-form-children-list input {
@@ -698,15 +697,18 @@
   font-size: 11px;
   color: gray;
   display: flex;
+  border-bottom: 2px solid #30363D;
+  margin-bottom: 5px;
 }
 
 .category-children-container .nested-children {
   padding-left: 0px;
   background-color: #1A2129;
   border: 1px solid #30363D;
-  border-radius: 4px;
+  border-radius: 1px;
+  margin: 10px;
 }
 
 .category-children-container .child-editor {
-  margin: 5px;
+  margin: 3px;
 }

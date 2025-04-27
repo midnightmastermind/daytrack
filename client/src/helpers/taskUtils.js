@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { buildCompoundKey } from "./goalUtils";
 
 export function findTaskByIdDeep(id, tasks) {
   if (!id || !Array.isArray(tasks)) return null;
@@ -24,8 +25,6 @@ export function findTaskByIdDeep(id, tasks) {
 }
 
 export function getSelectedLeaf(task) {
-  console.log("[getSelectedLeaf] called with:", task);
-
   let selected = null;
   let fallback = null;
 
@@ -39,9 +38,13 @@ export function getSelectedLeaf(task) {
 
     const nextAncestry = [...ancestry, current];
 
+    const hasValidInput =
+      node.properties?.input &&
+      ((typeof node.values?.input === "string" && node.values.input.trim().length > 0) ||
+       (typeof node.values?.input === "object" && Object.keys(node.values.input).length > 0));
+
     const isValid =
-      (node.properties?.checkbox && node.values?.checkbox === true) ||
-      (node.properties?.input && node.values?.input?.trim?.().length > 0);
+      (node.properties?.checkbox && node.values?.checkbox === true) || hasValidInput;
 
     const isLeaf = !node.children || node.children.length === 0;
 
@@ -65,20 +68,9 @@ export function getSelectedLeaf(task) {
   }
 
   walk(task);
-
-  if (!selected && fallback) {
-    console.warn("[getSelectedLeaf] ⚠️ no valid leaf found, using fallback:", fallback.name);
-    return fallback;
-  }
-
-  if (!selected) {
-    console.warn("[getSelectedLeaf] ❌ no valid leaf OR fallback found");
-    return task; // fallback to parent
-  }
-
-  console.log("[getSelectedLeaf] ✅ found:", selected.name);
-  return selected;
+  return selected || fallback || task;
 }
+
 export function getSelectedLeaves(task) {
   const selected = [];
 
@@ -91,18 +83,28 @@ export function getSelectedLeaves(task) {
     };
 
     const nextAncestry = [...ancestry, current];
+    const isLeaf = !node.children || node.children.length === 0;
+
+    // === FIXED LOGIC: Grouped inputs MUST be checked to count
+    const isGrouped = node.properties?.group === true && node.properties?.input === true;
+    const isChecked = node.values?.checkbox === true;
+
+    const hasValidInput =
+      typeof node.values?.input === "string"
+        ? node.values.input.trim() !== ""
+        : typeof node.values?.input === "object" &&
+          Object.values(node.values.input).some((val) =>
+            typeof val === "object" ? typeof val.value === "number" && val.value !== 0 : !!val
+          );
 
     const isValid =
-      (node.properties?.checkbox && node.values?.checkbox === true) ||
-      (node.properties?.input && node.values?.input?.trim?.().length > 0);
-
-    const isLeaf = !node.children || node.children.length === 0;
+      (isGrouped ? isChecked && hasValidInput : isChecked || hasValidInput);
 
     if (isLeaf && isValid) {
       selected.push({
         ...node,
         assignmentAncestry: nextAncestry,
-        assignmentId: node._id || node.tempId || node.id || uuidv4(),
+        assignmentId: `${node._id || node.tempId || node.id || uuidv4()}-${Date.now()}-${Math.random()}`,
       });
     }
 
@@ -112,13 +114,6 @@ export function getSelectedLeaves(task) {
   }
 
   walk(task);
-
-  if (!selected.length) {
-    console.warn("[getSelectedLeaves] ❌ no valid leaves found");
-  } else {
-    console.log("[getSelectedLeaves] ✅ found:", selected.map(x => x.name));
-  }
-
   return selected;
 }
 
@@ -126,14 +121,27 @@ export function getSelectedLeaves(task) {
 export function buildScheduleAssignmentsFromTask(task) {
   const selected = getSelectedLeaves(task);
 
-  return selected.map((leaf) => ({
-    ...leaf,
-    id: leaf._id?.toString() || leaf.tempId || leaf.id,
-    originalId: leaf._id?.toString() || leaf.tempId || leaf.id,
-    assignmentId: `${leaf._id || leaf.tempId || uuidv4()}-${Date.now()}-${Math.random()}`,
-    assignmentAncestry: leaf.assignmentAncestry || [],
-  }));
+  if (!selected.length) {
+    console.warn("[buildScheduleAssignmentsFromTask] ❌ No valid leaf tasks found");
+  } else {
+    console.log("[buildScheduleAssignmentsFromTask] ✅ selected:", selected.map(x => x.name));
+  }
+
+  return selected.map(leaf => {
+    const ancestry = leaf.assignmentAncestry || [];
+    const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
+    const groupId = parentGrouping?._id?.toString() || leaf._id?.toString();
+
+    return {
+      ...leaf,
+      id: leaf._id?.toString() || leaf.tempId || leaf.id,
+      originalId: groupId, // override originalId to grouping parent
+      assignmentId: leaf.assignmentId,
+      assignmentAncestry: ancestry,
+    };
+  });
 }
+
 
 
 export const getTaskAncestryByIdDeep = (taskTree = [], taskId, ancestry = []) => {
@@ -174,11 +182,49 @@ export const getTaskKey = (task) => {
 
 export const countTasks = (assignments) => {
   const countMap = {};
+
   for (const slotTasks of Object.values(assignments)) {
     for (const task of slotTasks) {
-      const id = task.originalId;
-      if (id) countMap[id] = (countMap[id] || 0) + 1;
+      const ancestry = task.assignmentAncestry || [];
+      const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
+      const groupId = parentGrouping?._id?.toString() || task.originalId;
+
+      // Regular task count (non-input)
+      countMap[groupId] = (countMap[groupId] || 0) + 1;
+
+      // Grouped input counts
+      if (task.properties?.group && task.values?.input) {
+        const inputValues = task.values.input;
+
+        for (const [key, val] of Object.entries(inputValues)) {
+          if (typeof val === "object" && typeof val.value === "number") {
+            const compoundKey = buildCompoundKey(groupId, key);
+            countMap[compoundKey] = (countMap[compoundKey] || 0) + val.value;
+            console.log(`📐 countTasks: ${compoundKey} += ${val.value}`);
+          }
+        }
+      }
     }
   }
+
+  console.log("✅ Final countMap:", countMap);
   return countMap;
+};
+
+
+// export const countTasks = (assignments) => {
+//   const countMap = {};
+//   for (const slotTasks of Object.values(assignments)) {
+//     for (const task of slotTasks) {
+//       const id = task.originalId;
+//       if (id) countMap[id] = (countMap[id] || 0) + 1;
+//     }
+//   }
+//   return countMap;
+// };
+
+export const getCompoundUnitKey = (task) => {
+  if (!task.grouping || !task.unit) return null;
+  const base = task.task_id?.toString?.() || task._id?.toString?.();
+  return `${base}__${task.unit}`;
 };

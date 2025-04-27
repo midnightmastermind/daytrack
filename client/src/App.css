@@ -244,14 +244,18 @@ p {
 }
 .container .goal-display-container {
   width: 100%;
-  height: 50vh;
+  min-height: 49vh;
   border: 1px solid var(--color-border);
   background-color: var(--color-bg);
+  overflow: hidden;
 }
 
 .container .display {
   width: 100%;
-  height: 50vh;
+  height: 100%;
+  min-height: 41.45vh;
+  max-height: 41.45vh;
+  overflow-y: scroll;
 }
 
 .container .task-bank .bp5-card {
@@ -322,6 +326,7 @@ p {
   color: white !important;
   font-size: 12px;
 }
+
 
 .time-header .bp5-icon-calendar {
   color: white !important;
@@ -633,6 +638,7 @@ p {
 
 .container .display-container {
   width: 100%;
+  min-height: 47vh;
   margin-top: 10px;
   border: 1px solid var(--color-border);
 }
@@ -747,9 +753,11 @@ p {
   flex-wrap: wrap;
   width: 100%;
   flex-direction: row;
-  height: 100%;
   overflow-y: scroll;
+  overflow-x: hidden;
   margin: 5px;
+  align-content: start;
+  height: 38vh;
 }
 
 .goal-display-container .goal-header-preview {
@@ -804,13 +812,70 @@ p {
 }
 
 .goal-display-container .goals-container .goal-tasks {
-  display: flex;
+    display: flex;
   flex-direction: column;
   justify-content: start;
   margin: 10px;
+  height: 100%;
 }
 
-.goal-display-container .goal-task {
+.goal-display-container .goals-container .unit-progress .bp5-fill {
+  font-weight: bold;
+}
+
+.goal-display-container .goals-container .goal-units-container,
+.goal-form .goal-preview .goal-units-container{
+  height: 100%;
+}
+
+.goal-display-container .goals-container .goal-unit,
+.goal-form .goal-preview .goal-unit{
+  height: 100%;
+}
+
+
+.goal-display-container .goals-container .goal-unit .bp5-tag,
+.goal-form .goal-preview .goal-unit .bp5-tag{
+  height: 50%;
+}
+
+.goal-display-container .goals-container .goal-task-grouped,
+.goal-form .goal-preview .goal-task-grouped {
+  display: flex;
+  height: 100%;
+}
+
+.goal-display-container .goals-container .group-unit-header,
+.goal-form .goal-preview .group-unit-header {
+  min-width: unset !important;
+}
+
+
+.goal-display-container .goal-unit .bp5-tag,
+.goal-form .goal-preview .goal-unit .bp5-tag {
+  width: 100%;
+}
+
+.goal-display-container .goal-unit .unit-tag,
+.goal-form .goal-preview .goal-unit .unit-tag {
+  color: white !important;
+}
+
+
+.goal-display-container .goal-units-container,
+.goal-form .goal-preview .goal-units-container {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5px;
+}
+
+.goal-display-container .bp5-tag,
+.goal-form .goal-preview .bp5-tag {
+  font-size: 11px !important;
+}
+
+.goal-display-container .goal-task,
+  .goal-form .goal-preview .goal-task {
   justify-content: space-between;
 }
 /* Scrollbar size */
@@ -956,6 +1021,13 @@ p {
   margin: 3px;
 }
 
+.preset-unit .unit-label {
+  margin-right: 3px;
+}
+
+.preset-unit .unit-value {
+  font-weight: bold;
+}
 .preset-unit .bp5-text-overflow-ellipsis {
   display: flex !important;
   justify-content: space-between !important;
@@ -1056,4 +1128,12 @@ p {
 .child-task .bp5-input {
   height: 20px;
   font-size: 11px;
+}
+
+.goal-form-drawer {
+  width: auto !important;
+}
+
+.task-form-drawer {
+  width: auto !important;
 }
