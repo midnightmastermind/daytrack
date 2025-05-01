@@ -95,14 +95,14 @@ export const makeSelectGoalsWithProgress = (selectedDate) =>
             flow: task.flow || "any",
           };
         });
-
+        
         // ✅ Attach totalProgress using new helper
-        const totalProgress = calculateGoalProgress({ ...goal, tasks: enrichedTasks });
+        //const totalProgress = calculateGoalProgress({ ...goal, tasks: enrichedTasks });
 
         return {
           ...goal,
           tasks: enrichedTasks,
-          totalProgress,
+          //totalProgress,
         };
       });
     }
