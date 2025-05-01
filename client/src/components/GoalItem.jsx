@@ -7,8 +7,6 @@ import { findTaskByIdDeep } from "../helpers/taskUtils";
 const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
   const tasks = useSelector((state) => state.tasks.tasks || []);
 
-  console.log(goal);
-
   const getLiveTaskName = (taskId) => {
     const match = findTaskByIdDeep(taskId, tasks);
     return match?.name || "(unknown)";

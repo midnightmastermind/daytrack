@@ -70,6 +70,15 @@ export function flattenGoalTasksForSave(tasks = []) {
       }
     return `${taskId}__${unit}`;
   };
+
+  export const buildCompoundChildKey = ( taskId, child, unit ) => {
+    if (!taskId || !unit) {
+        console.warn("⚠️ buildCompoundKey: missing taskId or unitKey", { taskId, unit });
+        return "";
+      }
+    return `${taskId}__${child}__${unit}`;
+  };
+  
   
   export function splitCompoundKey(compoundKey) {
     if (!compoundKey) return [null, null];
@@ -88,12 +97,21 @@ export function flattenGoalTasksForSave(tasks = []) {
  * Returns +1, -1, or 0 if not applicable.
  */
 export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
+    console.log("====getFlowMultiplier====");
+
     let direction = 0;
     if (goalFlow === "any") {
       direction = inputFlow === "in" ? 1 : -1;
     } else if (goalFlow === inputFlow) {
       direction = 1;
     }
+    console.log("flowObject: ", {
+      goalFlow,
+      inputFlow,
+      reverseFlow,
+      direction
+    });
+
     return reverseFlow ? -direction : direction;
   }
   
@@ -139,14 +157,21 @@ export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
       hasTarget = true,
       starting = 0,
       tasks = [],
-      flow: goalFlow = "any",
+      flow: goalFlow,
       reverseFlow = false,
     } = goal;
   
     let total = 0;
-  
+    console.log("calculateGoalProgress: ", {
+      hasTarget,
+      starting,
+      tasks,
+      goal,
+      reverseFlow
+    });
     for (const task of tasks) {
       if (task.grouping && Array.isArray(task.units)) {
+        console.log("GROUPED TASK: ", task);
         for (const unit of task.units) {
           const inputFlow = unit.flow || "in";
           const value = unit.progress || 0;
@@ -157,7 +182,7 @@ export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
             count,
             value,
             inputFlow,
-            goalFlow,
+            goalFlow: task.flow || "any",
             reverseFlow,
             hasTarget,
             starting: unit.starting || 0,
@@ -167,6 +192,7 @@ export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
           total += hasTarget ? progress : progress - (unit.starting || 0);
         }
       } else {
+        console.log("Regular TASK: ", task);
         const inputFlow = task.flow || "in";
         const value = task.progress || 0;
         const count = task.count || 0;
@@ -176,7 +202,7 @@ export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
           count,
           value,
           inputFlow,
-          goalFlow,
+          goalFlow: task.flow || "any",
           reverseFlow,
           hasTarget,
           starting: task.starting || 0,

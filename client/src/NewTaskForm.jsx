@@ -331,7 +331,6 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
   
     const freshLeaves = getSelectedLeaves(previewTask) || [];
     const parentId = (previewTask._id || previewTask.tempId || previewTask.id || "").toString();
-    console.log(draggableId == parentId);
   
     if (draggableId === parentId) {
       if (freshLeaves.length > 0) {
@@ -342,11 +341,6 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
           assignmentId: `${leaf.id || leaf.tempId}-${Date.now()}-${Math.random()}`,
           assignmentAncestry: getTaskAncestryByIdDeep(previewTask?.children || [], leaf._id || leaf.tempId || leaf.id),
         }));
-  
-        console.log("handlePreviewDrop result: ", result);
-        console.log("handlePreviewDrop assignmentLeaves: ", assignmentLeaves);
-        console.log("handlePreviewDrop parentId: ", parentId);
-        console.log("handlePreviewDrop freshLeaves: ", freshLeaves);
   
         setPreviewAssignments((prev) => ({
           ...prev,
@@ -360,11 +354,6 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
           assignmentId: `${previewTask.id || previewTask.tempId}-${Date.now()}-${Math.random()}`,
           assignmentAncestry: [],
         };
-  
-        console.log("handlePreviewDrop result (parent fallback): ", result);
-        console.log("handlePreviewDrop assignmentReadyLeaf (parent): ", assignmentReadyLeaf);
-        console.log("handlePreviewDrop parentId: ", parentId);
-        console.log("handlePreviewDrop freshLeaves: ", freshLeaves);
   
         setPreviewAssignments((prev) => ({
           ...prev,

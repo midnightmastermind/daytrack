@@ -5,8 +5,8 @@ import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
-import { buildScheduleAssignmentsFromTask, countTasks } from './helpers/taskUtils.js';
-import { buildCompoundKey } from "./helpers/goalUtils";
+import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep } from './helpers/taskUtils.js';
+import { buildCompoundKey, splitCompoundKey } from "./helpers/goalUtils";
 
 import {
   fetchTasks,
@@ -96,7 +96,6 @@ function App() {
     return slots;
   };
   const timeSlots = generateTimeSlots();
-
   useEffect(() => {
     const found = dayplans.find((plan) =>
       new Date(plan.date).toDateString() === selectedDate.toDateString()
@@ -120,6 +119,8 @@ function App() {
   }, [selectedDate, dayplans]);
 
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
+    console.log("====saveDayPlan====");
+  
     const resultArray = Object.entries(assignmentsToSave[type]).map(
       ([timeSlot, assignedTasks]) => ({
         timeSlot,
@@ -140,107 +141,86 @@ function App() {
     if (type === "actual") {
       const date = selectedDate.toISOString();
       const countMap = countTasks(assignmentsToSave[type]);
-      console.log("🧮 Final countMap:", countMap);
-  
+      
       for (const goal of goals) {
         const goalId = goal._id?.toString?.() || goal.tempId;
         const goalType = goal.type || "goal";
-        const goalFlowDir = goal.goalFlowDir || "any";
   
         for (const task of goal.tasks || []) {
           const baseId = task.task_id?.toString?.();
-          if (!baseId) {
-            console.warn("⚠️ Task is missing task_id", task);
-            continue;
-          }
+          if (!baseId) continue;
+          const realTask = findTaskByIdDeep(baseId, tasks);
+        
+          console.log("realTask: ", realTask);
+          const realFlow = realTask?.properties?.flow || "in";
   
-          // === CASE 1: Grouped task from GoalForm UI ===
+          // === CASE 1: Grouped UI ===
           if (task.grouping && task.units && task.unitSettings) {
             for (const unit of task.units) {
               if (unit.type === "text") continue;
+  
               const unitKey = unit.key;
               const compoundKey = buildCompoundKey(baseId, unitKey);
               const count = countMap[compoundKey] || 0;
-              const flow = task.unitSettings?.[unitKey]?.flow || "in";
-  
               const unitSettings = task.unitSettings?.[unitKey] || {};
-
+  
+              
               const payload = {
                 goalId,
                 goal_id: goalId,
                 date,
                 taskId: compoundKey,
                 count,
-                flow,
-                goalFlowDir,
-                inputFlow: flow,
+                inputFlow: realFlow,
+                goalFlow: unitSettings.flow || "any",
                 reverseFlow: unitSettings.reverseFlow ?? false,
-                hasTarget: unitSettings.hasTarget ?? true,
                 useInput: unitSettings.useInput ?? true,
-                starting: unitSettings.starting || 0
+                hasTarget: unitSettings.hasTarget ?? true,
+                starting: unitSettings.starting || 0,
               };
   
-              if (!payload.taskId || payload.taskId === "undefined") {
-                console.warn("❌ Skipping invalid taskId in grouped UI", payload);
-                continue;
-              }
-  
-              if (goalType === "goal" && count === 0) {
-                console.log("🛑 Skipping zero-count grouped UI", compoundKey);
-                continue;
-              }
-  
-              console.log(`🔁 [Grouped UI ${goalType}]`, compoundKey, "→", count);
+              if (goalType === "goal" && count === 0) continue;
               dispatch(addPendingProgress(payload));
               dispatch(createGoalProgress(payload));
             }
             continue;
           }
-          console.log(task);
-          // === CASE 2: Grouped task from DB (flattened structure) ===
+  
+          // === CASE 2: Grouped DB ===
           if (task.grouping && task.unit) {
+            const childCountMap = filterByTaskAndUnit(countMap, baseId, task.unit);
             const compoundKey = buildCompoundKey(baseId, task.unit);
-            if (!compoundKey) {
-              console.warn("⚠️ Skipping invalid compoundKey", task);
-              continue;
-            }            const count = countMap[compoundKey] || 0;
-            const flow = task.flow || "in";
-  
-            const payload = {
-              goalId,
-              goal_id: goalId,
-              date,
-              taskId: compoundKey,
-              count,
-              flow,
-              goalFlowDir,
-              inputFlow: flow,
-              reverseFlow: task.reverseFlow ?? false,
-              hasTarget: task.hasTarget ?? true,
-              useInput: task.useInput ?? true,
-              starting: task.starting || 0
-            };
-            
-  
-            if (!payload.taskId || payload.taskId === "undefined") {
-              console.warn("❌ Skipping invalid taskId in grouped DB", payload);
-              continue;
-            }
-  
-            if (goalType === "goal" && count === 0) {
-              console.log("🛑 Skipping zero-count grouped DB", compoundKey);
+
+            for (const [key, value] of Object.entries(childCountMap)) {
+              const childId = splitCompoundKey(key)[0];
+              const childTask = findTaskByIdDeep(childId, tasks);
+              const count = value || 0;
+    
+              const realInputFlow = childTask?.values?.input?.[task.unit]?.flow || "in";
+    
+              const payload = {
+                goalId,
+                goal_id: goalId,
+                date,
+                taskId: compoundKey,
+                count,
+                inputFlow: realInputFlow, // ✅ FIXED: from task.values.input[unit].flow
+                goalFlow: task.flow || "any",
+                reverseFlow: task.reverseFlow ?? false,
+                useInput: task.useInput ?? true,
+                hasTarget: task.hasTarget ?? true,
+                starting: task.starting || 0,
+              };
+    
+              if (goalType === "goal" && count === 0) continue;
+              dispatch(addPendingProgress(payload));
+              dispatch(createGoalProgress(payload));
               continue;
             }
-  
-            console.log(`🔁 [Grouped DB ${goalType}]`, compoundKey, "→", count);
-            dispatch(addPendingProgress(payload));
-            dispatch(createGoalProgress(payload));
-            continue;
           }
   
-          // === CASE 3: Regular goal or tracker ===
+          // === CASE 3: Regular ===
           const count = countMap[baseId] || 0;
-          const flow = task.flow || "in";
   
           const payload = {
             goalId,
@@ -248,26 +228,15 @@ function App() {
             date,
             taskId: baseId,
             count,
-            flow,
-            goalFlowDir,
-            inputFlow: flow,
+            inputFlow: realFlow,
+            goalFlow: task.flow || "any",
             reverseFlow: task.reverseFlow ?? false,
-            hasTarget: task.hasTarget ?? true,
             useInput: task.useInput ?? true,
-            starting: task.starting || 0
+            hasTarget: task.hasTarget ?? true,
+            starting: task.starting || 0,
           };
   
-          if (!payload.taskId || payload.taskId === "undefined") {
-            console.warn("❌ Skipping invalid regular taskId", payload);
-            continue;
-          }
-  
-          if (goalType === "goal" && count === 0) {
-            console.log("🛑 Skipping zero-count regular task", baseId);
-            continue;
-          }
-  
-          console.log(`📌 [Regular ${goalType}]`, baseId, "→", count);
+          if (goalType === "goal" && count === 0) continue;
           dispatch(addPendingProgress(payload));
           dispatch(createGoalProgress(payload));
         }
@@ -291,9 +260,8 @@ function App() {
     });
   };
   
-  console.log(goals);
-  console.log(tasks);
   const onDragEnd = (result) => {
+    console.log("====onDragEnd====");
     const { source, destination, draggableId } = result;
     if (!destination || !source) return;
 

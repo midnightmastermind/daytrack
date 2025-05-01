@@ -8,9 +8,7 @@ export const fetchGoals = createAsyncThunk("goals/fetch", async () => {
 });
 
 export const createGoal = createAsyncThunk("goals/create", async (goalData) => {
-  console.log("🚀 createGoal thunk called with:", goalData);
   const res = await goalService.createGoal(goalData);
-  console.log("✅ createGoal API response:", res.data);
   return { ...res.data, tempId: goalData.tempId };
 });
 
@@ -69,15 +67,11 @@ const goalSlice = createSlice({
       .addCase(createGoal.fulfilled, (state, action) => {
         const serverGoal = action.payload;
         const tempId = serverGoal.tempId;
-      
-        console.log("📥 createGoal.fulfilled", serverGoal);
-      
+            
         const idx = state.goals.findIndex((g) => g.tempId === tempId);
         if (idx !== -1) {
-          console.log("🔁 Merging serverGoal into optimistic goal at idx:", idx);
           state.goals[idx] = { ...state.goals[idx], ...serverGoal };
         } else {
-          console.log("➕ Pushing new serverGoal (not found by tempId)");
           state.goals.push(serverGoal);
         }
       })

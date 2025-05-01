@@ -7,8 +7,7 @@ import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurre
 const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
   const cutoff = useCurrentCutoff(); 
-  console.log("Schedule Card preview: ", taskPreview);
-  console.log("Schedule Card assignments: ", assignments);
+
   const isPast = useMemo(() => {
     const slotStart = DateTime.fromFormat(timeSlot, "h:mm a");
     const slotEnd = slotStart.plus({ minutes: 30 });
@@ -54,7 +53,7 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
                   taskDisplay = `${taskDisplay}: ${parts.join(", ")}`;
                 }
               }
-              console.log("taskDisplay: ", taskDisplay);
+              
               return (
                 <Draggable key={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} draggableId={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} index={index}>
                   {(provided) => (

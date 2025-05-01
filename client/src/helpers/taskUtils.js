@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { buildCompoundKey } from "./goalUtils";
+import { buildCompoundKey, buildCompoundChildKey } from "./goalUtils";
 
 export function findTaskByIdDeep(id, tasks) {
   if (!id || !Array.isArray(tasks)) return null;
@@ -198,9 +198,10 @@ export const countTasks = (assignments) => {
 
         for (const [key, val] of Object.entries(inputValues)) {
           if (typeof val === "object" && typeof val.value === "number") {
-            const compoundKey = buildCompoundKey(groupId, key);
+            const child_id = task._d === groupId ? null : task.id;
+            const compoundKey = buildCompoundChildKey(groupId, child_id, key);
             countMap[compoundKey] = (countMap[compoundKey] || 0) + val.value;
-            console.log(`📐 countTasks: ${compoundKey} += ${val.value}`);
+            // console.log(`📐 countTasks: ${compoundKey} += ${val.value}`);
           }
         }
       }
@@ -211,6 +212,21 @@ export const countTasks = (assignments) => {
   return countMap;
 };
 
+export const filterByTaskAndUnit = (countMap, taskId, unit) => {
+  const result = {};
+  const prefix = `${taskId}__`;
+  const suffix = `__${unit}`;
+
+  for (const [key, value] of Object.entries(countMap)) {
+    if (key.startsWith(prefix) && key.endsWith(suffix)) {
+      // Remove the taskId and the following double underscore from the key
+      const newKey = key.slice(prefix.length);
+      result[newKey] = value;
+    }
+  }
+
+  return result;
+}
 
 // export const countTasks = (assignments) => {
 //   const countMap = {};
@@ -223,8 +239,8 @@ export const countTasks = (assignments) => {
 //   return countMap;
 // };
 
-export const getCompoundUnitKey = (task) => {
+export const getCompoundUnitKey = (task, child) => {
   if (!task.grouping || !task.unit) return null;
   const base = task.task_id?.toString?.() || task._id?.toString?.();
-  return `${base}__${task.unit}`;
+  return `${base}_${child}_${task.unit}`;
 };

@@ -482,7 +482,6 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
     const flatTasks = flattenGoalTasksForSave(selectedTasks);
     const newGoal = {
       header: headerEnabled ? headerName : "",
-      goalFlowDir,
       tasks: flatTasks,
     };
 
