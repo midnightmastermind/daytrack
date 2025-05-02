@@ -35,21 +35,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
 
           // === GROUPED INPUT TASK ===
           if (t.grouping && Array.isArray(t.units)) {
-            const unitSettings = t.unitSettings || (t.unit ? {
-              [t.unit]: {
-                enabled: true,
-                flow: t.flow || "any",
-                ...(t.type === "goal"
-                  ? {
-                      operator: t.operator || "=",
-                      target: t.target || 0,
-                      timeScale: t.timeScale || "daily",
-                    }
-                  : {
-                      starting: t.starting || 0,
-                    }),
-              }
-            } : {});
+            const unitSettings = t.unitSettings;
             
             const children = Object.entries(unitSettings)
             .filter(([unitKey, unit]) => {
@@ -66,11 +52,11 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                 operator: unit.operator,
                 timeScale: unit.timeScale,
                 starting: unit.starting,
-                type: t.type,
-                progress: unitMeta?.progress || 0, // 🔥 this is what was missing
+                type: unit.type,
+                progress: 0, // 🔥 this is what was missing
               };
             });
-
+console.log(children);
             if (children.length === 0) return null;
 
             return (
@@ -107,7 +93,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                         className="goal-unit"
                       >
                         <Tag className="unit-tag" minimal>{flowIcon} {label}</Tag>
-                        {t.type === "goal" ? (
+                        {target ? (
                           <Tag className="unit-progress" intent={intent} minimal={!isComplete}>
                             {current} / {target}
                           </Tag>

@@ -60,7 +60,7 @@ function App() {
   const { dayplans } = useSelector((state) => state.dayplans);
   const { goals } = useSelector((state) => state.goals);
   const { goalProgress } = useSelector((state) => state.goalProgress);
-
+console.log(goals);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
 
@@ -157,28 +157,16 @@ function App() {
         for (const task of goal.tasks || []) {
           const baseId = task.task_id?.toString?.();
           if (!baseId) continue;
-
-          if (countArray[baseId]) {
-            const progress = 0;
-            const realTask = findTaskByIdDeep(baseId, tasks);
-            goalProgressParams[baseId] = {
-              countArray,
-              valueArray,
-              goal,
-              realTask,
-              progress
-            };
-          }
         }
         console.log(goalProgressParams);
-        if (Object.keys(goalProgressParams).length != 0) {
+        if (Object.keys(countArray).length != 0) {
           // for (const progress of goalProgress) {
           //   if (progress.goalId === goal._id) {
 
           //   }
           // }
           console.log(goal);
-          const calculations = calculateGoalProgress(goalProgressParams);
+          const calculations = calculateGoalProgress({goal, countArray, valueArray, tasks});
           console.log(goal, goalProgress, tasks, countArray, valueArray);
           // dispatch(addPendingProgress(progressPayload));
           // dispatch(createGoalProgress(progressPayload));

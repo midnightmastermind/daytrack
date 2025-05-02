@@ -1,0 +1,30 @@
+
+
+/* Folded (cover screen) - portrait narrow layout */
+@media screen and (max-width: 850px) and (min-width: 800px) and (orientation: portrait) {
+  /* Styles for folded Galaxy Fold 4 */
+  .container .schedule-container .schedules-scroll-wrapper {
+  .container .schedule-container .schedules-scroll-wrapper {
+  
+  }
+}
+
+/* Unfolded (main screen) - tablet layout */
+@media screen and (min-width: 1800px) and (max-width: 2200px) and (orientation: landscape) {
+  /* Styles for unfolded Galaxy Fold 4 */
+  body {
+    font-size: 18px;
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+Tips:
+
+Use max-device-width or min-device-width if you're working with older browsers.
+
+Test it in Chrome DevTools under "Galaxy Fold" in device emulation to adjust more precisely.
+
+
+Would you like to set up a full layout with this included?
+
