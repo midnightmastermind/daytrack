@@ -187,28 +187,44 @@ export const countValues = (assignments) => {
     for (const task of slotTasks) {
       const ancestry = task.assignmentAncestry || [];
       const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
-      const groupId = parentGrouping?._id?.toString() || task.originalId;
 
-      if (!groupId) continue;
+      if (parentGrouping) {
+        const groupId = parentGrouping?._id?.toString() || task.originalId;
 
-      if (!groupedValues[groupId]) {
-        groupedValues[groupId] = {};
-      }
-
-      const input = task.values?.input;
-      const childId = task.id;
-
-      for (const [key, val] of Object.entries(input || {})) {
-        if (typeof val === "object" && typeof val.value === "number") {
-          if (!groupedValues[groupId][childId]) {
-            groupedValues[groupId][childId] = {};
+        if (!groupId) continue;
+  
+        if (!groupedValues[groupId]) {
+          groupedValues[groupId] = {};
+        }
+  
+        const input = task.values?.input;
+        const childId = task.id;
+  
+        for (const [key, val] of Object.entries(input || {})) {
+          if (typeof val === "object" && typeof val.value === "number") {
+            if (!groupedValues[groupId][childId]) {
+              groupedValues[groupId][childId] = {};
+            }
+  
+            // Store full object with value and flow
+            groupedValues[groupId][childId][key] = {
+              value: (groupedValues[groupId][childId][key]?.value || 0) + val.value,
+              flow: val.flow || "in" // fallback to "in" if missing
+            };
+  
+            // // Optional total per unit (just sum)
+            // if (!groupedValues[groupId]._total) {
+            //   groupedValues[groupId]._total = {};
+            // }
+  
+            // groupedValues[groupId]._total[key] = (groupedValues[groupId]._total[key] || 0) + val.value;
           }
+        }
+      } else {
+        const value = task.values?.input;
+        if (typeof value === "number") {
 
-          // Store full object with value and flow
-          groupedValues[groupId][childId][key] = {
-            value: (groupedValues[groupId][childId][key]?.value || 0) + val.value,
-            flow: val.flow || "in" // fallback to "in" if missing
-          };
+          groupedValues[task._id] = (groupedValues[task._id] || 0) + value;
 
           // // Optional total per unit (just sum)
           // if (!groupedValues[groupId]._total) {
@@ -217,6 +233,7 @@ export const countValues = (assignments) => {
 
           // groupedValues[groupId]._total[key] = (groupedValues[groupId]._total[key] || 0) + val.value;
         }
+
       }
     }
   }
@@ -232,31 +249,36 @@ export const countTasks = (assignments) => {
     for (const task of slotTasks) {
       const ancestry = task.assignmentAncestry || [];
       const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
-      const groupId = parentGrouping?._id?.toString() || task.originalId;
 
-      if (!groupId) continue;
+      if (parentGrouping) {
+        const groupId = parentGrouping?._id?.toString() || task.originalId;
 
-      if (!groupedCounts[groupId]) {
-        groupedCounts[groupId] = {};
-      }
-
-      const childId = task.id;
-      const input = task.values?.input;
-
-      for (const [key, val] of Object.entries(input || {})) {
-        if (typeof val === "object" && typeof val.value === "number") {
-          if (!groupedCounts[groupId][childId]) {
-            groupedCounts[groupId][childId] = {};
-          }
-
-          groupedCounts[groupId][childId][key] = (groupedCounts[groupId][childId][key] || 0) + 1;
-
-          if (!groupedCounts[groupId]._total) {
-            groupedCounts[groupId]._total = {};
-          }
-
-          groupedCounts[groupId]._total[key] = (groupedCounts[groupId]._total[key] || 0) + 1;
+        if (!groupId) continue;
+  
+        if (!groupedCounts[groupId]) {
+          groupedCounts[groupId] = {};
         }
+  
+        const childId = task.id;
+        const input = task.values?.input;
+  
+        for (const [key, val] of Object.entries(input || {})) {
+          if (typeof val === "object" && typeof val.value === "number") {
+            if (!groupedCounts[groupId][childId]) {
+              groupedCounts[groupId][childId] = {};
+            }
+  
+            groupedCounts[groupId][childId][key] = (groupedCounts[groupId][childId][key] || 0) + 1;
+  
+            if (!groupedCounts[groupId]._total) {
+              groupedCounts[groupId]._total = {};
+            }
+  
+            groupedCounts[groupId]._total[key] = (groupedCounts[groupId]._total[key] || 0) + 1;
+          }
+        }
+      } else {
+        groupedCounts[task._id] = (groupedCounts[task._id] || 0) + 1;
       }
     }
   }

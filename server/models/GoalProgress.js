@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 
 const GoalProgressSchema = new mongoose.Schema({
-  goal_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Goal', required: true },
+  goalId: { type: mongoose.Schema.Types.ObjectId, ref: "Goal", required: true },
+  taskId: { type: String, required: true },
+  progressKey: { type: String, default: null }, // e.g., "amount", "calories"
   date: { type: Date, required: true },
-  progress: { type: mongoose.Schema.Types.Mixed, default: {} }
+  value: { type: Number, required: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('GoalProgress', GoalProgressSchema);

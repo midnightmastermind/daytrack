@@ -20,7 +20,7 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
     updatedTasks.splice(index, 1);
     updated[timeSlot] = updatedTasks;
     setAssignments(updated);
-    onAssignmentsChange?.(updated);
+    onAssignmentsChange(updated);
   };
 
   return (

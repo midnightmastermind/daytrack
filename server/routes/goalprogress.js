@@ -11,26 +11,31 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Normalize date to midnight UTC
+const normalizeDate = (d) => {
+  const dt = new Date(d);
+  dt.setUTCHours(0, 0, 0, 0);
+  return dt;
+};
+
+// POST - create or update a single goal progress entry
 router.post('/', async (req, res) => {
   try {
-    const { taskId, goalId, date, count } = req.body;
+    const { taskId, goalId, progressKey = null, date, value } = req.body;
 
-    if (!goalId || !taskId || typeof count !== 'number') {
-      return res.status(400).json({ error: 'Missing goalId, taskId, or count' });
+    if (!goalId || !taskId || typeof value !== 'number') {
+      return res.status(400).json({ error: 'Missing goalId, taskId, or value' });
     }
 
-    const normalizeDate = (d) => {
-      const dt = new Date(d);
-      dt.setUTCHours(0, 0, 0, 0);
-      return dt;
-    };
-
     const filter = {
-      goal_id: goalId,
-      date: normalizeDate(date),
+      goalId,
+      taskId,
+      progressKey,
+      date: normalizeDate(date)
     };
 
-    const update = { $set: { [`progress.${taskId}`]: count } };
+    const update = { $set: { value } };
 
     const updated = await GoalProgress.findOneAndUpdate(filter, update, {
       upsert: true,
@@ -43,8 +48,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-
-// PUT replace a full goal progress record by ID
+// PUT - update by record ID
 router.put('/:id', async (req, res) => {
   try {
     const updatedRecord = await GoalProgress.findByIdAndUpdate(
@@ -58,11 +62,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE a goal progress record by ID
+// DELETE - delete a specific goal progress record by ID
 router.delete('/:id', async (req, res) => {
+  console.log(req);
   try {
     await GoalProgress.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Goal progress record deleted' });
+    res.json({ id: req.params.id });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

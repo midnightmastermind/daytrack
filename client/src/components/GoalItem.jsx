@@ -1,4 +1,3 @@
-// components/GoalItem.jsx
 import React from "react";
 import { useSelector } from "react-redux";
 import { Card, Button, Tag, Elevation } from "@blueprintjs/core";
@@ -31,49 +30,26 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
       <div className="goal-tasks">
         {goal.tasks?.map((t, index) => {
           const displayName = getLiveTaskName(t.task_id || t._id || t.id);
-          const flowIcon = t.flow === "in" ? "⬆️" : t.flow === "out" ? "⬇️" : "";
 
           // === GROUPED INPUT TASK ===
-          if (t.grouping && Array.isArray(t.units)) {
-            const unitSettings = t.unitSettings;
-            
-            const children = Object.entries(unitSettings)
-            .filter(([unitKey, unit]) => {
-              const unitMeta = t.units.find((u) => u.key === unitKey);
-              return unit.enabled && unitMeta?.type !== "text";
-            })
-            .map(([unitKey, unit]) => {
-              const unitMeta = t.units.find((u) => u.key === unitKey);
-              return {
-                unitKey,
-                unitLabel: unitMeta?.label || unitKey,
-                flow: unit.flow || "any",
-                target: unit.target,
-                operator: unit.operator,
-                timeScale: unit.timeScale,
-                starting: unit.starting,
-                type: unit.type,
-                progress: 0, // 🔥 this is what was missing
-              };
-            });
-console.log(children);
-            if (children.length === 0) return null;
+          if (t.grouping && Array.isArray(t.children)) {
+            if (t.children.length === 0) return null;
 
             return (
               <div
                 key={`group-${t.task_id}-${index}`}
                 className="goal-task-grouped"
               >
-                <Tag className="group-unit-header" intent="primary">{displayName}</Tag>
+                <Tag className="group-unit-header" intent="primary">
+                  {displayName}
+                </Tag>
                 <div className="goal-units-container">
-                {children.map((unit) => {
-                    const unitKey = unit.unitKey;
-                    const unitMeta = t.units.find((u) => u.key === unitKey);
-                    const label = unitMeta?.label || unitKey;
+                  {t.children.map((unit) => {
+                    const label = unit.unitLabel || unit.unitKey;
                     const flow = unit.flow || "in";
                     const flowIcon = flow === "in" ? "⬆️" : flow === "out" ? "⬇️" : "";
 
-                    const current = unit.progress || 0;
+                    const current = unit.value || 0;
                     const target = unit.target || 0;
                     const starting = unit.starting || 0;
                     const operator = unit.operator || "=";
@@ -88,13 +64,16 @@ console.log(children);
                     const intent = isComplete ? "success" : "danger";
 
                     return (
-                      <div
-                        key={unitKey}
-                        className="goal-unit"
-                      >
-                        <Tag className="unit-tag" minimal>{flowIcon} {label}</Tag>
+                      <div key={unit.unitKey} className="goal-unit">
+                        <Tag className="unit-tag" minimal>
+                          {flowIcon} {label}
+                        </Tag>
                         {target ? (
-                          <Tag className="unit-progress" intent={intent} minimal={!isComplete}>
+                          <Tag
+                            className="unit-progress"
+                            intent={intent}
+                            minimal={!isComplete}
+                          >
                             {current} / {target}
                           </Tag>
                         ) : (
@@ -111,18 +90,21 @@ console.log(children);
           }
 
           // === REGULAR TASK ===
-          const current = t.progress || 0;
-          const target = t.target || 0;
-          const starting = t.starting || 0;
-          const operator = t.operator || "=";
-          const flow = t.flow || "in";
+          const {
+            value = 0,
+            target = 0,
+            starting = 0,
+            operator = "=",
+            flow = "in",
+            type,
+          } = t;
 
           const isComplete =
-            (operator === "=" && current === target) ||
-            (operator === ">" && current > target) ||
-            (operator === ">=" && current >= target) ||
-            (operator === "<" && current < target) ||
-            (operator === "<=" && current <= target);
+            (operator === "=" && value === target) ||
+            (operator === ">" && value > target) ||
+            (operator === ">=" && value >= target) ||
+            (operator === "<" && value < target) ||
+            (operator === "<=" && value <= target);
 
           const intent = isComplete ? "success" : "danger";
           const icon = flow === "in" ? "⬆️" : flow === "out" ? "⬇️" : "";
@@ -141,13 +123,13 @@ console.log(children);
               <Tag minimal={false} intent="primary">
                 {displayName}
               </Tag>
-              {t.type === "tracker" ? (
+              {type === "tracker" ? (
                 <Tag className="unit-progress" intent="primary" minimal>
                   Starting: {starting}
                 </Tag>
               ) : (
                 <Tag className="unit-progress" minimal={!isComplete} intent={intent}>
-                  {current} / {target}
+                  {value} / {target}
                 </Tag>
               )}
             </div>

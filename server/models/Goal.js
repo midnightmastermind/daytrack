@@ -8,7 +8,6 @@ const GoalTaskSchema = new mongoose.Schema({
   operator: { type: String, enum: ["=", ">", "<"], default: "=" },
   valueType: { type: String, enum: ["integer", "currency", "percentage"], default: "integer" },
   timeScale: { type: String, enum: ["daily", "weekly", "overall"], default: "daily" },
-  progress: { type: Number, default: 0 },
   useInput: { type: Boolean, default: false },
   incrementValue: { type: Number, default: 1 },
 

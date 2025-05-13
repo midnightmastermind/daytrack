@@ -1,3 +1,5 @@
+import { findTaskByIdDeep } from './taskUtils.js';
+
 export function flattenGoalTasksForSave(tasks = []) {
   const flattened = [];
 
@@ -119,25 +121,23 @@ export function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
  * Calculates progress for a single unit task (grouped or not).
  */
 export function calculateUnitProgress({
-  count = 0,
   value = 0,
   useInput = true,
-  inputFlow = "in",
-  goalFlow = "any",
+  taskFlow = "in",
+  flow = "any",
   reverseFlow = false,
   hasTarget = true,
   starting = 0,
 }) {
-  const direction = getFlowMultiplier(goalFlow, inputFlow, reverseFlow);
-  const delta = useInput ? value : count;
+  const direction = getFlowMultiplier(flow, taskFlow, reverseFlow);
+  const delta = value;
   const netChange = delta * direction;
 
   console.log("[📊 UnitCalc]", {
-    count,
     value,
     useInput,
-    inputFlow,
-    goalFlow,
+    taskFlow,
+    flow,
     reverseFlow,
     hasTarget,
     starting,
@@ -223,124 +223,149 @@ export function calculateGoalProgress(goalProgressParams) {
     goal,
     countArray,
     valueArray,
-    realTask,
-    progress
+    tasks,
   } = goalProgressParams;
-    for (const goalTask of goal.tasks) {
-      const taskId = goalTask.task_id;
-      if (goalTask.task_id in countArray) {
-        const taskCountObject = countArray[taskId];
-        const taskValueObject = valueArray[taskId]
-        if (goalTask.grouping) {
-          const newProgress = {};
-          
-          for (unit in goalTask.units) {
-            const unitSettings = goalTask.unitSettings[unit.key];
-            newProgress[unit.key] = 0;
-            if (unitSettings.useInput) {
-              for (const [childKey, childObject] of Object.entries(valueArray || {})) {
-                console.log(childObject);
+  const newProgress = {};
+
+  for (const goalTask of goal.tasks) {
+    const taskId = goalTask.task_id;
+    if (goalTask.task_id in countArray) {
+      const taskCount = countArray[taskId];
+      const taskValue = valueArray[taskId];
+
+      if (goalTask.grouping) {
+        newProgress[taskId] = {};
+        for (const [unitIndex, unit] of Object.entries(goalTask.units || {})) {
+          const unitSettings = goalTask.unitSettings[unit.key];
+          newProgress[taskId][unit.key] = 0;
+          if (unitSettings && unitSettings.useInput) {
+            for (const [childKey, childObject] of Object.entries(taskValue || {})) {
+              if (childObject[unit.key]) {
+                const calculationParams = {
+                  taskFlow: childObject[unit.key].flow || "in",
+                  value: childObject[unit.key].value || 0,
+                  ...unitSettings
+                };
+
+                const progress = calculateUnitProgress(calculationParams);
+                if (unitSettings.flow === "any" || unitSettings.flow === taskFlow) {
+                  newProgress[taskId][unit.key] = newProgress[taskId][unit.key] + (parseInt(progress));
+                }
               }
             }
-          }    
-          //     for (const [unitKey, unitObject] of Object.entries(valueArray || {})) {
-          //     if (unitObject[goalTask.unit]) {
-          //       const valueObject = val[goalTask.unit];
-          //       const calculationParams = {
-          //         taskFlow: valueObject.flow,
-          //         value: valueObject.value
-          //       }
-  
-          //     }
-                
-          //     }
-          //   }
-  
-          //     {
-          //       count = 0,
-          //       value = 0,
-          //       useInput = true,
-          //       inputFlow = "in",
-          //       goalFlow = "any",
-          //       reverseFlow = false,
-          //       hasTarget = true,
-          //       starting = 0,
-          //     }
-          //     const unitCalculation = calculateUnitProgress()
-          //   }
+          } else if (unitSettings && !unitSettings.useInput) {
+            // for (const [childKey, childObject] of Object.entries(taskCountObject || {})) {
+            //   if (childObject[unit.key]) {
+            //     const calculationParams = {
+            //       taskFlow: childObject[unit.key].flow || "in",
+            //       value: childObject[unit.key].value || 0,
+            //       ...unitSettings
+            //     };
+
+            //     const progress = calculateUnitProgress(calculationParams);
+            //     newProgress[unit.key] += progress;
+            //     console.log(newProgress);
+            //   }
+            // }
+            console.log("grouped count");
+          }
+        }
+
+      } else {
+        const realTask = findTaskByIdDeep(taskId, tasks);
+        newProgress[taskId] = 0;
+
+        if (goalTask.useInput) {
+          console.log("useInput");
+        } else {
+          const value = taskCount;
+          if (typeof value == "number") {
+            const calculationParams = {
+              taskFlow: realTask.flow || "in",
+              value,
+              ...goalTask
+            };
+
+            const progress = calculateUnitProgress(calculationParams);
+            if (goalTask.flow === "any" || goalTask.flow === (realTask.flow || "in")) {
+              newProgress[taskId] = progress;
+            }
+          }
         }
       }
     }
+  }
+  return newProgress;
 }
-  //     // const childTask = findTaskByIdDeep(childId, tasks);
+//     // const childTask = findTaskByIdDeep(childId, tasks);
 
 
-  //     // //grouping stuff
-  //     // if (task.grouping) {
+//     // //grouping stuff
+//     // if (task.grouping) {
 
-  //     // }
-  //   }
-  // }
-  // const {
-  //   hasTarget = true,
-  //   starting = 0,
-  //   tasks = [],
-  //   flow: goalFlow,
-  //   reverseFlow = false,
-  // } = goal;
+//     // }
+//   }
+// }
+// const {
+//   hasTarget = true,
+//   starting = 0,
+//   tasks = [],
+//   flow: goalFlow,
+//   reverseFlow = false,
+// } = goal;
 
-  // let total = 0;
-  // console.log("calculateGoalProgress: ", {
-  //   hasTarget,
-  //   starting,
-  //   tasks,
-  //   goal,
-  //   reverseFlow
-  // });
+// let total = 0;
+// console.log("calculateGoalProgress: ", {
+//   hasTarget,
+//   starting,
+//   tasks,
+//   goal,
+//   reverseFlow
+// });
 
-  // for (const task of goal.tasks) {
+// for (const task of goal.tasks) {
 
-  //   if (task.grouping && Array.isArray(task.units)) {
-  //     console.log("GROUPED TASK: ", task);
-  //     for (const unit of task.units) {
-  //       const inputFlow = unit.flow || "in";
-  //       const value = unit.progress || 0;
-  //       const count = unit.count || 0;
-  //       const useInput = unit.useInput ?? true;
+//   if (task.grouping && Array.isArray(task.units)) {
+//     console.log("GROUPED TASK: ", task);
+//     for (const unit of task.units) {
+//       const inputFlow = unit.flow || "in";
+//       const value = unit.progress || 0;
+//       const count = unit.count || 0;
+//       const useInput = unit.useInput ?? true;
 
-  //       const progress = calculateUnitProgress({
-  //         count,
-  //         value,
-  //         inputFlow,
-  //         goalFlow: task.flow || "any",
-  //         reverseFlow,
-  //         hasTarget,
-  //         starting: unit.starting || 0,
-  //         useInput,
-  //       });
+//       const progress = calculateUnitProgress({
+//         count,
+//         value,
+//         inputFlow,
+//         goalFlow: task.flow || "any",
+//         reverseFlow,
+//         hasTarget,
+//         starting: unit.starting || 0,
+//         useInput,
+//       });
 
-  //       total += hasTarget ? progress : progress - (unit.starting || 0);
-  //     }
-  //   } else {
-  //     console.log("Regular TASK: ", task);
-  //     const inputFlow = task.flow || "in";
-  //     const value = task.progress || 0;
-  //     const count = task.count || 0;
-  //     const useInput = task.useInput ?? true;
+//       total += hasTarget ? progress : progress - (unit.starting || 0);
+//     }
+//   } else {
+//     console.log("Regular TASK: ", task);
+//     const inputFlow = task.flow || "in";
+//     const value = task.progress || 0;
+//     const count = task.count || 0;
+//     const useInput = task.useInput ?? true;
 
-  //     const progress = calculateUnitProgress({
-  //       count,
-  //       value,
-  //       inputFlow,
-  //       goalFlow: task.flow || "any",
-  //       reverseFlow,
-  //       hasTarget,
-  //       starting: task.starting || 0,
-  //       useInput,
-  //     });
+//     const progress = calculateUnitProgress({
+//       count,
+//       value,
+//       inputFlow,
+//       goalFlow: task.flow || "any",
+//       reverseFlow,
+//       hasTarget,
+//       starting: task.starting || 0,
+//       useInput,
+//     });
 
-  //     total += hasTarget ? progress : progress - (task.starting || 0);
-  //   }
-  // }
+//     total += hasTarget ? progress : progress - (task.starting || 0);
+//   }
+// }
 
-  // return hasTarget ? total : starting + total;
+// return hasTarget ? total : starting + total;
