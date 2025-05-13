@@ -167,9 +167,15 @@ function App() {
 
         for (const [taskId, result] of Object.entries(calculations || {})) {
           if (typeof result === "number") {
-            const key = `${taskId}__null`;
-            const existing = progressLookup[key];
-            const payload = { goalId, date, taskId, progressKey: null, value: result };
+            let taskIdStr = taskId?.toString?.();
+if (!taskIdStr || taskIdStr === "undefined") {
+  taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
+}
+if (typeof result !== "number" || isNaN(result)) continue;
+
+const key = `${taskIdStr}__null`;
+const existing = progressLookup[key];
+const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
             dispatch(addPendingProgress(payload));
 
             if (result === 0 && existing) {
@@ -182,9 +188,15 @@ function App() {
 
           } else if (typeof result === "object") {
             for (const [progressKey, value] of Object.entries(result)) {
-              const key = `${taskId}__${progressKey}`;
-              const existing = progressLookup[key];
-              const payload = { goalId, date, taskId, progressKey, value };
+              let taskIdStr = taskId?.toString?.();
+if (!taskIdStr || taskIdStr === "undefined") {
+  taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
+}
+if (typeof value !== "number" || isNaN(value)) continue;
+
+const key = `${taskIdStr}__${progressKey}`;
+const existing = progressLookup[key];
+const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
               dispatch(addPendingProgress(payload));
 
               if (value === 0 && existing) {
