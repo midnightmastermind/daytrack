@@ -266,14 +266,15 @@ function App() {
   const onDragEnd = (result) => {
     console.log("====onDragEnd====");
     const { source, destination, draggableId } = result;
-    if (!destination || !source) return;
+    if (!destination || !source || destination.droppableId === "taskBank") return;
 
     const fromTaskBank = source.droppableId === "taskBank";
+    
     const type = destination.droppableId.includes("preview") ? "preview" : "actual";
     const slotKey = destination.droppableId.replace("preview_", "").replace("actual_", "");
     const updated = { ...assignments };
     const destSlot = updated[type][slotKey] || [];
-
+console.log(destination);
     if (fromTaskBank) {
       const taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
       if (!taskFromBank) return;
