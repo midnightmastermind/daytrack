@@ -232,7 +232,9 @@ export function calculateGoalProgress(goalProgressParams) {
     if (goalTask.task_id in countArray) {
       const taskCount = countArray[taskId];
       const taskValue = valueArray[taskId];
-
+      console.log(taskId);
+      console.log(taskCount);
+      console.log(taskValue);
       if (goalTask.grouping) {
         newProgress[taskId] = {};
         for (const [unitIndex, unit] of Object.entries(goalTask.units || {})) {

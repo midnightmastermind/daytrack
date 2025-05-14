@@ -78,7 +78,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                           </Tag>
                         ) : (
                           <Tag className="unit-progress" intent="primary" minimal>
-                            {starting}
+                            {current}
                           </Tag>
                         )}
                       </div>
@@ -125,7 +125,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
               </Tag>
               {type === "tracker" ? (
                 <Tag className="unit-progress" intent="primary" minimal>
-                  Starting: {starting}
+                  {value}
                 </Tag>
               ) : (
                 <Tag className="unit-progress" minimal={!isComplete} intent={intent}>

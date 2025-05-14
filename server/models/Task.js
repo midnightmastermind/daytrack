@@ -5,10 +5,12 @@ const TaskSchema = new mongoose.Schema({
   description: { type: String, default: "" },
   children: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task", default: [] }],
   properties: {
+    group: { type: Boolean, default: false },
     card: { type: Boolean, default: false },
     checkbox: { type: Boolean, default: false },
     input: { type: Boolean, default: false },
-    category: { type: Boolean, default: false }
+    category: { type: Boolean, default: false },
+    grouping: { input: { type: mongoose.Schema.Types.Mixed, default: "" }}
   },
   values: {
     checkbox: { type: Boolean, default: false },

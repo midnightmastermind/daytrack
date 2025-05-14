@@ -117,7 +117,39 @@ export function getSelectedLeaves(task) {
   return selected;
 }
 
+export function insertTaskById(tasks, parentId, taskToInsert) {
+  for (const task of tasks) {
+    const id = task._id || task.tempId || task.id;
+    if (id === parentId) {
+      console.log("✅ Inserting into:", task.name || id);
+      task.children = [...(task.children || []), taskToInsert];
+      console.log(task.children);
+      return true;
+    }
+    if (Array.isArray(task.children) && insertTaskById(task.children, parentId, taskToInsert)) {
+      return true;
+    }
+  }
+  return false;
+}
 
+export function replaceTaskByTempId(tasks, tempId, newTask) {
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    const taskTemp = task.tempId || task.id;
+
+    if (taskTemp === tempId) {
+      tasks[i] = newTask;
+      return true;
+    }
+
+    if (Array.isArray(task.children)) {
+      const replaced = replaceTaskByTempId(task.children, tempId, newTask);
+      if (replaced) return true;
+    }
+  }
+  return false;
+}
 export function buildScheduleAssignmentsFromTask(task) {
   const selected = getSelectedLeaves(task);
 
@@ -143,7 +175,20 @@ export function buildScheduleAssignmentsFromTask(task) {
 }
 
 
-
+export function updateTaskById(tasks, targetId, updates) {
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    const id = task._id || task.tempId || task.id;
+    if (id === targetId) {
+      tasks[i] = { ...task, ...updates };
+      return true;
+    }
+    if (task.children && updateTaskById(task.children, targetId, updates)) {
+      return true;
+    }
+  }
+  return false;
+}
 export const getTaskAncestryByIdDeep = (taskTree = [], taskId, ancestry = []) => {
   for (const task of taskTree) {
     const id = task._id?.toString?.() || task.tempId || task.id;

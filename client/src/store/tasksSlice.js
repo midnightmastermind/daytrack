@@ -1,6 +1,7 @@
 // store/tasksSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import taskService from "../services/tasksService";
+import { insertTaskById, replaceTaskByTempId, updateTaskById } from "../helpers/taskUtils";
 
 export const fetchTasks = createAsyncThunk("tasks/fetchTasks", async () => {
   const response = await taskService.getTasks();
@@ -8,6 +9,7 @@ export const fetchTasks = createAsyncThunk("tasks/fetchTasks", async () => {
 });
 
 export const createTask = createAsyncThunk("tasks/createTask", async (taskData) => {
+  console.log("wtf", taskData);
   const response = await taskService.createTask(taskData);
   return response.data;
 });
@@ -31,12 +33,20 @@ const tasksSlice = createSlice({
   },
   reducers: {
     addTaskOptimistic: (state, action) => {
-      state.tasks.push(action.payload);
+      const task = action.payload;
+      const parentId = task.parentId;
+      if (parentId) {
+        const inserted = insertTaskById(state.tasks, parentId, task);
+        if (!inserted) {
+          state.tasks.push(task);
+        }
+      } else {
+        state.tasks.push(task);
+      }
     },
     updateTaskOptimistic: (state, action) => {
       const { id, updates } = action.payload;
-      const task = state.tasks.find((t) => t._id === id || t.tempId === id);
-      if (task) Object.assign(task, updates);
+      updateTaskById(state.tasks, id, updates);
     },
     deleteTaskOptimistic: (state, action) => {
       const id = action.payload;
@@ -58,9 +68,20 @@ const tasksSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(createTask.fulfilled, (state, action) => {
-        const idx = state.tasks.findIndex((t) => t.tempId && t.tempId === action.meta.arg.tempId);
-        if (idx !== -1) state.tasks[idx] = action.payload;
-        else state.tasks.push(action.payload);
+        const created = action.payload; // ✅ FIX: this was missing
+        const tempId = action.meta.arg.tempId;
+        console.log(action);
+        if (replaceTaskByTempId(state.tasks, tempId, created)) return;
+      
+        const parentId = action.meta.arg.parentId || created.parentId;
+        if (parentId) {
+          const inserted = insertTaskById(state.tasks, parentId, created);
+          if (!inserted) {
+            state.tasks.push(created);
+          }
+        } else {
+          state.tasks.push(created);
+        }
       })
       .addCase(updateTask.fulfilled, (state, action) => {
         const idx = state.tasks.findIndex((t) => t._id === action.payload._id);

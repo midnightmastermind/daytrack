@@ -26,13 +26,31 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-// POST a new task
+// POST a new task, with optional parentId to embed into a parent's children
 router.post('/', async (req, res) => {
   try {
-    const newTask = new Task(req.body);
+    const { parentId, ...taskData } = req.body;
+
+    // Create and save the new task
+    const newTask = new Task(taskData);
     const savedTask = await newTask.save();
-    res.status(201).json(savedTask);
+
+    // Attach to parent if needed
+    if (parentId) {
+      const parent = await Task.findById(parentId);
+      if (parent) {
+        parent.children = [...(parent.children || []), savedTask._id];
+        await parent.save();
+      }
+    }
+
+    // Return a clean object with parentId explicitly added
+    const response = savedTask.toObject();
+    if (parentId) response.parentId = parentId;
+
+    res.status(201).json(response);
   } catch (err) {
+    console.error("POST error:", err);
     res.status(400).json({ error: 'Failed to create task' });
   }
 });

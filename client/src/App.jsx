@@ -33,7 +33,8 @@ import {
   createGoalProgress,
   deleteGoalProgress,
   updateGoalProgress,
-  addPendingProgress
+  addPendingProgress,
+  removePendingProgress
 } from "./store/goalProgressSlice";
 
 import {
@@ -168,14 +169,14 @@ function App() {
         for (const [taskId, result] of Object.entries(calculations || {})) {
           if (typeof result === "number") {
             let taskIdStr = taskId?.toString?.();
-if (!taskIdStr || taskIdStr === "undefined") {
-  taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
-}
-if (typeof result !== "number" || isNaN(result)) continue;
+            if (!taskIdStr || taskIdStr === "undefined") {
+              taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
+            }
+            if (typeof result !== "number" || isNaN(result)) continue;
 
-const key = `${taskIdStr}__null`;
-const existing = progressLookup[key];
-const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
+            const key = `${taskIdStr}__null`;
+            const existing = progressLookup[key];
+            const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
             dispatch(addPendingProgress(payload));
 
             if (result === 0 && existing) {
@@ -189,14 +190,14 @@ const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: res
           } else if (typeof result === "object") {
             for (const [progressKey, value] of Object.entries(result)) {
               let taskIdStr = taskId?.toString?.();
-if (!taskIdStr || taskIdStr === "undefined") {
-  taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
-}
-if (typeof value !== "number" || isNaN(value)) continue;
+              if (!taskIdStr || taskIdStr === "undefined") {
+                taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
+              }
+              if (typeof value !== "number" || isNaN(value)) continue;
 
-const key = `${taskIdStr}__${progressKey}`;
-const existing = progressLookup[key];
-const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
+              const key = `${taskIdStr}__${progressKey}`;
+              const existing = progressLookup[key];
+              const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
               dispatch(addPendingProgress(payload));
 
               if (value === 0 && existing) {
@@ -209,31 +210,38 @@ const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
             }
           }
         }
+        const goalIdStr = (goal._id || goal.tempId)?.toString?.();
+
         const existingRecords = goalprogress.filter(
           (r) =>
-            (r.goalId === goalId || r.goal_id === goalId) &&
-            new Date(r.date).toDateString() === dateStr
+            r.goalId?.toString?.() === goalIdStr ||
+            r.goal_id?.toString?.() === goalIdStr
         );
-      
+
         for (const rec of existingRecords) {
           const baseId = rec.taskId;
           const unitKey = rec.progressKey || null;
-          
+          console.log("🎯 Checking for deletion:", {
+            goalIdStr,
+            recGoalId: rec.goalId,
+            rec_goal_id: rec.goal_id,
+          });
           console.log(rec);
           const isMissing =
             !countArray[baseId] && // task is not in current schedule
             (unitKey === null || !Object.keys(valueArray?.[baseId] || {}).includes(unitKey));
-            console.log(isMissing);
+          console.log(isMissing);
 
           if (isMissing) {
             dispatch(deleteGoalProgress({ id: rec._id }));
-            dispatch(addPendingProgress({
-              goalId,
-              date: selectedDate.toISOString(),
-              taskId: baseId,
-              progressKey: unitKey,
-              value: 0
-            }));
+            // dispatch(addPendingProgress({
+            //   goalId,
+            //   date: selectedDate.toISOString(),
+            //   taskId: baseId,
+            //   progressKey: unitKey,
+            //   value: 0
+            // }));
+            dispatch(removePendingProgress(rec._id)); // immediate optimistic delete
           }
         }
       }
