@@ -22,6 +22,7 @@ const TaskCard = ({
   onEditTask,
   onOpenDrawer,
   onTaskUpdate,
+  onInsertAdhoc,
   preview = false,
 }) => {
   if (!task) return null;
@@ -35,20 +36,20 @@ const TaskCard = ({
 
   console.log(taskStateRef);
   useEffect(() => {
-    const name = newPresetDraft?.name?.trim();
-    if (!newPresetDraft.checkbox || !name) return;
-  
-    // Already inserted
-    if (adhocTempId) return;
-  
-    const tempId = `adhoc_${Date.now()}`;
-    const adhoc = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false }, tempId);
-    if (!adhoc) return;
-    console.log("adhoc", adhoc);
-    dispatch(addTaskOptimistic(adhoc));
-    setAdhocTempId(tempId);
-  }, [newPresetDraft]);
-  
+  const name = newPresetDraft?.name?.trim();
+  if (!newPresetDraft.checkbox || !name) return;
+
+  if (adhocTempId) return;
+
+  const tempId = `adhoc_${Date.now()}`;
+  const adhoc = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false }, tempId);
+  if (!adhoc) return;
+
+  console.log("adhoc", adhoc);
+  onInsertAdhoc?.(adhoc); // <<< only line you change
+  setAdhocTempId(tempId);
+}, [newPresetDraft]);
+
   useEffect(() => {
     if (!adhocTempId) return;
   

@@ -3,7 +3,7 @@ import { CardList, Button } from "@blueprintjs/core";
 import { Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 
-const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
+const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer, onInsertAdhoc }) => {
   const topLevelTasks = tasks.filter((task) => task.properties?.card);
 
   return (
@@ -24,6 +24,7 @@ const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer }) => {
                 <TaskCard
                   key={task._id || task.tempId}
                   task={task}
+                  onInsertAdhoc={onInsertAdhoc}
                   index={index}
                   onEditTask={onEditTask}
                   onOpenDrawer={onOpenDrawer}

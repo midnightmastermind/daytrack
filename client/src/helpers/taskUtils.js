@@ -118,19 +118,28 @@ export function getSelectedLeaves(task) {
 }
 
 export function insertTaskById(tasks, parentId, taskToInsert) {
-  for (const task of tasks) {
+  return tasks.map((task) => {
     const id = task._id || task.tempId || task.id;
+
     if (id === parentId) {
-      console.log("✅ Inserting into:", task.name || id);
-      task.children = [...(task.children || []), taskToInsert];
-      console.log(task.children);
-      return true;
+      return {
+        ...task,
+        children: [...(task.children || []), taskToInsert],
+      };
     }
-    if (Array.isArray(task.children) && insertTaskById(task.children, parentId, taskToInsert)) {
-      return true;
+
+    if (Array.isArray(task.children)) {
+      const updatedChildren = insertTaskById(task.children, parentId, taskToInsert);
+      if (updatedChildren !== task.children) {
+        return {
+          ...task,
+          children: updatedChildren,
+        };
+      }
     }
-  }
-  return false;
+
+    return task;
+  });
 }
 
 export function replaceTaskByTempId(tasks, tempId, newTask) {

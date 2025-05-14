@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
-import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues } from './helpers/taskUtils.js';
+import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById} from './helpers/taskUtils.js';
 import { buildCompoundKey, splitCompoundKey, calculateGoalProgress } from "./helpers/goalUtils";
 
 import {
@@ -123,6 +123,13 @@ function App() {
     setPlanDirty(false);
   }, [selectedDate, dayplans]);
 
+const insertAdhocTask = (task) => {
+  dispatch(addTaskOptimistic(task));
+
+  const updatedSnapshot = insertTaskById(taskSnapshotRef.current, task.parentId, task);
+  setTaskSnapshot(updatedSnapshot);
+  taskSnapshotRef.current = updatedSnapshot;
+};
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
 
@@ -324,6 +331,7 @@ console.log(destination);
               <div className="left-side">
                 <TaskBank
                   tasks={tasks}
+                  onInsertAdhoc={insertAdhocTask}
                   onEditTask={(task) => setTask(task)}
                   onOpenDrawer={() => setIsDrawerOpen(true)}
                   onTaskUpdate={(updatedTask) => {
