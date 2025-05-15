@@ -42,7 +42,7 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
           <div className="tag-container">
             {tasksForSlot.map((task, index) => {
               let taskDisplay = task.name;
-
+              console.log(task);
               if (task?.values?.input) {
                 if (typeof task.values.input === "string") {
                   taskDisplay = `${taskDisplay}: ${task.values.input}`;
@@ -53,7 +53,15 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
                   taskDisplay = `${taskDisplay}: ${parts.join(", ")}`;
                 }
               }
-              
+            //   <div className={"task-tag-content"}>
+            //   <div className={"task-tag-name"}>
+            //     {task.name}
+            //   </div>
+            //   { task?.values?.input && task?.values.input == string 
+                
+            //   }
+
+            // </div>
               return (
                 <Draggable key={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} draggableId={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} index={index}>
                   {(provided) => (

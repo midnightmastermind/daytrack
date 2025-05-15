@@ -19,7 +19,7 @@ import {
 } from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
 import GoalItem from "./components/GoalItem";
-import { findTaskByIdDeep } from "./helpers/taskUtils";
+import { findTaskByIdDeep, updateTaskByIdImmutable } from "./helpers/taskUtils";
 import { flattenGoalTasksForSave } from "./helpers/goalUtils";
 
 /** Inline Components **/
@@ -28,14 +28,14 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
   return (
     <div className="goal-task-row">
       <div className="goal-header-container">
-          <div className="goal-tags">
-            {task.path?.map((segment, i) => (
-              <Tag key={`${task.task_id}-segment-${i}`} intent={i === task.path.length - 1 ? "primary" : undefined}>
-                {segment}
-              </Tag>
-            ))}
-          </div>
+        <div className="goal-tags">
+          {task.path?.map((segment, i) => (
+            <Tag key={`${task.task_id}-segment-${i}`} intent={i === task.path.length - 1 ? "primary" : undefined}>
+              {segment}
+            </Tag>
+          ))}
         </div>
+      </div>
       <div className="goal-task">
         <div className="goal-task-settings">
           <div className="time-settings">
@@ -300,6 +300,7 @@ const ActualPanel = ({
     );
   };
 
+  console.log(selectedTasks);
   return (
     <Card className="goal-actual" elevation={2}>
       <div className="goal-actual-header">Goal Editor</div>
@@ -372,14 +373,41 @@ const ActualPanel = ({
                           unit={unit}
                           unitKey={unitKey}
                           unitState={unitState}
-                          updateUnitSettings={(field, value) =>
-                            updateGoalItem(t.task_id, "unitSettings", {
-                              ...(t.unitSettings || {}),
-                              [unitKey]: {
-                                ...(t.unitSettings?.[unitKey] || {}),
-                                [field]: value,
-                              },
-                            })
+                          updateUnitSettings={(unitKey, field, value) =>
+                            setSelectedTasks((prev) =>
+                              prev.map((item) => {
+                                if (item.task_id !== t.task_id) return item;
+
+                                const prevUnit = item.unitSettings?.[unitKey] || {};
+
+                                const updatedUnit = {
+                                  ...prevUnit,
+                                  [field]: value,
+                                };
+
+                                // Sync children array with unitSettings
+                                const updatedChildren = (item.units || []).map((unit) => {
+                                  const key = unit.key;
+                                  const settings = key === unitKey ? updatedUnit : item.unitSettings?.[key] || {};
+
+                                  return {
+                                    unitKey: key,
+                                    unitLabel: unit.label,
+                                    ...settings,
+                                    value: 0, // optionally default
+                                  };
+                                });
+
+                                return {
+                                  ...item,
+                                  unitSettings: {
+                                    ...item.unitSettings,
+                                    [unitKey]: updatedUnit,
+                                  },
+                                  children: updatedChildren,
+                                };
+                              })
+                            )
                           }
                         />
                       );

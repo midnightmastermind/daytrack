@@ -23,6 +23,7 @@
   }
   .goal-form .goal-actual {
     flex: 3;
+    min-width: 600px;
   }
 
   .goal-form .goal-preview {
@@ -134,11 +135,11 @@
     background-color: var(--color-bg-light);
     border: 1px solid var(--color-border);
     box-shadow: 0 2px 4px var(--color-shadow);
-    height: 90px;
+    min-height: 90px;
     margin-top: 42px;
     display: flex;
     flex-direction: column;
-    width: 160px;
+    min-width: 160px;
     padding: 0px !important;
   }
   

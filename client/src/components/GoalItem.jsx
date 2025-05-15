@@ -45,44 +45,46 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                 </Tag>
                 <div className="goal-units-container">
                   {t.children.map((unit) => {
-                    const label = unit.unitLabel || unit.unitKey;
-                    const flow = unit.flow || "in";
-                    const flowIcon = flow === "in" ? "⬆️" : flow === "out" ? "⬇️" : "";
+                    if (unit.enabled) {
+                      const label = unit.unitLabel || unit.unitKey;
+                      const flow = unit.flow || "in";
+                      const flowIcon = flow === "in" ? "⬆️" : flow === "out" ? "⬇️" : "";
 
-                    const current = unit.value || 0;
-                    const target = unit.target || 0;
-                    const starting = unit.starting || 0;
-                    const operator = unit.operator || "=";
+                      const current = unit.value || 0;
+                      const target = unit.target || 0;
+                      const starting = unit.starting || 0;
+                      const operator = unit.operator || "=";
 
-                    const isComplete =
-                      (operator === "=" && current === target) ||
-                      (operator === ">" && current > target) ||
-                      (operator === ">=" && current >= target) ||
-                      (operator === "<" && current < target) ||
-                      (operator === "<=" && current <= target);
+                      const isComplete =
+                        (operator === "=" && current === target) ||
+                        (operator === ">" && current > target) ||
+                        (operator === ">=" && current >= target) ||
+                        (operator === "<" && current < target) ||
+                        (operator === "<=" && current <= target);
 
-                    const intent = isComplete ? "success" : "danger";
+                      const intent = isComplete ? "success" : "danger";
 
-                    return (
-                      <div key={unit.unitKey} className="goal-unit">
-                        <Tag className="unit-tag" minimal>
-                          {flowIcon} {label}
-                        </Tag>
-                        {target ? (
-                          <Tag
-                            className="unit-progress"
-                            intent={intent}
-                            minimal={!isComplete}
-                          >
-                            {current} / {target}
+                      return (
+                        <div key={unit.unitKey} className="goal-unit">
+                          <Tag className="unit-tag" minimal>
+                            {flowIcon} {label}
                           </Tag>
-                        ) : (
-                          <Tag className="unit-progress" intent="primary" minimal>
-                            {current}
-                          </Tag>
-                        )}
-                      </div>
-                    );
+                          {target ? (
+                            <Tag
+                              className="unit-progress"
+                              intent={intent}
+                              minimal={!isComplete}
+                            >
+                              {current} / {target}
+                            </Tag>
+                          ) : (
+                            <Tag className="unit-progress" intent="primary" minimal>
+                              {current}
+                            </Tag>
+                          )}
+                        </div>
+                      );
+                    }
                   })}
                 </div>
               </div>

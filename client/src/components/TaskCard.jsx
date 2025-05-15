@@ -15,6 +15,7 @@ import {
 import { Draggable } from "react-beautiful-dnd";
 import { useDispatch } from "react-redux";
 import { createTask, addTaskOptimistic, updateTaskOptimistic } from "../store/tasksSlice";
+import { getSelectedLeaves } from "../helpers/taskUtils";
 
 const TaskCard = ({
   task,
@@ -32,10 +33,12 @@ const TaskCard = ({
   const taskStateRef = useRef(task);
   const [isOpen, setIsOpen] = useState(false);
   const [newPresetDraft, setNewPresetDraft] = useState({});
+  const [localTask, setLocalTask] = useState(task);
   const toggleCollapse = () => setIsOpen(!isOpen);
 
   useEffect(() => {
     taskStateRef.current = task;
+    setLocalTask(task);
   }, [task]);
 
   useEffect(() => {
@@ -84,6 +87,7 @@ const TaskCard = ({
       children: updatedChildren,
     };
     if (onTaskUpdate) onTaskUpdate(taskStateRef.current);
+    setLocalTask({ ...taskStateRef.current });
   };
 
   const handleNewPresetChange = (key, value, parentId) => {
@@ -354,7 +358,7 @@ const TaskCard = ({
                         buttonPosition="none"
                       />
                       <Switch
-                      className={`flow-switch-${newPresetDraft[unit.key]?.flow || "in"}`}
+                        className={`flow-switch-${newPresetDraft[unit.key]?.flow || "in"}`}
                         innerLabel="In"
                         innerLabelChecked="Out"
                         checked={newPresetDraft[unit.key]?.flow === "out"}
@@ -382,61 +386,143 @@ const TaskCard = ({
 
   const taskId =
     (task._id || task.tempId || task.id || "unknown-task").toString();
+  const selectedLeaves = getSelectedLeaves(localTask);
 
-  
+  // const cardContent = (
+  //   <Card
+  //     elevation={2}
+  //     className={`task-card${preview ? " preview" : ""}${taskId == draggedTaskId ? " dragging" : ""}`}
+  //     style={{
+  //       cursor: preview ? "default" : "grab",
+  //       opacity: preview ? 1 : undefined,
+  //     }}
+  //   >
+  //     <div className="task-header">
+  //       <div className="task-header-left">
+  //         {task.children?.length > 0 ? (
+  //           <Button
+  //             icon={isOpen ? "caret-down" : "caret-right"}
+  //             onClick={toggleCollapse}
+  //             minimal
+  //           />
+  //         ) : (
+  //           <Icon icon="dot" />
+  //         )}
+  //         <div className="task-name">{task.name}</div>
+  //       </div>
+
+  //       {!preview && (
+  //         <div className="task-header-right">
+  //           <Button
+  //             icon="cog"
+  //             className="edit-task-button"
+  //             minimal
+  //             onClick={() => {
+  //               onEditTask(task);
+  //               onOpenDrawer();
+  //             }}
+  //           />
+  //           <Icon className="drag-icon" icon="horizontal-inbetween" />
+  //         </div>
+  //       )}
+  //     </div>
+
+  //     {task.children?.length > 0 && (
+  //       <Collapse
+  //         className="task-children-collapse"
+  //         isOpen={isOpen}
+  //         keepChildrenMounted
+  //       >
+  //         <div className="task-children">
+  //           {renderChildren(
+  //             taskStateRef.current.children || [],
+  //             task.properties?.grouping?.units,
+  //             task._id
+  //           )}
+  //         </div>
+  //       </Collapse>
+  //     )}
+  //   </Card>
+  // );
 
   return (
     <Draggable draggableId={taskId} index={index}>
-  {(provided, snapshot) => (
-    <Card
-      ref={provided.innerRef}
-      {...provided.draggableProps}
-      className={`task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`}
-      style={{
-        ...provided.draggableProps.style,
-        cursor: snapshot.isDragging ? "grabbing" : "grab",
-        opacity: snapshot.isDragging ? 0.5 : 1,
-      }}
-    >
-      <div className="task-header">
-        <div className="task-header-left">
-          {/* collapse toggle */}
-          <Button
-            icon={isOpen ? "caret-down" : "caret-right"}
-            onClick={toggleCollapse}
-            minimal
-          />
-          <div className="task-name">{task.name}</div>
-        </div>
+      {(provided, snapshot) => (
+        <Card
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`}
+          style={{
+            ...provided.draggableProps.style,
+            opacity: snapshot.isDragging ? 0.5 : 1,
+          }}
+        >
+          <div className="task-header">
+            <div className="task-header-left">
+              {task.children?.length > 0 ? (
+                <Button
+                  icon={isOpen ? "caret-down" : "caret-right"}
+                  onClick={toggleCollapse}
+                  minimal
+                />
+              ) : (
+                <Icon icon="dot" />
+              )}
+              <div className="task-name">{task.name}</div>
+            </div>
+            {selectedLeaves.length > 0 && (
+              <div className="taskcard-leaf-preview">
+                {selectedLeaves.map((leaf) => (
+                  <Tag
+                    key={leaf._id || leaf.tempId || leaf.id}
+                    className="leaf-chip"
+                    minimal
+                    intent="success"
+                    icon="tick"
+                  >
+                    {leaf.name}
+                  </Tag>
+                ))}
+              </div>
+            )}
 
-        {!preview && (
-          <div className="task-header-right">
-            <Button
-              icon="cog"
-              className="edit-task-button"
-              minimal
-              onClick={() => {
-                onEditTask(task);
-                onOpenDrawer();
-              }}
-            />
-            <Icon
-              icon="horizontal-inbetween"
-              className="drag-icon"
-              {...provided.dragHandleProps} // ✅ Apply drag handle only here
-            />
+            <div className="task-header-right">
+              {!preview && (
+                <Button
+                  icon="cog"
+                  className="edit-task-button"
+                  minimal
+                  onClick={() => {
+                    onEditTask(task);
+                    onOpenDrawer();
+                  }}
+                />
+              )}
+              <Icon
+                icon="horizontal-inbetween"
+                className="drag-icon"
+                {...provided.dragHandleProps} // ✅ Apply drag handle only here
+              />
+            </div>
           </div>
-        )}
-      </div>
 
-      {task.children?.length > 0 && (
-        <Collapse isOpen={isOpen} keepChildrenMounted>
-          <div className="task-children">{renderChildren(...)}</div>
-        </Collapse>
+          {task.children?.length > 0 && (
+            <Collapse
+              className="task-children-collapse"
+              isOpen={isOpen}
+              keepChildrenMounted
+            >
+              <div className="task-children">
+                {renderChildren(
+                  taskStateRef.current.children || [],
+                  task.properties?.grouping?.units,
+                  task._id)}
+              </div>
+            </Collapse>
+          )}
+        </Card>
       )}
-    </Card>
-  )}
-</Draggable>
+    </Draggable>
   );
 }
 export default TaskCard;

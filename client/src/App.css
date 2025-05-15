@@ -87,6 +87,10 @@ body {
 .flow-switch-out .bp5-control-indicator{
   background: var(--color-error) !important;
 }
+.flow-switch-out .bp5-control-indicator-child,
+.flow-switch-in .bp5-control-indicator-child {
+  color: white;
+}
 .increased_value {
   background-color: var(--color-success);
 }
@@ -397,7 +401,6 @@ p {
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
   align-items: center;
   font-size: 13px;
   color: #FBFFFF;
@@ -414,7 +417,7 @@ p {
 }
 
 .container .task-header-left {
-  justify-content: start;
+  margin-right: auto;
   padding-left: 3px;
 }
 
@@ -466,11 +469,45 @@ p {
   align-items: start;
 }
 
+.container .task-bank .taskcard-leaf-preview {
+  display: flex;
+  flex-direction: column;
+  overflow-y: scroll;
+  height: 100%;
+  background-color: var(--color-success);
+  padding: 0px 5px;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+  opacity: .7;
+}
+
+.container .task-bank .taskcard-leaf-preview .leaf-chip {
+  background: unset;
+  min-height: 0px;
+  padding: 0px;
+  padding-top: 1px;
+  line-height: 10px;
+}
+.container .task-bank .taskcard-leaf-preview .leaf-chip .bp5-icon-tick {
+  margin-right: 2px;
+}
+.container .task-bank .taskcard-leaf-preview .leaf-chip svg {
+  height: 9px;
+  width: 9px;
+}
+
+.container .task-bank .taskcard-leaf-preview .leaf-chip span {
+  font-size: 10px;
+  color: white;
+  text-align: left;
+}
 .container .task-bank .task-children-collapse {
   width: 100%;
   max-height: 165px;
   min-height: 0px;
   overflow-y: scroll !important;
+  padding: 0px 3px;
+  background-color: var(--color-surface);
 }
 
 .container .task-bank .task-children-header .bp5-fill {
@@ -491,6 +528,7 @@ p {
   align-items: start;
   border: 1px solid var(--color-border);
   width: 100%;
+  margin-top: 2px;
 }
 
 .container .task-bank .category-collapse {
@@ -832,11 +870,10 @@ p {
 }
 
 .goal-display-container .goals-container .goal-item {
-  width: 30%;
   background-color: var(--color-bg-light);
   border: 1px solid var(--color-border);
   box-shadow: 0 2px 4px var(--color-shadow);
-  height: 90px;
+  height: auto;
   margin-right: 5px;
   margin-bottom: 5px;
   display: flex;
@@ -864,6 +901,7 @@ p {
 .goal-display-container .goals-container .goal-unit,
 .goal-form .goal-preview .goal-unit{
   height: 100%;
+  display: flex;
 }
 
 
@@ -875,7 +913,6 @@ p {
 .goal-display-container .goals-container .goal-task-grouped,
 .goal-form .goal-preview .goal-task-grouped {
   display: flex;
-  height: 100%;
 }
 
 .goal-display-container .goals-container .group-unit-header,
@@ -883,15 +920,12 @@ p {
   min-width: unset !important;
 }
 
-
-.goal-display-container .goal-unit .bp5-tag,
-.goal-form .goal-preview .goal-unit .bp5-tag {
-  width: 100%;
-}
-
 .goal-display-container .goal-unit .unit-tag,
 .goal-form .goal-preview .goal-unit .unit-tag {
   color: white !important;
+  flex: 1;
+  display: flex;
+  text-align: left;
 }
 
 

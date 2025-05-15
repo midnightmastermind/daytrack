@@ -14,7 +14,11 @@ const GoalDisplay = ({ goals, onEditGoal }) => {
       </div>
       <div className="goals-container">
         {goals && goals.length > 0 ? (
-          goals.map((goal) => <GoalItem key={goal._id || goal.id} goal={goal} onEdit={onEditGoal} />)
+          goals.map((goal) => (
+            <div className={"goal-item-container"}>
+              <GoalItem key={goal._id || goal.id} goal={goal} onEdit={onEditGoal} />
+            </div>
+          ))
         ) : (
           <div>No goals yet</div>
         )}

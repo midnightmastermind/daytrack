@@ -23,7 +23,15 @@ export function findTaskByIdDeep(id, tasks) {
 
   return null;
 }
-
+export const updateTaskByIdImmutable = (tasks, targetId, updateFn) => {
+  return tasks.map((task) => {
+    const id = task.task_id || task._id || task.tempId || task.id;
+    if (id === targetId) {
+      return updateFn(task); // updateFn must return a new object
+    }
+    return task;
+  });
+};
 export function updateTaskByIdDeep(tasks, targetId, updates) {
   return tasks.map((task) => {
     const id = task._id || task.tempId || task.id;
