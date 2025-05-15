@@ -14,7 +14,7 @@ const CurrentTimeIndicator = () => {
     return null; // Outside the range
   }
 
-  const offset = ((totalMinutes / 30) * SLOT_HEIGHT) + 30;
+  const offset = ((totalMinutes / 30) * SLOT_HEIGHT) + 40;
 
   return (
     <div

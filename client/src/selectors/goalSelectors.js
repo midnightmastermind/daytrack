@@ -117,7 +117,6 @@ export const makeSelectGoalsWithProgress = (selectedDate) =>
     [(state) => state.goals.goals, selectGoalProgress],
     (goals, progressRecords) => {
       const selectedDateKey = new Date(selectedDate).toISOString().slice(0, 10);
-      console.log("progressRecords: ", progressRecords);
       return goals.map((goal) => {
         const goalId = goal._id?.toString?.() || goal.tempId;
 
@@ -137,7 +136,7 @@ export const makeSelectGoalsWithProgress = (selectedDate) =>
                     p.progressKey === unitKey &&
                     new Date(p.date).toISOString().slice(0, 10) === selectedDateKey
                 );
-                console.log("record: ", record);
+
                 return {
                   ...unit,
                   unitKey,
@@ -161,7 +160,6 @@ export const makeSelectGoalsWithProgress = (selectedDate) =>
           return { ...task, value: record?.value || 0 };
         });
 
-        console.log("enrichedTasks: ", enrichedTasks);
         return { ...goal, tasks: enrichedTasks };
       });
     }

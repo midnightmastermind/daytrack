@@ -41,7 +41,9 @@
   flex-direction: column;
   gap: 10px;
 }
-
+.task-form .task-form-preview-panel .dragging {
+  height: 40px !important;
+}
 .task-form .preview-taskbank,
 .task-form .preview-schedule {
   background-color: #131417;

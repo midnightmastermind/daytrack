@@ -24,6 +24,22 @@ export function findTaskByIdDeep(id, tasks) {
   return null;
 }
 
+export function updateTaskByIdDeep(tasks, targetId, updates) {
+  return tasks.map((task) => {
+    const id = task._id || task.tempId || task.id;
+    if (id === targetId) {
+      return { ...task, ...updates };
+    }
+    if (task.children) {
+      const updatedChildren = updateTaskByIdDeep(task.children, targetId, updates);
+      if (updatedChildren !== task.children) {
+        return { ...task, children: updatedChildren };
+      }
+    }
+    return task;
+  });
+}
+
 export function getSelectedLeaf(task) {
   let selected = null;
   let fallback = null;
@@ -142,6 +158,40 @@ export function insertTaskById(tasks, parentId, taskToInsert) {
   });
 }
 
+export function diffTaskChildren(original = [], current = []) {
+  const added = [];
+  const updated = [];
+  const deleted = [];
+
+  const originalMap = new Map();
+  original.forEach((child) => {
+    const key = child._id || child.tempId || child.id;
+    if (key) originalMap.set(key, child);
+  });
+
+  const currentMap = new Map();
+  current.forEach((child) => {
+    const key = child._id || child.tempId || child.id;
+    currentMap.set(key, child);
+    if (!originalMap.has(key)) {
+      added.push(child);
+    } else {
+      const originalChild = originalMap.get(key);
+      if (JSON.stringify(originalChild) !== JSON.stringify(child)) {
+        updated.push({ id: key, updates: child });
+      }
+    }
+  });
+
+  originalMap.forEach((child, key) => {
+    if (!currentMap.has(key)) {
+      deleted.push(child);
+    }
+  });
+
+  return { added, updated, deleted };
+}
+
 export function replaceTaskByTempId(tasks, tempId, newTask) {
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
@@ -162,11 +212,11 @@ export function replaceTaskByTempId(tasks, tempId, newTask) {
 export function buildScheduleAssignmentsFromTask(task) {
   const selected = getSelectedLeaves(task);
 
-  if (!selected.length) {
-    console.warn("[buildScheduleAssignmentsFromTask] ❌ No valid leaf tasks found");
-  } else {
-    console.log("[buildScheduleAssignmentsFromTask] ✅ selected:", selected.map(x => x.name));
-  }
+  // if (!selected.length) {
+  //   console.warn("[buildScheduleAssignmentsFromTask] ❌ No valid leaf tasks found");
+  // } else {
+  //   console.log("[buildScheduleAssignmentsFromTask] ✅ selected:", selected.map(x => x.name));
+  // }
 
   return selected.map(leaf => {
     const ancestry = leaf.assignmentAncestry || [];
@@ -198,6 +248,7 @@ export function updateTaskById(tasks, targetId, updates) {
   }
   return false;
 }
+
 export const getTaskAncestryByIdDeep = (taskTree = [], taskId, ancestry = []) => {
   for (const task of taskTree) {
     const id = task._id?.toString?.() || task.tempId || task.id;
@@ -292,7 +343,6 @@ export const countValues = (assignments) => {
     }
   }
 
-  console.log("✅ Nested countValues with flow:", groupedValues);
   return groupedValues;
 };
 
@@ -337,74 +387,9 @@ export const countTasks = (assignments) => {
     }
   }
 
-  console.log("✅ Nested countTasks:", groupedCounts);
+  // console.log("✅ Nested countTasks:", groupedCounts);
   return groupedCounts;
 };
-
-// export const countTasks = (assignments) => {
-//   const countMap = {};
-
-//   for (const slotTasks of Object.values(assignments)) {
-//     for (const task of slotTasks) {
-//       const ancestry = task.assignmentAncestry || [];
-//       const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
-//       const groupId = parentGrouping?._id?.toString() || task.originalId;
-
-//       // Regular task count (non-input)
-//       countMap[groupId] = (countMap[groupId] || 0) + 1;
-
-//       // Grouped input counts
-//       if (task.properties?.group && task.values?.input) {
-//         const inputValues = task.values.input;
-
-//         for (const [key, val] of Object.entries(inputValues)) {
-//           if (typeof val === "object" && typeof val.value === "number") {
-//             const child_id = task._d === groupId ? null : task.id;
-//             const compoundKey = buildCompoundChildKey(groupId, child_id, key);
-//             countMap[compoundKey] = (countMap[compoundKey] || 0) + 1;
-//             // console.log(`📐 countTasks: ${compoundKey} += ${val.value}`);
-//           }
-//         }
-//       }
-//     }
-//   }
-
-//   console.log("✅ Final countMap:", countMap);
-//   return countMap;
-// };
-
-// export const countValues = (assignments) => {
-//   const countMap = {};
-
-//   for (const slotTasks of Object.values(assignments)) {
-//     for (const task of slotTasks) {
-//       const ancestry = task.assignmentAncestry || [];
-//       const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
-//       const groupId = parentGrouping?._id?.toString() || task.originalId;
-
-//       if (typeof task.values.input === "number") {
-//       // Regular task count (non-input)
-//         countMap[groupId] = (countMap[groupId] || 0) + task.values.input;
-//       }
-//       // Grouped input counts
-//       if (task.properties?.group && task.values?.input) {
-//         const inputValues = task.values.input;
-
-//         for (const [key, val] of Object.entries(inputValues)) {
-//           if (typeof val === "object" && typeof val.value === "number") {
-//             const child_id = task._d === groupId ? null : task.id;
-//             const compoundKey = buildCompoundChildKey(groupId, child_id, key);
-//             countMap[compoundKey] = (countMap[compoundKey] || 0) + val.value;
-//             // console.log(`📐 countTasks: ${compoundKey} += ${val.value}`);
-//           }
-//         }
-//       }
-//     }
-//   }
-
-//   console.log("✅ Final countMap:", countMap);
-//   return countMap;
-// };
 
 export const filterByTaskAndUnit = (countMap, taskId, unit) => {
   const result = {};
@@ -421,17 +406,6 @@ export const filterByTaskAndUnit = (countMap, taskId, unit) => {
 
   return result;
 }
-
-// export const countTasks = (assignments) => {
-//   const countMap = {};
-//   for (const slotTasks of Object.values(assignments)) {
-//     for (const task of slotTasks) {
-//       const id = task.originalId;
-//       if (id) countMap[id] = (countMap[id] || 0) + 1;
-//     }
-//   }
-//   return countMap;
-// };
 
 export const getCompoundUnitKey = (task, child) => {
   if (!task.grouping || !task.unit) return null;

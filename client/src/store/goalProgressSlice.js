@@ -30,7 +30,6 @@ export const updateGoalProgress = createAsyncThunk(
 export const deleteGoalProgress = createAsyncThunk(
   "goalProgress/delete",
   async ({ id }) => {
-    console.log("hit", id);
     await goalProgressService.removeGoalProgress(id);
     return { id, taskId }; // ✅ return both so reducer can unset correct key
   }

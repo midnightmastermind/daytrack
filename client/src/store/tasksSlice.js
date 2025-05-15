@@ -9,7 +9,6 @@ export const fetchTasks = createAsyncThunk("tasks/fetchTasks", async () => {
 });
 
 export const createTask = createAsyncThunk("tasks/createTask", async (taskData) => {
-  console.log("wtf", taskData);
   const response = await taskService.createTask(taskData);
   return response.data;
 });
@@ -35,11 +34,10 @@ const tasksSlice = createSlice({
     addTaskOptimistic: (state, action) => {
       const task = action.payload;
       const parentId = task.parentId;
+    
       if (parentId) {
-        const inserted = insertTaskById(state.tasks, parentId, task);
-        if (!inserted) {
-          state.tasks.push(task);
-        }
+        const updated = insertTaskById(state.tasks, parentId, task);
+        state.tasks = updated; // ✅ Use the returned tree
       } else {
         state.tasks.push(task);
       }
@@ -68,9 +66,8 @@ const tasksSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(createTask.fulfilled, (state, action) => {
-        const created = action.payload; // ✅ FIX: this was missing
+        const created = action.payload;
         const tempId = action.meta.arg.tempId;
-        console.log(action);
         if (replaceTaskByTempId(state.tasks, tempId, created)) return;
       
         const parentId = action.meta.arg.parentId || created.parentId;

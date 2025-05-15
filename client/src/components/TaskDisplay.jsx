@@ -104,7 +104,7 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
                     <div style={{ display: "flex", flexDirection: "column", flexWrap: "wrap" }}>
                       {leaves.map((leaf) => (
                         <Tag
-                          key={`${leaf.key}-${timeSlot}-${index}`}
+                          key={leaf.assignmentId || `${leaf.key}-${timeSlot}-${index}`}
                           intent={leaf.intent}
                           minimal={false}
                           style={{ marginRight: "5px", marginBottom: "8px" }}

@@ -14,7 +14,7 @@ import {
 } from "@blueprintjs/core";
 import { Draggable } from "react-beautiful-dnd";
 import { useDispatch } from "react-redux";
-import { createTask, addTaskOptimistic, updateTaskOptimistic} from "../store/tasksSlice";
+import { createTask, addTaskOptimistic, updateTaskOptimistic } from "../store/tasksSlice";
 
 const TaskCard = ({
   task,
@@ -23,6 +23,7 @@ const TaskCard = ({
   onOpenDrawer,
   onTaskUpdate,
   onInsertAdhoc,
+  draggedTaskId,
   preview = false,
 }) => {
   if (!task) return null;
@@ -32,32 +33,29 @@ const TaskCard = ({
   const [isOpen, setIsOpen] = useState(false);
   const [newPresetDraft, setNewPresetDraft] = useState({});
   const toggleCollapse = () => setIsOpen(!isOpen);
-  const [adhocTempId, setAdhocTempId] = useState(null);
-
-  console.log(taskStateRef);
-  useEffect(() => {
-  const name = newPresetDraft?.name?.trim();
-  if (!newPresetDraft.checkbox || !name) return;
-
-  if (adhocTempId) return;
-
-  const tempId = `adhoc_${Date.now()}`;
-  const adhoc = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false }, tempId);
-  if (!adhoc) return;
-
-  console.log("adhoc", adhoc);
-  onInsertAdhoc?.(adhoc); // <<< only line you change
-  setAdhocTempId(tempId);
-}, [newPresetDraft]);
 
   useEffect(() => {
-    if (!adhocTempId) return;
-  
-    const updated = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false }, adhocTempId);
-    dispatch(updateTaskOptimistic({ id: adhocTempId, updates: updated }));
-  }, [newPresetDraft, adhocTempId]);
+    taskStateRef.current = task;
+  }, [task]);
 
-  console.log(taskStateRef.current);
+  useEffect(() => {
+    const isValid = newPresetDraft.name?.trim() && newPresetDraft.checkbox;
+
+    if (isValid && onInsertAdhoc) {
+      const tempId = newPresetDraft.tempId || `adhoc_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
+      const draft = buildAdhocChildFromDraft({ ...newPresetDraft, tempId });
+
+      onInsertAdhoc(tempId, draft);
+    }
+  }, [newPresetDraft]);
+
+  useEffect(() => {
+    const myId = (task._id || task.tempId || task.id || "").toString();
+    if (draggedTaskId === myId) {
+      setIsOpen(false);
+    }
+  }, [draggedTaskId]);
+
   const updateChildValue = (childrenArray, childId, key, newValue) => {
     return childrenArray.map((child) => {
       const childKey = child._id || child.tempId || child.id;
@@ -90,7 +88,7 @@ const TaskCard = ({
 
   const handleNewPresetChange = (key, value, parentId) => {
     setNewPresetDraft((prev) => {
-      const tempId = prev.tempId || `adhoc_${Date.now()}`;
+      const tempId = prev.tempId;
       return {
         ...prev,
         [key]: value,
@@ -102,7 +100,7 @@ const TaskCard = ({
 
   const buildAdhocChildFromDraft = (draft) => {
     if (!draft.name?.trim()) return null;
-  
+
     return {
       id: draft.tempId,
       tempId: draft.tempId,
@@ -119,112 +117,113 @@ const TaskCard = ({
     };
   };
 
-  const injectAdhocIntoCategory = (node, parentId, adhocChild) => {
-    const currentId = node._id || node.tempId || node.id || parentId;
-    console.log(adhocChild);
-    if (!currentId) return node;
-  
-    if (currentId.toString() === parentId.toString()) {
-      const filtered = (node.children || []).filter((c) => !c.id?.startsWith("adhoc_"));
-      return {
-        ...node,
-        children: [...filtered, adhocChild],
-      };
-    }
-  
-    if (Array.isArray(node.children) && node.children.length > 0) {
-      return {
-        ...node,
-        children: node.children.map((child) =>
-          injectAdhocIntoCategory(child, parentId, adhocChild)
-        ),
-      };
-    }
-  
-    return node;
+
+  const saveNewPreset = () => {
+    if (!newPresetDraft.name?.trim()) return;
+    const tempId = newPresetDraft.tempId || `preset_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
+
+    const presetTask = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false, tempId });
+    if (!presetTask) return;
+    console.log(presetTask);
+    dispatch(addTaskOptimistic(presetTask));
+    dispatch(createTask(presetTask));
+
+    setNewPresetDraft({});
   };
-  
-const saveNewPreset = () => {
-  if (!newPresetDraft.name?.trim()) return;
-
-  const presetTask = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false }, adhocTempId || `preset_${Date.now()}`);
-  if (!presetTask) return;
-
-  dispatch(updateTaskOptimistic({ id: presetTask.id, updates: presetTask }));
-  dispatch(createTask(presetTask));
-
-  setAdhocTempId(null);
-  setNewPresetDraft({});
-};
 
   const renderChildren = (childrenArray, parentGroupingUnits = [], parentId = null) => {
-  const rendered = childrenArray
-    .filter((child) => !child.id?.toString().startsWith("adhoc_"))
-    .map((child) => {
-      const childKey = child._id || child.tempId || child.id;
-      const isGroupedInput =
-        child.properties?.group &&
-        child.properties?.input &&
-        Array.isArray(parentGroupingUnits) &&
-        parentGroupingUnits.length > 0;
+    let rendered = childrenArray
+      .filter((child) => {
+        const id = child._id || child.tempId || child.id;
+        return !id?.toString().startsWith("adhoc_") || !!child._id;
+      })
+      .map((child) => {
+        const childKey = child._id || child.tempId || child.id;
+        const isGroupedInput =
+          child.properties?.group &&
+          child.properties?.input &&
+          Array.isArray(parentGroupingUnits) &&
+          parentGroupingUnits.length > 0;
 
-      if (child.properties?.category) {
-        const groupingUnits = child.properties?.grouping?.units || [];
-        return (
-          <div key={childKey} className="category-container">
-            <div className="category-name">
-              <Tag minimal>{child.name}</Tag>
+        if (child.properties?.category) {
+          const groupingUnits = child.properties?.grouping?.units || [];
+          return (
+            <div key={childKey} className="category-container">
+              <div className="category-name">
+                <Tag minimal>{child.name}</Tag>
+              </div>
+              {child.children?.length > 0 && (
+                <Collapse isOpen keepChildrenMounted>
+                  <div className={`category-collapse ${groupingUnits.length > 0 ? "grouped-category" : ""}`}>
+                    {renderChildren(child.children, groupingUnits, child._id)}
+                  </div>
+                </Collapse>
+              )}
             </div>
-            {child.children?.length > 0 && (
-              <Collapse isOpen keepChildrenMounted>
-                <div className={`category-collapse ${groupingUnits.length > 0 ? "grouped-category" : ""}`}>
-                  {renderChildren(child.children, groupingUnits, child._id)}
-                </div>
-              </Collapse>
-            )}
-          </div>
-        );
-      }
+          );
+        }
 
-      return (
-        <Tag
-          key={childKey}
-          className="child-task"
-          intent="primary"
-          elevation={Elevation.FOUR}
-          minimal={!child.values?.checkbox}
-        >
-          {child.properties?.checkbox && (
-            <Checkbox
-              checked={child.values?.checkbox ?? false}
-              onChange={(e) =>
-                handleChildChange(childKey, "checkbox", e.target.checked)
-              }
-            />
-          )}
-          <div className="child-task-name">{child.name}</div>
-          {/* 👇 Fallback for simple input tasks (not grouped or category) */}
-          {child.properties?.input &&
-            !child.properties?.group &&
-            !child.properties?.category && (
-              <InputGroup
-                placeholder="Enter value..."
-                value={child.values?.input || ""}
+        return (
+          <Tag
+            key={childKey}
+            className="child-task"
+            intent="primary"
+            elevation={Elevation.FOUR}
+            minimal={!child.values?.checkbox}
+          >
+            {child.properties?.checkbox && (
+              <Checkbox
+                checked={child.values?.checkbox ?? false}
                 onChange={(e) =>
-                  handleChildChange(childKey, "input", e.target.value)
+                  handleChildChange(childKey, "checkbox", e.target.checked)
                 }
-                className="simple-input"
               />
             )}
+            <div className="child-task-name">{child.name}</div>
+            {/* 👇 Fallback for simple input tasks (not grouped or category) */}
+            {child.properties?.input &&
+              !child.properties?.group &&
+              !child.properties?.category && (
+                <InputGroup
+                  placeholder="Enter value..."
+                  value={child.values?.input || ""}
+                  onChange={(e) =>
+                    handleChildChange(childKey, "input", e.target.value)
+                  }
+                  className="simple-input"
+                />
+              )}
 
-          {isGroupedInput &&
-            parentGroupingUnits.length > 0 &&
-            (Boolean(child.name) ? (
-              <div
-                className="preset-values"
-              >
-                {parentGroupingUnits.map((unit) => {
-                  if (unit.key === "name") return null;
+            {isGroupedInput &&
+              parentGroupingUnits.length > 0 &&
+              (Boolean(child.name) ? (
+                <div
+                  className="preset-values"
+                >
+                  {parentGroupingUnits.map((unit) => {
+                    if (unit.key === "name") return null;
+                    const field = child.values?.input?.[unit.key];
+                    const value =
+                      typeof field === "object" ? field.value : field;
+                    const flow =
+                      typeof field === "object" ? field.flow : "in";
+
+                    return (
+                      <Tag key={`${childKey}-${unit.key}`} className="preset-unit" minimal>
+                        <div className="unit-label">
+                          {`${unit.label}:`}
+                        </div>
+                        <div className={`unit-value ${flow === 'in' ? 'increased_value' : 'decreased_value'}`}>
+                          {unit.type === "text"
+                            ? value
+                            : `${value}`}
+                        </div>
+                      </Tag>
+                    );
+                  })}
+                </div>
+              ) : (
+                parentGroupingUnits.map((unit) => {
                   const field = child.values?.input?.[unit.key];
                   const value =
                     typeof field === "object" ? field.value : field;
@@ -232,89 +231,67 @@ const saveNewPreset = () => {
                     typeof field === "object" ? field.flow : "in";
 
                   return (
-                    <Tag key={`${childKey}-${unit.key}`} className="preset-unit" minimal>
-                      <div className="unit-label">
-                        {`${unit.label}:`}
-                      </div>
-                      <div className={`unit-value ${flow === 'in' ? 'increased_value' : 'decreased_value'}`}>
-                        {unit.type === "text"
-                          ? value
-                          : `${value}`}
-                      </div>
-                    </Tag>
-                  );
-                })}
-              </div>
-            ) : (
-              parentGroupingUnits.map((unit) => {
-                const field = child.values?.input?.[unit.key];
-                const value =
-                  typeof field === "object" ? field.value : field;
-                const flow =
-                  typeof field === "object" ? field.flow : "in";
-
-                return (
-                  <div
-                    key={`${childKey}-${unit.key}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      marginTop: 6,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {unit.type === "text" ? (
-                      <InputGroup
-                        placeholder={unit.label}
-                        value={value || ""}
-                        onChange={(e) =>
-                          handleChildChange(childKey, "input", {
-                            ...child.values?.input,
-                            [unit.key]: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      <>
-                        <NumericInput
-                          fill
+                    <div
+                      key={`${childKey}-${unit.key}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        marginTop: 6,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {unit.type === "text" ? (
+                        <InputGroup
+                          placeholder={unit.label}
                           value={value || ""}
-                          onValueChange={(num) =>
-                            handleChildChange(childKey, "input", {
-                              ...child.values?.input,
-                              [unit.key]: {
-                                value: num,
-                                flow,
-                              },
-                            })
-                          }
-                          buttonPosition="none"
-                        />
-                        <Switch
-                          innerLabel="In"
-                          innerLabelChecked="Out"
-                          checked={flow === "out"}
                           onChange={(e) =>
                             handleChildChange(childKey, "input", {
                               ...child.values?.input,
-                              [unit.key]: {
-                                value,
-                                flow: e.target.checked ? "out" : "in",
-                              },
+                              [unit.key]: e.target.value,
                             })
                           }
                         />
-                      </>
-                    )}
-                  </div>
-                );
-              })
-            ))}
-        </Tag>
-      );
+                      ) : (
+                        <>
+                          <NumericInput
+                            fill
+                            value={value || ""}
+                            onValueChange={(num) =>
+                              handleChildChange(childKey, "input", {
+                                ...child.values?.input,
+                                [unit.key]: {
+                                  value: num,
+                                  flow,
+                                },
+                              })
+                            }
+                            buttonPosition="none"
+                          />
+                          <Switch
+                            innerLabel="In"
+                            innerLabelChecked="Out"
+                            checked={flow === "out"}
+                            onChange={(e) =>
+                              handleChildChange(childKey, "input", {
+                                ...child.values?.input,
+                                [unit.key]: {
+                                  value,
+                                  flow: e.target.checked ? "out" : "in",
+                                },
+                              })
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
+                  );
+                })
+              ))}
+          </Tag>
+        );
 
-    });
+      });
 
 
     if (parentGroupingUnits?.length > 0) {
@@ -394,6 +371,8 @@ const saveNewPreset = () => {
           </div>
         </Tag>
       );
+
+      rendered = rendered.slice().reverse();
     }
 
     return rendered;
@@ -405,7 +384,7 @@ const saveNewPreset = () => {
   const cardContent = (
     <Card
       elevation={2}
-      className={`task-card${preview ? " preview" : ""}`}
+      className={`task-card${preview ? " preview" : ""}${taskId == draggedTaskId ? " dragging" : ""}`}
       style={{
         cursor: preview ? "default" : "grab",
         opacity: preview ? 1 : undefined,

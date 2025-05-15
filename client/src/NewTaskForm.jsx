@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Button,
-  FormGroup,
   InputGroup,
   Switch,
   NumericInput,
@@ -12,15 +11,31 @@ import TaskCard from "./components/TaskCard";
 import ScheduleCard from "./components/ScheduleCard";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { v4 as uuidv4 } from "uuid";
-import { getSelectedLeaves, getTaskKey, buildScheduleAssignmentsFromTask, getTaskAncestryByIdDeep } from "./helpers/taskUtils";
+import { getSelectedLeaves, getTaskKey, getTaskAncestryByIdDeep, updateTaskByIdDeep } from "./helpers/taskUtils";
 import "./NewTaskForm.css";
 
-const ChildEditor = ({ child, onChange, onDelete }) => {
-  const updateField = (field, value) => onChange({ ...child, [field]: value });
+import { useDispatch } from "react-redux";
+import { deleteTask, deleteTaskOptimistic, updateTask, createTask } from "./store/tasksSlice";
+import { diffTaskChildren } from "./helpers/taskUtils"; // or wherever you placed it
 
-  const updateNestedChild = (id, updatedChild) => {
-    const updated = child.children.map((c) => (c.id === id ? updatedChild : c));
-    onChange({ ...child, children: updated });
+const ChildEditor = ({ child, updateChild, removeChild, setStaged }) => {
+
+  const updateField = (field, value) => {
+    updateChild(child._id || child.tempId || child.id, {
+      ...child,
+      [field]: value,
+    });
+  };
+
+  const updateNestedChild = (nestedId, updatedNestedChild) => {
+    const parentId = child._id || child.tempId || child.id;
+  
+    const updatedParent = {
+      ...child,
+      children: updateTaskByIdDeep(child.children || [], nestedId, updatedNestedChild),
+    };
+  
+    updateChild(parentId, updatedParent);
   };
 
   const addNestedChild = () => {
@@ -31,7 +46,10 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
       values: { checkbox: false, input: {} },
       children: [],
     };
-    onChange({ ...child, children: [...(child.children || []), newChild] });
+    updateChild(child._id || child.tempId || child.id, {
+      ...child,
+      children: [...(child.children || []), newChild],
+    });
   };
 
   const addUnit = () => {
@@ -71,7 +89,11 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               onChange={(e) => updateField("name", e.target.value)}
             />
           </div>
-          <Button icon="cross" minimal onClick={onDelete} />
+          <Button
+            icon="cross"
+            minimal
+            onClick={() => removeChild(child._id || child.tempId || child.id)}
+          />
         </div>
         <div className="child-input-options">
           <Switch
@@ -196,11 +218,14 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
                       />
                     </div>
                     <Button icon="cross" minimal onClick={() =>
-                      onChange({
+                      updateChild(child._id || child.tempId || child.id, {
                         ...child,
-                        children: child.children.filter((c) => c.id !== nested.id),
+                        children: child.children.filter(
+                          (c) => (c._id || c.tempId || c.id) !== (nested._id || nested.tempId || nested.id)
+                        ),
                       })
-                    } />
+                    }
+                    />
                   </div>
                   <div className="preset-inputs">
                     {(child.properties.grouping?.units || []).map((unit) => {
@@ -295,13 +320,11 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
               <ChildEditor
                 key={getTaskKey(nested)}
                 child={nested}
-                onChange={(updated) => updateNestedChild(nested.id, updated)}
-                onDelete={() =>
-                  onChange({
-                    ...child,
-                    children: child.children.filter((c) => c.id !== nested.id),
-                  })
-                }
+                updateChild={updateNestedChild}
+                removeChild={(id) => {
+                  const updated = child.children.filter((c) => getTaskKey(c) !== id);
+                  updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
+                }}
               />
             ))}
             <div className="nested-button">
@@ -316,6 +339,7 @@ const ChildEditor = ({ child, onChange, onDelete }) => {
 
 const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, onTaskUpdate }) => {
   const [selectedLeaves, setSelectedLeaves] = useState([]);
+  const [draggedTaskId, setDraggedTaskId] = useState(null);
 
   useEffect(() => {
     if (previewTask) {
@@ -323,25 +347,31 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
     }
   }, [previewTask]);
 
+  const onBeforeCapture = (before) => {
+    const taskId = before.draggableId;
+    setDraggedTaskId(taskId); // set it early
+  };
+
   const handlePreviewDrop = (result) => {
     if (!result.destination || !result.source) return;
     const { destination, draggableId } = result;
-  
+    setDraggedTaskId(null); // set it early
+
     if (destination.droppableId !== "preview_7:30 AM") return;
-  
-    const freshLeaves = getSelectedLeaves(previewTask) || [];
+
     const parentId = (previewTask._id || previewTask.tempId || previewTask.id || "").toString();
-  
+
     if (draggableId === parentId) {
-      if (freshLeaves.length > 0) {
+      if (selectedLeaves.length > 0) {
         // ✅ Some children checked — insert them
-        const assignmentLeaves = freshLeaves.map((leaf) => ({
+        const assignmentLeaves = selectedLeaves.map((leaf) => ({
           ...leaf,
           id: leaf.id || leaf._id || leaf.tempId,
           assignmentId: `${leaf.id || leaf.tempId}-${Date.now()}-${Math.random()}`,
           assignmentAncestry: getTaskAncestryByIdDeep(previewTask?.children || [], leaf._id || leaf.tempId || leaf.id),
         }));
-  
+
+        console.log(assignmentLeaves);
         setPreviewAssignments((prev) => ({
           ...prev,
           "7:30 AM": [...(prev["7:30 AM"] || []), ...assignmentLeaves],
@@ -354,7 +384,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
           assignmentId: `${previewTask.id || previewTask.tempId}-${Date.now()}-${Math.random()}`,
           assignmentAncestry: [],
         };
-  
+
         setPreviewAssignments((prev) => ({
           ...prev,
           "7:30 AM": [...(prev["7:30 AM"] || []), assignmentReadyLeaf],
@@ -362,7 +392,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
       }
     }
   };
-  
+
 
   const handleTaskUpdate = (updatedTask) => {
     // 🔥 Every time you check a box or input something, refresh the selectedLeaves
@@ -370,24 +400,27 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
     onTaskUpdate(updatedTask);
   };
 
+  const previewTaskId = previewTask ? (previewTask._id || previewTask.tempId || previewTask.id || "").toString() : null;
+
   return (
     <div className="task-form-preview-panel">
       <h4>Preview</h4>
-      <DragDropContext onDragEnd={handlePreviewDrop}>
+      <DragDropContext onBeforeCapture={onBeforeCapture} onDragEnd={handlePreviewDrop}>
         <div className="preview-bank-schedule">
           <div className="preview-taskbank">
             <Droppable droppableId="preview-bank">
               {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
+                <div className={(draggedTaskId == previewTaskId) ? "dragging" : ""} ref={provided.innerRef} {...provided.droppableProps}>
                   {/* Always render the full parent task for editing */}
                   {previewTask && (
                     <TaskCard
+                      draggedTaskId={draggedTaskId}
                       key={previewTask._id || previewTask.tempId || previewTask.id}
                       task={previewTask}
                       index={0}
                       preview
-                      onEditTask={() => {}}
-                      onOpenDrawer={() => {}}
+                      onEditTask={() => { }}
+                      onOpenDrawer={() => { }}
                       onTaskUpdate={handleTaskUpdate} // 🔥 use the new live handler
                     />
                   )}
@@ -403,7 +436,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
               timeSlot="7:30 AM"
               assignments={previewAssignments}
               setAssignments={setPreviewAssignments}
-              onAssignmentsChange={() => {}}
+              onAssignmentsChange={() => { }}
             />
           </div>
         </div>
@@ -412,22 +445,18 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
   );
 };
 const NewTaskForm = ({ task, onSave, onDelete }) => {
-  const [taskName, setTaskName] = useState("");
-  const [children, setChildren] = useState([]);
+  const [stagedTask, setStagedTask] = useState(null);
+  const stagedTaskRef = useRef(null);
   const [previewTask, setPreviewTask] = useState(null);
   const [previewAssignments, setPreviewAssignments] = useState({ "7:30 AM": [] });
+  
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (task) {
-      const updated = {
-        ...task,
-        name: task.name || "",
-        children: task.children || [],
-        tempId: task.tempId || uuidv4(),
-      };
-      setTaskName(updated.name);
-      setChildren(updated.children);
-      setPreviewTask(updated);
+      const clone = structuredClone(task);
+      setStagedTask(clone);
+      stagedTaskRef.current = clone;
     } else {
       const temp = {
         id: uuidv4(),
@@ -436,17 +465,10 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
         properties: { card: true, category: true },
         children: [],
       };
-      setTaskName("");
-      setChildren([]);
-      setPreviewTask(temp);
+      setStagedTask(temp);
+      stagedTaskRef.current = temp;
     }
   }, [task]);
-
-  useEffect(() => {
-    if (previewTask) {
-      setPreviewTask((prev) => ({ ...prev, name: taskName, children }));
-    }
-  }, [taskName, children]);
 
   const addChild = () => {
     const newChild = {
@@ -456,30 +478,45 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
       values: { checkbox: false, input: "" },
       children: [],
     };
-    setChildren([...children, newChild]);
+    setStagedTask(prev => ({ ...prev, children: [...(prev.children || []), newChild] }));
   };
 
-  const updateChild = (id, updatedChild) => {
-    const updated = children.map((c) => (c.id === id ? updatedChild : c));
-    setChildren(updated);
-  };
+  const updateChild = useCallback((id, updatedChild) => {
+    setStagedTask(prev => ({
+      ...prev,
+      children: updateTaskByIdDeep(prev.children || [], id, updatedChild),
+    }));
+  }, []);
 
   const removeChild = (id) => {
-    const filtered = children.filter((c) => c.id !== id);
-    setChildren(filtered);
+    const filteredChildren = stagedTask.children.filter(
+      (c) => (c._id || c.tempId || c.id) !== id
+    );
+    setStagedTask({ ...stagedTask, children: filteredChildren });
   };
 
   const handleSave = () => {
-    const tempId = task?._id || task?.tempId || uuidv4();
-    const newTask = {
-      _id: task?._id,
-      tempId,
-      name: taskName,
-      description: "",
-      properties: previewTask?.properties || { card: true, category: true },
-      children,
+    if (!stagedTaskRef.current || !stagedTask) return;
+
+    const { additions, updates, deletions } = diffTaskChildren(stagedTaskRef.current.children, stagedTask.children);
+
+    additions.forEach((task) => dispatch(createTask(task)));
+    updates.forEach(({ id, updates }) => dispatch(updateTask({ id, updates })));
+    deletions.forEach((id) => {
+      dispatch(deleteTaskOptimistic(id));
+      dispatch(deleteTask(id));
+    });
+
+    const topLevelTask = {
+      ...(stagedTask._id ? { _id: stagedTask._id } : {}),
+      name: stagedTask.name,
+      tempId: stagedTask.tempId,
+      properties: stagedTask.properties || { card: true, category: true },
+      children: stagedTask.children,
     };
-    onSave(newTask);
+
+    dispatch(updateTask({ id: topLevelTask._id || topLevelTask.tempId, updates: topLevelTask }));
+    onSave(topLevelTask);
   };
 
   const handlePreviewTaskUpdate = (updatedTask) => {
@@ -496,8 +533,8 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
           </Tag>
           <InputGroup
             placeholder="Enter task name"
-            value={taskName}
-            onChange={(e) => setTaskName(e.target.value)}
+            value={stagedTask?.name || ""}
+            onChange={(e) => setStagedTask({ ...stagedTask, name: e.target.value })}
           />
         </div>
         <div className="task-form-children-section">
@@ -506,14 +543,21 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
             <Button intent="primary" icon="plus" text="Add Subtask" onClick={addChild} />
           </div>
           <div className="task-form-children-list">
-            {children.map((child) => (
-              <ChildEditor
-                key={getTaskKey(child)}
-                child={child}
-                onChange={(updated) => updateChild(child.id, updated)}
-                onDelete={() => removeChild(child.id)}
-              />
-            ))}
+            {(stagedTask?.children || []).map((child) => {
+              const id = child._id || child.tempId || child.id;
+              const liveChild = stagedTask.children.find(
+                (c) => (c._id || c.tempId || c.id) === id
+              );
+
+              return (
+                <ChildEditor
+                  key={getTaskKey(child)}
+                  child={liveChild}
+                  updateChild={updateChild}
+                  removeChild={removeChild}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -531,7 +575,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
       </div>
 
       <PreviewPanel
-        previewTask={previewTask}
+        previewTask={stagedTask}
         previewAssignments={previewAssignments}
         setPreviewAssignments={setPreviewAssignments}
         onTaskUpdate={handlePreviewTaskUpdate}

@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
-import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById} from './helpers/taskUtils.js';
+import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById } from './helpers/taskUtils.js';
 import { buildCompoundKey, splitCompoundKey, calculateGoalProgress } from "./helpers/goalUtils";
 
 import {
@@ -69,6 +69,7 @@ function App() {
 
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const taskSnapshotRef = useRef([]);
+  const adhocDraftMapRef = useRef(new Map());
 
   const [assignments, setAssignments] = useState({ actual: {}, preview: {} });
   const [lastSavedAssignments, setLastSavedAssignments] = useState({ actual: {}, preview: {} });
@@ -77,6 +78,7 @@ function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchTasks());
@@ -86,6 +88,7 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
+    console.log("New Tasks: ", tasks);
     setTaskSnapshot(tasks);
     taskSnapshotRef.current = tasks;
   }, [tasks]);
@@ -101,6 +104,7 @@ function App() {
     return slots;
   };
   const timeSlots = generateTimeSlots();
+
   useEffect(() => {
     const found = dayplans.find((plan) =>
       new Date(plan.date).toDateString() === selectedDate.toDateString()
@@ -123,13 +127,23 @@ function App() {
     setPlanDirty(false);
   }, [selectedDate, dayplans]);
 
-const insertAdhocTask = (task) => {
-  dispatch(addTaskOptimistic(task));
+  const handleInsertAdhoc = (tempId, draftTask) => {
+    if (!adhocDraftMapRef.current.has(tempId)) {
+      adhocDraftMapRef.current.set(tempId, draftTask);
+    }
+  }
 
-  const updatedSnapshot = insertTaskById(taskSnapshotRef.current, task.parentId, task);
-  setTaskSnapshot(updatedSnapshot);
-  taskSnapshotRef.current = updatedSnapshot;
-};
+  const insertAdhocTask = (task) => {
+    console.log("insert adhoc task: ", task);
+    dispatch(addTaskOptimistic(task));
+
+    const updatedSnapshot = insertTaskById(taskSnapshotRef.current, task.parentId, task);
+    console.log("updated snapshot: ", task);
+
+    setTaskSnapshot(updatedSnapshot);
+    taskSnapshotRef.current = updatedSnapshot;
+  };
+
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
 
@@ -228,27 +242,14 @@ const insertAdhocTask = (task) => {
         for (const rec of existingRecords) {
           const baseId = rec.taskId;
           const unitKey = rec.progressKey || null;
-          console.log("🎯 Checking for deletion:", {
-            goalIdStr,
-            recGoalId: rec.goalId,
-            rec_goal_id: rec.goal_id,
-          });
-          console.log(rec);
+
           const isMissing =
             !countArray[baseId] && // task is not in current schedule
             (unitKey === null || !Object.keys(valueArray?.[baseId] || {}).includes(unitKey));
-          console.log(isMissing);
 
           if (isMissing) {
+            dispatch(removePendingProgress(rec._id)); // immediate optimistic delet
             dispatch(deleteGoalProgress({ id: rec._id }));
-            // dispatch(addPendingProgress({
-            //   goalId,
-            //   date: selectedDate.toISOString(),
-            //   taskId: baseId,
-            //   progressKey: unitKey,
-            //   value: 0
-            // }));
-            dispatch(removePendingProgress(rec._id)); // immediate optimistic delete
           }
         }
       }
@@ -272,20 +273,40 @@ const insertAdhocTask = (task) => {
 
   const onDragEnd = (result) => {
     console.log("====onDragEnd====");
+    setDraggedTaskId(null); // Reset after drop
+
     const { source, destination, draggableId } = result;
     if (!destination || !source || destination.droppableId === "taskBank") return;
 
     const fromTaskBank = source.droppableId === "taskBank";
-    
+
     const type = destination.droppableId.includes("preview") ? "preview" : "actual";
     const slotKey = destination.droppableId.replace("preview_", "").replace("actual_", "");
     const updated = { ...assignments };
     const destSlot = updated[type][slotKey] || [];
-console.log(destination);
-    if (fromTaskBank) {
-      const taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
-      if (!taskFromBank) return;
 
+    if (fromTaskBank) {
+      let taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
+
+      if (taskFromBank && adhocDraftMapRef.current.size > 0) {
+        const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
+          .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
+          .map(([_, task]) => task);
+
+        if (matchingAdhocs.length > 0) {
+          matchingAdhocs.forEach((adhocTask) => {
+            insertAdhocTask(adhocTask); // Inserts + updates snapshot
+            console.log("⚡️Inserted adhoc on drag:", adhocTask.name);
+          });
+          adhocDraftMapRef.current.clear();
+
+          // Re-fetch parent from updated snapshot after insertion
+          taskFromBank = taskSnapshotRef.current.find((t) =>
+            (t._id || t.tempId)?.toString() === draggableId
+          );
+        }
+      }
+      if (!taskFromBank) return;
       console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
       console.log("[🌿 buildScheduleAssignmentsFromTask] Selected leaves:", selectedLeaves.map(t => t.name));
@@ -316,9 +337,21 @@ console.log(destination);
     saveDayPlan(updated, type);
   };
 
+  const onDragStart = (start) => {
+    const { draggableId, source } = start;
+    console.log("🔥 Drag started for", draggableId, "from", source.droppableId);
+    // setDraggedTaskId(draggableId);
+
+    // Optional: set state to track currently dragged task
+    // setDraggingTaskId(draggableId);
+  };
+  const onBeforeCapture = (before) => {
+    const taskId = before.draggableId;
+    setDraggedTaskId(taskId); // set it early
+  };
   return (
     <TimeProvider>
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="container">
           <Toolbar
             selectedDate={selectedDate}
@@ -331,7 +364,8 @@ console.log(destination);
               <div className="left-side">
                 <TaskBank
                   tasks={tasks}
-                  onInsertAdhoc={insertAdhocTask}
+                  draggedTaskId={draggedTaskId}
+                  onInsertAdhoc={handleInsertAdhoc}
                   onEditTask={(task) => setTask(task)}
                   onOpenDrawer={() => setIsDrawerOpen(true)}
                   onTaskUpdate={(updatedTask) => {
