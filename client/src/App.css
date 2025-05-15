@@ -71,7 +71,25 @@ body {
   height: 100%;
   overflow-y: hidden;
 }
+.decreased_value {
+  background-color: var(--color-error);
+}
+.unit-value {
+  padding: 0px 2px;
+  border: 1px solid white;
+  border-radius: 2px;
+  margin-left: 2px;
+}
+.flow-switch-in .bp5-control-indicator {
+  background: var(--color-success) !important;
+}
 
+.flow-switch-out .bp5-control-indicator{
+  background: var(--color-error) !important;
+}
+.increased_value {
+  background-color: var(--color-success);
+}
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);

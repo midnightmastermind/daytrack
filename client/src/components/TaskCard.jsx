@@ -269,6 +269,7 @@ const TaskCard = ({
                             buttonPosition="none"
                           />
                           <Switch
+                            className={`flow-switch-${flow}`}
                             innerLabel="In"
                             innerLabelChecked="Out"
                             checked={flow === "out"}
@@ -353,6 +354,7 @@ const TaskCard = ({
                         buttonPosition="none"
                       />
                       <Switch
+                      className={`flow-switch-${newPresetDraft[unit.key]?.flow || "in"}`}
                         innerLabel="In"
                         innerLabelChecked="Out"
                         checked={newPresetDraft[unit.key]?.flow === "out"}
