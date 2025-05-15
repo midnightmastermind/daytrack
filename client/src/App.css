@@ -439,6 +439,12 @@ p {
 .container .task-bank .dragging {
   height: 40px !important;
 }
+.drag-icon {
+  cursor: grab;
+}
+.dragging .drag-icon {
+  cursor: grabbing;
+}
 .container .task-bank .task-options {
   width: 100%;
   height: 100%;

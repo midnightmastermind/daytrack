@@ -383,26 +383,29 @@ const TaskCard = ({
   const taskId =
     (task._id || task.tempId || task.id || "unknown-task").toString();
 
-  const cardContent = (
+  
+
+  return (
+    <Draggable draggableId={taskId} index={index}>
+  {(provided, snapshot) => (
     <Card
-      elevation={2}
-      className={`task-card${preview ? " preview" : ""}${taskId == draggedTaskId ? " dragging" : ""}`}
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      className={`task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`}
       style={{
-        cursor: preview ? "default" : "grab",
-        opacity: preview ? 1 : undefined,
+        ...provided.draggableProps.style,
+        cursor: snapshot.isDragging ? "grabbing" : "grab",
+        opacity: snapshot.isDragging ? 0.5 : 1,
       }}
     >
       <div className="task-header">
         <div className="task-header-left">
-          {task.children?.length > 0 ? (
-            <Button
-              icon={isOpen ? "caret-down" : "caret-right"}
-              onClick={toggleCollapse}
-              minimal
-            />
-          ) : (
-            <Icon icon="dot" />
-          )}
+          {/* collapse toggle */}
+          <Button
+            icon={isOpen ? "caret-down" : "caret-right"}
+            onClick={toggleCollapse}
+            minimal
+          />
           <div className="task-name">{task.name}</div>
         </div>
 
@@ -417,49 +420,23 @@ const TaskCard = ({
                 onOpenDrawer();
               }}
             />
-            <Icon className="drag-icon" icon="horizontal-inbetween" />
+            <Icon
+              icon="horizontal-inbetween"
+              className="drag-icon"
+              {...provided.dragHandleProps} // ✅ Apply drag handle only here
+            />
           </div>
         )}
       </div>
 
       {task.children?.length > 0 && (
-        <Collapse
-          className="task-children-collapse"
-          isOpen={isOpen}
-          keepChildrenMounted
-        >
-          <div className="task-children">
-            {renderChildren(
-              taskStateRef.current.children || [],
-              task.properties?.grouping?.units,
-              task._id
-            )}
-          </div>
+        <Collapse isOpen={isOpen} keepChildrenMounted>
+          <div className="task-children">{renderChildren(...)}</div>
         </Collapse>
       )}
     </Card>
-  );
-
-  return (
-    <Draggable
-      draggableId={taskId}
-      index={index}
-      isDragDisabled={false}
-    >
-      {(provided, snapshot) =>
-        React.cloneElement(cardContent, {
-          ref: provided.innerRef,
-          ...provided.draggableProps,
-          ...provided.dragHandleProps,
-          className: `task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`,
-          style: {
-            ...provided.draggableProps.style,
-            cursor: snapshot.isDragging ? "grabbing" : "grab",
-            opacity: snapshot.isDragging ? 0.5 : 1,
-          },
-        })
-      }
-    </Draggable>
+  )}
+</Draggable>
   );
 }
 export default TaskCard;
