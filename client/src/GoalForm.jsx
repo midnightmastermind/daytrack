@@ -480,26 +480,30 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           type: task.type || "goal",
           units: original?.properties?.grouping?.units || task.units || [],
           unitSettings: {},
+          children: [], // ✅ NEW
         };
-
+      
         group.unitSettings[unitKey] = {
           enabled: true,
           flow: task.flow || "any",
           ...(task.hasTarget
             ? {
-              operator: task.operator || "=",
-              target: task.target || 0,
-              timeScale: task.timeScale || "daily",
-            }
+                operator: task.operator || "=",
+                target: task.target || 0,
+                timeScale: task.timeScale || "daily",
+              }
             : {
-              starting: task.starting || 0,
-            }),
+                starting: task.starting || 0,
+              }),
         };
-
+      
+        group.children = (task.children || []).map((child) => ({
+          ...child,
+          value: 0,
+        }));
+      
         groupedMap[taskId] = group;
-      } else {
-        regularTasks.push(task);
-      }
+      }      
     }
 
     const rehydrated = [...regularTasks, ...Object.values(groupedMap)];
@@ -507,15 +511,55 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   }, [goal, tasks]);
 
   const handleSaveGoal = () => {
-    const flatTasks = flattenGoalTasksForSave(selectedTasks);
+    console.log(selectedTasks);
+    const enrichedTasks = selectedTasks.map((task) => {
+      if (task.grouping && Array.isArray(task.units)) {
+        const unitSettings = {};
+    
+        for (const unit of task.units) {
+          const key = unit.key;
+          const settings = task.unitSettings?.[key] || {};
+          
+          // ✅ Apply default values if missing
+          unitSettings[key] = {
+            enabled: settings.enabled ?? false,
+            flow: settings.flow || "any",
+            reverseFlow: settings.reverseFlow ?? false,
+            timeScale: settings.timeScale || "daily",
+            useInput: settings.useInput ?? true,
+            hasTarget: settings.hasTarget ?? true,
+            operator: settings.operator || "=",
+            target: settings.target ?? 0,
+            starting: settings.starting ?? 0,
+          };
+        }
+    
+        const children = task.units.map((unit) => ({
+          unitKey: unit.key,
+          unitLabel: unit.label,
+          value: 0,
+          ...unitSettings[unit.key],
+        }));
+    
+        return {
+          ...task,
+          unitSettings,
+          children,
+        };
+      }
+    
+      return task;
+    });
+    
     const newGoal = {
       header: headerEnabled ? headerName : "",
-      tasks: flatTasks,
+      tasks: enrichedTasks,
     };
 
     const tempId = goal?.tempId || `temp_${uuidv4()}`;
     const fullGoal = { ...newGoal, tempId };
 
+    console.log(fullGoal);
     if (goal && goal._id) {
       dispatch(updateGoalOptimistic({ id: goal._id, updates: fullGoal }));
       dispatch(updateGoal({ id: goal._id, goalData: fullGoal }));
@@ -523,7 +567,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
       dispatch(addGoalOptimistic(fullGoal));
       dispatch(createGoal(fullGoal));
     }
-
+    
     onSave?.(fullGoal);
   };
 

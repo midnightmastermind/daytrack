@@ -15,8 +15,11 @@ const GoalTaskSchema = new mongoose.Schema({
   grouping: { type: Boolean, default: false },
   type: { type: String, enum: ["goal", "tracker"], default: "goal" },
   unit: { type: String },
+  unitSettings: { type: mongoose.Schema.Types.Mixed }, // ✅ allow object
+  units: { type: [mongoose.Schema.Types.Mixed], default: [] }, // ✅ array of unit objects
+  children: { type: [mongoose.Schema.Types.Mixed], default: [] }, // ✅ for rendering grouped preview
   flow: { type: String, enum: ["any", "in", "out"], default: "any" },
-  starting: { type: Number }  // optional for tracker
+  starting: { type: Number }
 });
 
 const GoalSchema = new mongoose.Schema({

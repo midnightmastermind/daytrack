@@ -10,7 +10,15 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
     const match = findTaskByIdDeep(taskId, tasks);
     return match?.name || "(unknown)";
   };
-
+  const getGoalChildrenFromSettings = (units, unitSettings) =>
+    units
+      .filter(u => u.type !== "text") // skip text-only
+      .map(u => ({
+        unitKey: u.key,
+        unitLabel: u.label,
+        value: 0,
+        ...unitSettings[u.key],
+      }));
   return (
     <Card className="goal-item" elevation={Elevation.TWO}>
       <div className="goal-header">
