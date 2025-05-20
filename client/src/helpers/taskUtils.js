@@ -109,7 +109,6 @@ export function getSelectedLeaves(task) {
     const nextAncestry = [...ancestry, current];
     const isLeaf = !node.children || node.children.length === 0;
 
-    // === FIXED LOGIC: Grouped inputs MUST be checked to count
     const isGrouped = node.properties?.group === true && node.properties?.input === true;
     const isChecked = node.values?.checkbox === true;
 
@@ -138,6 +137,18 @@ export function getSelectedLeaves(task) {
   }
 
   walk(task);
+
+  // 🛠️ FIX: If nothing selected, but the top-level task is a card, return it
+  if (!selected.length && task.properties?.card) {
+    selected.push({
+      ...task,
+      id: task._id?.toString(),
+      originalId: task._id?.toString(),
+      assignmentId: `${task._id}-${Date.now()}-${Math.random()}`,
+      assignmentAncestry: [task],
+    });
+  }
+
   return selected;
 }
 
