@@ -84,11 +84,11 @@ function App() {
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
     dispatch(fetchGoals());
-    dispatch(fetchGoalProgress());
+    // dispatch(fetchGoalProgress());
   }, [dispatch]);
 
   useEffect(() => {
-    console.log("New Tasks: ", tasks);
+    // console.log("New Tasks: ", tasks);
     setTaskSnapshot(tasks);
     taskSnapshotRef.current = tasks;
   }, [tasks]);
@@ -170,89 +170,110 @@ function App() {
       const valueArray = countValues(assignmentsToSave[type]);
       const prevCountArray = countTasks(lastSavedAssignments[type] || {});
 
-
       for (const goal of goals) {
-        const goalId = goal._id?.toString?.() || goal.tempId;
-        const calculations = calculateGoalProgress({ goal, countArray, valueArray, tasks });
-
-        const dateStr = new Date(date).toDateString();
-
-        const existingProgress = goalprogress
-          .filter((r) => r.goal_id?.toString?.() === goalId && new Date(r.date).toDateString() === dateStr);
-
-        const progressLookup = {};
-        for (const rec of existingProgress) {
-          const taskId = rec.taskId;
-          const key = `${taskId}__${rec.progressKey || "null"}`;
-          progressLookup[key] = rec;
-        }
-
-        for (const [taskId, result] of Object.entries(calculations || {})) {
-          if (typeof result === "number") {
-            let taskIdStr = taskId?.toString?.();
-            if (!taskIdStr || taskIdStr === "undefined") {
-              taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
-            }
-            if (typeof result !== "number" || isNaN(result)) continue;
-
-            const key = `${taskIdStr}__null`;
-            const existing = progressLookup[key];
-            const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
-            dispatch(addPendingProgress(payload));
-
-            if (result === 0 && existing) {
-              dispatch(deleteGoalProgress({ id: existing._id }));
-            } else if (existing && existing.value !== result) {
-              dispatch(updateGoalProgress({ id: existing._id, updates: { value: result } }));
-            } else if (!existing && result !== 0) {
-              dispatch(createGoalProgress(payload));
-            }
-
-          } else if (typeof result === "object") {
-            for (const [progressKey, value] of Object.entries(result)) {
-              let taskIdStr = taskId?.toString?.();
-              if (!taskIdStr || taskIdStr === "undefined") {
-                taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
-              }
-              if (typeof value !== "number" || isNaN(value)) continue;
-
-              const key = `${taskIdStr}__${progressKey}`;
-              const existing = progressLookup[key];
-              const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
-              dispatch(addPendingProgress(payload));
-
-              if (value === 0 && existing) {
-                dispatch(deleteGoalProgress({ id: existing._id }));
-              } else if (existing && existing.value !== value) {
-                dispatch(updateGoalProgress({ id: existing._id, updates: { value } }));
-              } else if (!existing && value !== 0) {
-                dispatch(createGoalProgress(payload));
-              }
+        let hasUpdates = false;
+      
+        for (const slotTasks of Object.values(assignments)) {
+          for (const task of slotTasks) {
+            const entries = buildProgressEntriesFromTask(task, goal, currentDate, task.assignmentId);
+      
+            if (entries.length > 0) {
+              goal.progress = [...(goal.progress || []), ...entries];
+              hasUpdates = true;
             }
           }
         }
-        const goalIdStr = (goal._id || goal.tempId)?.toString?.();
-
-        const existingRecords = goalprogress.filter(
-          (r) =>
-            r.goalId?.toString?.() === goalIdStr ||
-            r.goal_id?.toString?.() === goalIdStr
-        );
-
-        for (const rec of existingRecords) {
-          const baseId = rec.taskId;
-          const unitKey = rec.progressKey || null;
-
-          const isMissing =
-            !countArray[baseId] && // task is not in current schedule
-            (unitKey === null || !Object.keys(valueArray?.[baseId] || {}).includes(unitKey));
-
-          if (isMissing) {
-            dispatch(removePendingProgress(rec._id)); // immediate optimistic delet
-            dispatch(deleteGoalProgress({ id: rec._id }));
-          }
+      
+        if (hasUpdates) {
+          dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: goal.progress } }));
+          dispatch(updateGoal({ id: goal._id, goalData: { progress: goal.progress } }));
         }
       }
+      
+
+    //   for (const goal of goals) {
+    //     const goalId = goal._id?.toString?.() || goal.tempId;
+    //     const calculations = calculateGoalProgress({ goal, countArray, valueArray, tasks });
+
+    //     const dateStr = new Date(date).toDateString();
+
+    //     const existingProgress = goalprogress
+    //       .filter((r) => r.goal_id?.toString?.() === goalId && new Date(r.date).toDateString() === dateStr);
+
+    //     const progressLookup = {};
+    //     for (const rec of existingProgress) {
+    //       const taskId = rec.taskId;
+    //       const key = `${taskId}__${rec.progressKey || "null"}`;
+    //       progressLookup[key] = rec;
+    //     }
+
+    //     for (const [taskId, result] of Object.entries(calculations || {})) {
+    //       if (typeof result === "number") {
+    //         let taskIdStr = taskId?.toString?.();
+    //         if (!taskIdStr || taskIdStr === "undefined") {
+    //           taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
+    //         }
+    //         if (typeof result !== "number" || isNaN(result)) continue;
+
+    //         const key = `${taskIdStr}__null`;
+    //         const existing = progressLookup[key];
+    //         const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
+    //         dispatch(addPendingProgress(payload));
+
+    //         if (result === 0 && existing) {
+    //           dispatch(deleteGoalProgress({ id: existing._id }));
+    //         } else if (existing && existing.value !== result) {
+    //           dispatch(updateGoalProgress({ id: existing._id, updates: { value: result } }));
+    //         } else if (!existing && result !== 0) {
+    //           dispatch(createGoalProgress(payload));
+    //         }
+
+    //       } else if (typeof result === "object") {
+    //         for (const [progressKey, value] of Object.entries(result)) {
+    //           let taskIdStr = taskId?.toString?.();
+    //           if (!taskIdStr || taskIdStr === "undefined") {
+    //             taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
+    //           }
+    //           if (typeof value !== "number" || isNaN(value)) continue;
+
+    //           const key = `${taskIdStr}__${progressKey}`;
+    //           const existing = progressLookup[key];
+    //           const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
+    //           dispatch(addPendingProgress(payload));
+
+    //           if (value === 0 && existing) {
+    //             dispatch(deleteGoalProgress({ id: existing._id }));
+    //           } else if (existing && existing.value !== value) {
+    //             dispatch(updateGoalProgress({ id: existing._id, updates: { value } }));
+    //           } else if (!existing && value !== 0) {
+    //             dispatch(createGoalProgress(payload));
+    //           }
+    //         }
+    //       }
+    //     }
+    //     const goalIdStr = (goal._id || goal.tempId)?.toString?.();
+
+    //     const existingRecords = goalprogress.filter(
+    //       (r) =>
+    //         r.goalId?.toString?.() === goalIdStr ||
+    //         r.goal_id?.toString?.() === goalIdStr
+    //     );
+
+    //     for (const rec of existingRecords) {
+    //       const baseId = rec.taskId;
+    //       const unitKey = rec.progressKey || null;
+
+    //       const isMissing =
+    //         !countArray[baseId] && // task is not in current schedule
+    //         (unitKey === null || !Object.keys(valueArray?.[baseId] || {}).includes(unitKey));
+
+    //       if (isMissing) {
+    //         dispatch(removePendingProgress(rec._id)); // immediate optimistic delet
+    //         dispatch(deleteGoalProgress({ id: rec._id }));
+    //       }
+    //     }
+    //   }
+    // }
     }
     setLastSavedAssignments({
       ...lastSavedAssignments,
@@ -269,6 +290,7 @@ function App() {
         : `❌ Failed to save ${type} schedule`,
       intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
     });
+
   };
 
   const onDragEnd = (result) => {
@@ -288,47 +310,37 @@ function App() {
     if (fromTaskBank) {
       let taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
 
-      if (taskFromBank && adhocDraftMapRef.current.size > 0) {
-        const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
-          .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
-          .map(([_, task]) => task);
+      // if (taskFromBank && adhocDraftMapRef.current.size > 0) {
+      //   const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
+      //     .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
+      //     .map(([_, task]) => task);
 
-        if (matchingAdhocs.length > 0) {
-          matchingAdhocs.forEach((adhocTask) => {
-            insertAdhocTask(adhocTask); // Inserts + updates snapshot
-            console.log("⚡️Inserted adhoc on drag:", adhocTask.name);
-          });
-          adhocDraftMapRef.current.clear();
+      //   if (matchingAdhocs.length > 0) {
+      //     matchingAdhocs.forEach((adhocTask) => {
+      //       insertAdhocTask(adhocTask); // Inserts + updates snapshot
+      //       console.log("⚡️Inserted adhoc on drag:", adhocTask.name);
+      //     });
+      //     adhocDraftMapRef.current.clear();
 
-          // Re-fetch parent from updated snapshot after insertion
-          taskFromBank = taskSnapshotRef.current.find((t) =>
-            (t._id || t.tempId)?.toString() === draggableId
-          );
-        }
-      }
+      //     // Re-fetch parent from updated snapshot after insertion
+      //     taskFromBank = taskSnapshotRef.current.find((t) =>
+      //       (t._id || t.tempId)?.toString() === draggableId
+      //     );
+      //   }
+      // }
       if (!taskFromBank) return;
       console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
       console.log("[🌿 buildScheduleAssignmentsFromTask] Selected leaves:", selectedLeaves.map(t => t.name));
 
-      if (!selectedLeaves.length && taskFromBank.properties?.card) {
-        selectedLeaves.push({
-          ...taskFromBank,
-          id: taskFromBank._id?.toString(),
-          originalId: taskFromBank._id?.toString(),
-          assignmentId: `${taskFromBank._id}-${Date.now()}-${Math.random()}`,
-          assignmentAncestry: [taskFromBank],
-        });
-      }
-
       const currentIds = new Set(destSlot.map(t => t.assignmentId));
       const newTasks = selectedLeaves.filter(t => !currentIds.has(t.assignmentId));
-      if (newTasks.length < selectedLeaves.length) {
-        AppToaster.show({
-          message: "That task is already scheduled at this time.",
-          intent: Intent.WARNING,
-        });
-      }
+      // if (newTasks.length < selectedLeaves.length) {
+      //   AppToaster.show({
+      //     message: "That task is already scheduled at this time.",
+      //     intent: Intent.WARNING,
+      //   });
+      // }
 
       updated[type][slotKey] = [...destSlot, ...newTasks];
     }

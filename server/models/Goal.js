@@ -19,12 +19,25 @@ const GoalTaskSchema = new mongoose.Schema({
   units: { type: [mongoose.Schema.Types.Mixed], default: [] }, // ✅ array of unit objects
   children: { type: [mongoose.Schema.Types.Mixed], default: [] }, // ✅ for rendering grouped preview
   flow: { type: String, enum: ["any", "in", "out"], default: "any" },
-  starting: { type: Number }
+  starting: { type: Number },
 });
 
 const GoalSchema = new mongoose.Schema({
   header: { type: String, default: "" },
-  tasks: { type: [GoalTaskSchema], default: [] }
+  tasks: { type: [GoalTaskSchema], default: [] },
+  progress: {
+    type: [
+      {
+        task_id: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
+        unitKey: { type: String },
+        value: { type: Number },
+        date: { type: String },
+        flow: { type: String, enum: ["in", "out", "any"] },
+        assignmentId: { type: String }
+      }
+    ],
+    default: []
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Goal", GoalSchema);
