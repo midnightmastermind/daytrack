@@ -93,6 +93,7 @@ function App() {
     taskSnapshotRef.current = tasks;
   }, [tasks]);
 
+  console.log(tasks);
   const generateTimeSlots = () => {
     let slots = [];
     let start = DateTime.local().set({ hour: 7, minute: 0 });
@@ -183,11 +184,12 @@ function App() {
             }
           }
         }
-      
-        if (hasUpdates) {
-          dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: goal.progress } }));
-          dispatch(updateGoal({ id: goal._id, goalData: { progress: goal.progress } }));
-        }
+        
+        console.log(goal);
+        // if (hasUpdates) {
+        //   dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: goal.progress } }));
+        //   dispatch(updateGoal({ id: goal._id, goalData: { progress: goal.progress } }));
+        // }
       }
       
 
@@ -280,16 +282,16 @@ function App() {
       [type]: assignmentsToSave[type],
     });
 
-    const response = existing
-      ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: dayPlanPayload }))
-      : await dispatch(createDayPlan({ ...dayPlanPayload }));
+    // const response = existing
+    //   ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: dayPlanPayload }))
+    //   : await dispatch(createDayPlan({ ...dayPlanPayload }));
 
-    AppToaster.show({
-      message: response?.payload
-        ? `✅ ${type} schedule saved!`
-        : `❌ Failed to save ${type} schedule`,
-      intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
-    });
+    // AppToaster.show({
+    //   message: response?.payload
+    //     ? `✅ ${type} schedule saved!`
+    //     : `❌ Failed to save ${type} schedule`,
+    //   intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
+    // });
 
   };
 
