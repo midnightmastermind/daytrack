@@ -78,7 +78,7 @@ export function getSelectedLeaf(task) {
         assignmentAncestry: nextAncestry,
       };
     }
-
+    
     if (isLeaf && isValid && !selected) {
       selected = {
         ...node,
@@ -231,13 +231,7 @@ export function replaceTaskByTempId(tasks, tempId, newTask) {
 export function buildScheduleAssignmentsFromTask(task) {
   const selected = getSelectedLeaves(task);
 
-  // if (!selected.length) {
-  //   console.warn("[buildScheduleAssignmentsFromTask] ❌ No valid leaf tasks found");
-  // } else {
-  //   console.log("[buildScheduleAssignmentsFromTask] ✅ selected:", selected.map(x => x.name));
-  // }
-
-  return selected.map(leaf => {
+  return selected.map((leaf) => {
     const ancestry = leaf.assignmentAncestry || [];
     const parentGrouping = ancestry.find(a => a.properties?.grouping?.enabled);
     const groupId = parentGrouping?._id?.toString() || leaf._id?.toString();
@@ -245,14 +239,14 @@ export function buildScheduleAssignmentsFromTask(task) {
     return {
       ...leaf,
       id: leaf._id?.toString() || leaf.tempId || leaf.id,
-      originalId: groupId, // override originalId to grouping parent
-      assignmentId: leaf.assignmentId,
+      originalId: groupId,
+      assignmentId:
+        leaf.assignmentId ||
+        `${leaf._id || leaf.tempId || leaf.id}-${Date.now()}-${Math.random()}`,
       assignmentAncestry: ancestry,
     };
   });
 }
-
-
 export function updateTaskById(tasks, targetId, updates) {
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];

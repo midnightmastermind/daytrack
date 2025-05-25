@@ -6,7 +6,7 @@ import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
 import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById } from './helpers/taskUtils.js';
-import { buildCompoundKey, splitCompoundKey, calculateGoalProgress } from "./helpers/goalUtils";
+import { buildCompoundKey, splitCompoundKey, calculateGoalProgress, buildProgressEntriesFromTask } from "./helpers/goalUtils";
 
 import {
   fetchTasks,
@@ -62,15 +62,14 @@ function App() {
   const { tasks } = useSelector((state) => state.tasks);
   const { dayplans } = useSelector((state) => state.dayplans);
   const { goals } = useSelector((state) => state.goals);
-  const { goalprogress } = useSelector((state) => state.goalProgress);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
-
+  console.log(goalsWithProgress);
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
-
+  
   const [assignments, setAssignments] = useState({ actual: {}, preview: {} });
   const [lastSavedAssignments, setLastSavedAssignments] = useState({ actual: {}, preview: {} });
   const [task, setTask] = useState(null);
@@ -93,7 +92,7 @@ function App() {
     taskSnapshotRef.current = tasks;
   }, [tasks]);
 
-  console.log(tasks);
+
   const generateTimeSlots = () => {
     let slots = [];
     let start = DateTime.local().set({ hour: 7, minute: 0 });
@@ -170,128 +169,60 @@ function App() {
       const countArray = countTasks(assignmentsToSave[type]);
       const valueArray = countValues(assignmentsToSave[type]);
       const prevCountArray = countTasks(lastSavedAssignments[type] || {});
+      console.log(assignments);
+      const progressUpdates = {};
 
       for (const goal of goals) {
-        let hasUpdates = false;
+        let newEntries = [];
       
-        for (const slotTasks of Object.values(assignments)) {
+        for (const slotTasks of Object.values(assignmentsToSave[type])) {
+          if (!Array.isArray(slotTasks)) continue;
+      
           for (const task of slotTasks) {
-            const entries = buildProgressEntriesFromTask(task, goal, currentDate, task.assignmentId);
-      
-            if (entries.length > 0) {
-              goal.progress = [...(goal.progress || []), ...entries];
-              hasUpdates = true;
-            }
+            const entries = buildProgressEntriesFromTask(task, goal, date, task.assignmentId);
+            newEntries = [...newEntries, ...entries];
           }
         }
-        
-        console.log(goal);
-        // if (hasUpdates) {
-        //   dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: goal.progress } }));
-        //   dispatch(updateGoal({ id: goal._id, goalData: { progress: goal.progress } }));
-        // }
-      }
       
-
-    //   for (const goal of goals) {
-    //     const goalId = goal._id?.toString?.() || goal.tempId;
-    //     const calculations = calculateGoalProgress({ goal, countArray, valueArray, tasks });
-
-    //     const dateStr = new Date(date).toDateString();
-
-    //     const existingProgress = goalprogress
-    //       .filter((r) => r.goal_id?.toString?.() === goalId && new Date(r.date).toDateString() === dateStr);
-
-    //     const progressLookup = {};
-    //     for (const rec of existingProgress) {
-    //       const taskId = rec.taskId;
-    //       const key = `${taskId}__${rec.progressKey || "null"}`;
-    //       progressLookup[key] = rec;
-    //     }
-
-    //     for (const [taskId, result] of Object.entries(calculations || {})) {
-    //       if (typeof result === "number") {
-    //         let taskIdStr = taskId?.toString?.();
-    //         if (!taskIdStr || taskIdStr === "undefined") {
-    //           taskIdStr = `${goalId}__null__adhoc_${Date.now()}`;
-    //         }
-    //         if (typeof result !== "number" || isNaN(result)) continue;
-
-    //         const key = `${taskIdStr}__null`;
-    //         const existing = progressLookup[key];
-    //         const payload = { goalId, date, taskId: taskIdStr, progressKey: null, value: result };
-    //         dispatch(addPendingProgress(payload));
-
-    //         if (result === 0 && existing) {
-    //           dispatch(deleteGoalProgress({ id: existing._id }));
-    //         } else if (existing && existing.value !== result) {
-    //           dispatch(updateGoalProgress({ id: existing._id, updates: { value: result } }));
-    //         } else if (!existing && result !== 0) {
-    //           dispatch(createGoalProgress(payload));
-    //         }
-
-    //       } else if (typeof result === "object") {
-    //         for (const [progressKey, value] of Object.entries(result)) {
-    //           let taskIdStr = taskId?.toString?.();
-    //           if (!taskIdStr || taskIdStr === "undefined") {
-    //             taskIdStr = `${goalId}__${progressKey}__adhoc_${Date.now()}`;
-    //           }
-    //           if (typeof value !== "number" || isNaN(value)) continue;
-
-    //           const key = `${taskIdStr}__${progressKey}`;
-    //           const existing = progressLookup[key];
-    //           const payload = { goalId, date, taskId: taskIdStr, progressKey, value };
-    //           dispatch(addPendingProgress(payload));
-
-    //           if (value === 0 && existing) {
-    //             dispatch(deleteGoalProgress({ id: existing._id }));
-    //           } else if (existing && existing.value !== value) {
-    //             dispatch(updateGoalProgress({ id: existing._id, updates: { value } }));
-    //           } else if (!existing && value !== 0) {
-    //             dispatch(createGoalProgress(payload));
-    //           }
-    //         }
-    //       }
-    //     }
-    //     const goalIdStr = (goal._id || goal.tempId)?.toString?.();
-
-    //     const existingRecords = goalprogress.filter(
-    //       (r) =>
-    //         r.goalId?.toString?.() === goalIdStr ||
-    //         r.goal_id?.toString?.() === goalIdStr
-    //     );
-
-    //     for (const rec of existingRecords) {
-    //       const baseId = rec.taskId;
-    //       const unitKey = rec.progressKey || null;
-
-    //       const isMissing =
-    //         !countArray[baseId] && // task is not in current schedule
-    //         (unitKey === null || !Object.keys(valueArray?.[baseId] || {}).includes(unitKey));
-
-    //       if (isMissing) {
-    //         dispatch(removePendingProgress(rec._id)); // immediate optimistic delet
-    //         dispatch(deleteGoalProgress({ id: rec._id }));
-    //       }
-    //     }
-    //   }
-    // }
+        // 🧼 Determine removed assignmentIds
+        const prevAssignments = Object.values(lastSavedAssignments[type] || {}).flat();
+        const newAssignments = Object.values(assignmentsToSave[type] || {}).flat();
+      
+        const removedAssignmentIds = prevAssignments
+          .map(t => t.assignmentId)
+          .filter(id => id && !newAssignments.some(nt => nt.assignmentId === id));
+      
+        // 🧽 Filter out removed AND duplicate assignmentIds
+        const newAssignmentIds = new Set(newEntries.map(e => e.assignmentId));
+        const cleanedProgress = (goal.progress || []).filter(
+          (entry) =>
+            !removedAssignmentIds.includes(entry.assignmentId) &&
+            !newAssignmentIds.has(entry.assignmentId) // <- prevent duplicates
+        );
+      
+        const updatedProgress = [...cleanedProgress, ...newEntries];
+      
+        if (newEntries.length > 0 || removedAssignmentIds.length > 0) {
+          dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: updatedProgress } }));
+          dispatch(updateGoal({ id: goal._id, goalData: { progress: updatedProgress } }));
+        }
+      }
     }
     setLastSavedAssignments({
       ...lastSavedAssignments,
       [type]: assignmentsToSave[type],
     });
 
-    // const response = existing
-    //   ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: dayPlanPayload }))
-    //   : await dispatch(createDayPlan({ ...dayPlanPayload }));
+    const response = existing
+      ? await dispatch(updateDayPlan({ id: existing._id, dayPlanData: dayPlanPayload }))
+      : await dispatch(createDayPlan({ ...dayPlanPayload }));
 
-    // AppToaster.show({
-    //   message: response?.payload
-    //     ? `✅ ${type} schedule saved!`
-    //     : `❌ Failed to save ${type} schedule`,
-    //   intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
-    // });
+    AppToaster.show({
+      message: response?.payload
+        ? `✅ ${type} schedule saved!`
+        : `❌ Failed to save ${type} schedule`,
+      intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
+    });
 
   };
 

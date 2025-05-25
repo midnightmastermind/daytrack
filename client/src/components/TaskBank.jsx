@@ -4,8 +4,7 @@ import { Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 
 const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onOpenDrawer, onInsertAdhoc, draggedTaskId }) => {
-  console.log("TaskBank");
-  console.log(tasks);
+
   const topLevelTasks = tasks.filter((task) => task.properties?.card);
 
   return (

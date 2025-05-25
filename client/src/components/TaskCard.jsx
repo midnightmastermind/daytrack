@@ -128,7 +128,6 @@ const TaskCard = ({
 
     const presetTask = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false, tempId });
     if (!presetTask) return;
-    console.log(presetTask);
     dispatch(addTaskOptimistic(presetTask));
     dispatch(createTask(presetTask));
 
@@ -386,7 +385,7 @@ const TaskCard = ({
 
   const taskId =
     (task._id || task.tempId || task.id || "unknown-task").toString();
-  const selectedLeaves = getSelectedLeaves(localTask);
+  const selectedLeaves = getSelectedLeaves(localTask) .filter((leaf) => leaf._id !== localTask._id); // exclude fallback parent;
 
   // const cardContent = (
   //   <Card

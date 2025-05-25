@@ -266,7 +266,7 @@ p {
 }
 .container .goal-display-container {
   width: 100%;
-  min-height: 49vh;
+  min-height: 64vh;
   border: 1px solid var(--color-border);
   background-color: var(--color-bg);
   overflow: hidden;
@@ -828,7 +828,7 @@ p {
   overflow-x: hidden;
   margin: 5px;
   align-content: start;
-  height: 38vh;
+  height: 100%;
 }
 
 .goal-display-container .goal-header-preview {
@@ -889,6 +889,9 @@ p {
   height: 100%;
 }
 
+.goal-display-container .goals-container .unit-progress {
+  flex: 1;
+}
 .goal-display-container .goals-container .unit-progress .bp5-fill {
   font-weight: bold;
 }
@@ -902,6 +905,7 @@ p {
 .goal-form .goal-preview .goal-unit{
   height: 100%;
   display: flex;
+  position: relative;
 }
 
 
@@ -923,7 +927,6 @@ p {
 .goal-display-container .goal-unit .unit-tag,
 .goal-form .goal-preview .goal-unit .unit-tag {
   color: white !important;
-  flex: 1;
   display: flex;
   text-align: left;
 }
@@ -943,7 +946,7 @@ p {
 
 .goal-display-container .goal-task,
   .goal-form .goal-preview .goal-task {
-  justify-content: space-between;
+    justify-content: end;
 }
 /* Scrollbar size */
 ::-webkit-scrollbar {
@@ -1204,3 +1207,51 @@ p {
 .task-form-drawer {
   width: auto !important;
 }
+
+.goal-task {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.task-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.triangle-indicator {
+  position: absolute;
+  right: -8px; /* adjust as needed */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6px;
+  pointer-events: none;
+  animation: popFade 1.2s ease-in-out forwards;
+}
+
+.triangle-indicator.success {
+  color: #0f9960;
+}
+
+.triangle-indicator.danger {
+  color: #db3737;
+}
+
+@keyframes popFade {
+  0% {
+    transform: translateY(-50%) scale(1.4);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-50%) scale(1.15);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 0;
+  }
+}
+

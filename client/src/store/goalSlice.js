@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import goalService from "../services/goalService";
+import { enrichGoalWithProgress } from "../helpers/goalUtils";
 
 // === Thunks ===
 export const fetchGoals = createAsyncThunk("goals/fetch", async () => {
@@ -32,21 +33,23 @@ const goalSlice = createSlice({
   },
   reducers: {
     addGoalOptimistic: (state, action) => {
-      state.goals.push(action.payload);
+      const enriched = enrichGoalWithProgress(action.payload);
+      state.goals.push(enriched);
     },
     updateGoalOptimistic: (state, action) => {
       const { id, updates } = action.payload;
-      const idx = state.goals.findIndex((g) => g._id === id || g.tempId === id);
-      if (idx !== -1) {
-        state.goals[idx] = {
-          ...state.goals[idx],
-          ...updates,
-        };
+      const index = state.goals.findIndex(g => g._id === id || g.tempId === id);
+      if (index !== -1) {
+        const merged = { ...state.goals[index], ...updates };
+        state.goals[index] = enrichGoalWithProgress(merged);
       }
     },
     deleteGoalOptimistic: (state, action) => {
       const id = action.payload;
       state.goals = state.goals.filter((g) => g._id !== id && g.tempId !== id);
+    },
+    setGoals: (state, action) => {
+      state.goals = action.payload.map(enrichGoalWithProgress);
     },
   },
   extraReducers: (builder) => {
@@ -57,7 +60,7 @@ const goalSlice = createSlice({
       })
       .addCase(fetchGoals.fulfilled, (state, action) => {
         state.loading = false;
-        state.goals = action.payload;
+        state.goals = action.payload.map(enrichGoalWithProgress);
       })
       .addCase(fetchGoals.rejected, (state, action) => {
         state.loading = false;
@@ -65,9 +68,9 @@ const goalSlice = createSlice({
       })
 
       .addCase(createGoal.fulfilled, (state, action) => {
-        const serverGoal = action.payload;
+        const serverGoal = enrichGoalWithProgress(action.payload);
         const tempId = serverGoal.tempId;
-            
+
         const idx = state.goals.findIndex((g) => g.tempId === tempId);
         if (idx !== -1) {
           state.goals[idx] = { ...state.goals[idx], ...serverGoal };
@@ -77,7 +80,7 @@ const goalSlice = createSlice({
       })
 
       .addCase(updateGoal.fulfilled, (state, action) => {
-        const updatedGoal = action.payload;
+        const updatedGoal = enrichGoalWithProgress(action.payload);
         const idx = state.goals.findIndex((g) => g._id === updatedGoal._id);
         if (idx !== -1) {
           state.goals[idx] = {
@@ -98,6 +101,7 @@ export const {
   addGoalOptimistic,
   updateGoalOptimistic,
   deleteGoalOptimistic,
+  setGoals,
 } = goalSlice.actions;
 
 export default goalSlice.reducer;
