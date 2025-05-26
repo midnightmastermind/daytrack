@@ -180,6 +180,9 @@ function App() {
       
           for (const task of slotTasks) {
             const entries = buildProgressEntriesFromTask(task, goal, date, task.assignmentId);
+            console.log(task);
+            console.log(goal);
+            console.log(entries);
             newEntries = [...newEntries, ...entries];
           }
         }

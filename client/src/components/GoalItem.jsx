@@ -16,7 +16,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
   const triggerChangeIndicator = (key, direction) => {
     setChangeIndicators((prev) => ({ ...prev, [key]: direction }));
     setTimeout(() => {
-      // setChangeIndicators((prev) => ({ ...prev, [key]: null }));
+      setChangeIndicators((prev) => ({ ...prev, [key]: null }));
     }, 1500);
   };
 

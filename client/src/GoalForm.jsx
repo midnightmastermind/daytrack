@@ -20,7 +20,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import GoalItem from "./components/GoalItem";
 import { findTaskByIdDeep, updateTaskByIdImmutable } from "./helpers/taskUtils";
-import { flattenGoalTasksForSave } from "./helpers/goalUtils";
+import { rehydrate_goal_tasks } from "./helpers/goalUtils";
 
 /** Inline Components **/
 
@@ -446,69 +446,25 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
-
+console.log(goal);
   const taskOptions = getTaskPaths(tasks || []);
 
   useEffect(() => {
-    if (!goal) {
-      setHeaderName("");
-      setHeaderEnabled(false);
-      setGoalFlowDir("any");
-      setSelectedTasks([]);
-      return;
-    }
+  if (!goal) {
+    setHeaderName("");
+    setHeaderEnabled(false);
+    setGoalFlowDir("any");
+    setSelectedTasks([]);
+    return;
+  }
 
-    setHeaderName(goal.header || "");
-    setHeaderEnabled(!!goal.header);
-    setGoalFlowDir(goal.goalFlowDir || "any");
+  setHeaderName(goal.header || "");
+  setHeaderEnabled(!!goal.header);
+  setGoalFlowDir(goal.goalFlowDir || "any");
 
-    const groupedMap = {};
-    const regularTasks = [];
-
-    for (const task of goal.tasks || []) {
-      const taskId = task.task_id?.toString?.();
-      if (!taskId) continue;
-
-      const original = findTaskByIdDeep(taskId, tasks);
-
-      if (task.grouping && task.unit) {
-        const unitKey = task.unit;
-        const group = groupedMap[taskId] || {
-          task_id: taskId,
-          path: task.path || [],
-          grouping: true,
-          type: task.type || "goal",
-          units: original?.properties?.grouping?.units || task.units || [],
-          unitSettings: {},
-          children: [], // ✅ NEW
-        };
-      
-        group.unitSettings[unitKey] = {
-          enabled: true,
-          flow: task.flow || "any",
-          ...(task.hasTarget
-            ? {
-                operator: task.operator || "=",
-                target: task.target || 0,
-                timeScale: task.timeScale || "daily",
-              }
-            : {
-                starting: task.starting || 0,
-              }),
-        };
-      
-        group.children = (task.children || []).map((child) => ({
-          ...child,
-          value: 0,
-        }));
-      
-        groupedMap[taskId] = group;
-      }      
-    }
-
-    const rehydrated = [...regularTasks, ...Object.values(groupedMap)];
-    setSelectedTasks(rehydrated);
-  }, [goal, tasks]);
+  const rehydrated = rehydrate_goal_tasks(goal, tasks);
+  setSelectedTasks(rehydrated);
+}, [goal, tasks]);
 
   const handleSaveGoal = () => {
     console.log(selectedTasks);

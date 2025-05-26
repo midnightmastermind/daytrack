@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "concurrently": "^9.1.2",
+    "mongodb": "^6.16.0",
     "nodemon": "^3.1.9"
   },
   "scripts": {

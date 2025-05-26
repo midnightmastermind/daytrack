@@ -277,85 +277,90 @@ export function getGoalUnitTotalsByTask(goal, options = {}) {
 
   return byTask;
 }
-
-
-const getGroupParentId = (task) => {
-  return task.assignmentAncestry?.find(a => a.properties?.grouping?.enabled)?._id?.toString?.();
-};
+export function getGroupParentId(task) {
+  // ✅ This now looks for any ancestry node marked as a grouping parent
+  return task.assignmentAncestry?.find(
+    (a) => a.properties?.group === true || a.properties?.grouping?.enabled === true
+  )?._id?.toString?.();
+}
 
 export function buildProgressEntriesFromTask(task, goal, assignmentDate, assignmentId) {
   const entries = [];
-  const seenKeys = new Set(); // 🛡️ Prevent duplicates
-
+  const seenKeys = new Set();
+  const taskId = task._id?.toString?.() || task.id;
+  
   for (const goalTask of goal.tasks || []) {
-    const taskId = task._id?.toString?.() || task.id;
+    const goalTaskId = goalTask.task_id?.toString?.();
 
-    if (goalTask.grouping && goalTask.task_id?.toString?.() !== getGroupParentId(task)) continue;
+    if (goalTask.grouping) {
+      console.log(getGroupParentId(task));
+      // ✅ Only match grouped goals if task is under the correct grouped parent
+      if (goalTaskId !== getGroupParentId(task)) continue;
 
-    if (goalTask.grouping && goalTask.unitSettings) {
       const input = task.values?.input || {};
-
-      for (const [unitKey, unitConfig] of Object.entries(goalTask.unitSettings)) {
+      console.log(task);
+      console.log(goalTask);
+      console.log(input);
+      for (const [unitKey, unitConfig] of Object.entries(goalTask.unitSettings || {})) {
+        console.log(unitKey);
+        console.log(unitConfig);
         if (!unitConfig.enabled) continue;
 
         const val = input[unitKey];
+        console.log(val);
         if (typeof val?.value !== "number") continue;
 
         const flowMatch = unitConfig.flow === "any" || val.flow === unitConfig.flow;
         if (!flowMatch) continue;
 
-        const key = `${taskId}__${unitKey}__${assignmentId}`;
+        const key = `${goalTaskId}__${unitKey}__${assignmentId}`;
         if (seenKeys.has(key)) continue;
         seenKeys.add(key);
 
         entries.push({
-          task_id: task._id,
+          task_id: goalTaskId,
           unitKey,
           value: val.value,
           flow: val.flow,
           date: assignmentDate,
-          assignmentId
+          assignmentId,
+        });
+      }
+    } else {
+      if (goalTaskId !== taskId) continue;
+
+      const trackInput = goalTask.useInput;
+      const input = task.values?.input;
+      const baseKey = `${taskId}__${assignmentId}`;
+
+      if (trackInput && typeof input === "number" && !seenKeys.has(baseKey)) {
+        seenKeys.add(baseKey);
+        entries.push({
+          task_id: taskId,
+          unitKey: taskId,
+          value: input,
+          flow: "in",
+          date: assignmentDate,
+          assignmentId,
         });
       }
 
-    } else {
-      const trackInput = goalTask.useInput;
-      const input = task.values?.input;
-
-      const baseKey = `${taskId}__${assignmentId}`;
-      if (trackInput && typeof input === "number") {
-        if (!seenKeys.has(baseKey)) {
-          seenKeys.add(baseKey);
-          entries.push({
-            task_id: task._id,
-            unitKey: taskId,
-            value: input,
-            flow: "in",
-            date: assignmentDate,
-            assignmentId
-          });
-        }
-      }
-
-      if (!trackInput && task.values?.checkbox === true) {
-        if (!seenKeys.has(baseKey)) {
-          seenKeys.add(baseKey);
-          entries.push({
-            task_id: task._id,
-            unitKey: taskId,
-            value: 1,
-            flow: "in",
-            date: assignmentDate,
-            assignmentId
-          });
-        }
+      if (!trackInput && task.values?.checkbox === true && !seenKeys.has(baseKey)) {
+        seenKeys.add(baseKey);
+        entries.push({
+          task_id: taskId,
+          unitKey: taskId,
+          value: 1,
+          flow: "in",
+          date: assignmentDate,
+          assignmentId,
+        });
       }
     }
   }
-
+console.log(entries);
   return entries;
 }
-
 
 /**
  * Calculates progress for a single unit task (grouped or not).
@@ -467,4 +472,87 @@ export function calculateGoalProgress(goalProgressParams) {
     }
   }
   return newProgress;
+}
+
+
+export function rehydrate_goal_tasks(goal, tasks) {
+  const groupedMap = {};
+  const regularTasks = [];
+
+  for (const task of goal.tasks || []) {
+    const taskId = task.task_id?.toString?.();
+    if (!taskId) continue;
+
+    const original = findTaskByIdDeep(taskId, tasks);
+
+    // Grouped Input Task
+    if (task.grouping && task.unit) {
+      const unitKey = task.unit;
+      const group = groupedMap[taskId] || {
+        task_id: taskId,
+        path: task.path || [],
+        grouping: true,
+        type: task.type || "goal",
+        units: original?.properties?.grouping?.units || task.units || [],
+        unitSettings: {},
+        children: [],
+      };
+
+      group.unitSettings[unitKey] = {
+        enabled: true,
+        flow: task.flow || "any",
+        reverseFlow: task.reverseFlow ?? false,
+        useInput: task.useInput ?? true,
+        hasTarget: task.hasTarget ?? true,
+        timeScale: task.timeScale || "daily",
+        ...(task.hasTarget ?? true
+          ? {
+              operator: task.operator || "=",
+              target: task.target ?? 0,
+            }
+          : {
+              starting: task.starting ?? 0,
+            }),
+      };
+
+      groupedMap[taskId] = group;
+    }
+
+    // Regular Goal Task (not grouped)
+    else {
+      const baseTask = {
+        ...task,
+        path: task.path || original?.path || [],
+        type: task.type || "goal",
+        target: task.target ?? 0,
+        operator: task.operator || "=",
+        timeScale: task.timeScale || "daily",
+        reverseFlow: task.reverseFlow ?? false,
+        flow: task.flow || "any",
+        useInput: task.useInput ?? true,
+        hasTarget: task.hasTarget ?? true,
+        starting: task.starting ?? 0,
+      };
+
+      regularTasks.push(baseTask);
+    }
+  }
+
+  // Populate children array for each grouped task
+  for (const group of Object.values(groupedMap)) {
+    const children = group.units
+      .filter((u) => u.type !== "text")
+      .map((unit) => {
+        const settings = group.unitSettings[unit.key] || {};
+        return {
+          unitKey: unit.key,
+          unitLabel: unit.label,
+          value: 0,
+          ...settings,
+        };
+      });
+    group.children = children;
+  }
+
+  return [...regularTasks, ...Object.values(groupedMap)];
 }
