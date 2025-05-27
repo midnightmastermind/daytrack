@@ -208,7 +208,7 @@ export function diffTaskChildren(original = [], current = []) {
     }
   });
 
-  return { added, updated, deleted };
+  return { additions: added, updates: updated, deletions: deleted };
 }
 
 export function replaceTaskByTempId(tasks, tempId, newTask) {
