@@ -528,6 +528,22 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
       <div className="task-form-edit-panel task-form-panel">
         <div className="edit-panel-header">{task ? "Edit Task" : "Create New Task"}</div>
         <div className="task-card-name">
+          <div className="task-icon-input">
+  <Tag>Icon (emoji or BlueprintJS name)</Tag>
+  <InputGroup
+    placeholder="e.g. 🍽️ or symbol-circle"
+    value={stagedTask?.properties?.icon || ""}
+    onChange={(e) =>
+      setStagedTask({
+        ...stagedTask,
+        properties: {
+          ...stagedTask.properties,
+          icon: e.target.value,
+        },
+      })
+    }
+  />
+</div>
           <Tag intent="primary">
             Task Name
           </Tag>
