@@ -20,7 +20,7 @@ const GoalDisplay = ({ goals, onEditGoal }) => {
             </div>
           ))
         ) : (
-          <div>No goals yet</div>
+          <div className="empty-container">No goals yet</div>
         )}
       </div>
     </div>

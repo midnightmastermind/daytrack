@@ -1,5 +1,5 @@
 // NewTaskForm.jsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo} from "react";
 import {
   Button,
   InputGroup,
@@ -10,13 +10,18 @@ import {
 } from "@blueprintjs/core";
 import TaskCard from "./components/TaskCard";
 import ScheduleCard from "./components/ScheduleCard";
+import EmojiIconPicker from "./components/EmojiIconPicker";
+
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { v4 as uuidv4 } from "uuid";
 import {
   getSelectedLeaves,
   getTaskKey,
   getTaskAncestryByIdDeep,
-  updateTaskByIdDeep
+  updateTaskByIdDeep,
+  getAllGroupEnabledIds,
+  findTaskByIdDeep,
+  getTaskAncestryIdsByIdDeep
 } from "./helpers/taskUtils";
 import "./NewTaskForm.css";
 
@@ -24,12 +29,55 @@ import { useDispatch } from "react-redux";
 import {
   deleteTask,
   deleteTaskOptimistic,
+  addTaskOptimistic,
+  updateTaskOptimistic,
+  createTask,
   updateTask,
-  createTask
 } from "./store/tasksSlice";
 import { diffTaskChildren } from "./helpers/taskUtils";
 
-const ChildEditor = ({ child, updateChild, removeChild, groupingEnabled }) => {
+const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild, groupingEnabled }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [groupedUnits, setGroupedUnits] = useState([]);
+  console.log(allGroupIds);
+  function getRelevantParentUnitsForChild(stagedTask, childId, allGroupIds) {
+    if (!stagedTask || !childId || !Array.isArray(allGroupIds)) return [];
+  
+    const ancestryIds = getTaskAncestryIdsByIdDeep([stagedTask], childId);
+    if (!Array.isArray(ancestryIds)) return [];
+  
+    // Filter for group-enabled ancestors, excluding the child itself
+    const matchingAncestorIds = ancestryIds.filter(
+      (id) => id !== childId && allGroupIds.includes(id)
+    );
+  
+    // Collect units from those matching ancestor tasks
+    const units = matchingAncestorIds.flatMap((id) => {
+      const node = findTaskByIdDeep(id, [stagedTask]);
+      return Array.isArray(node?.properties?.grouping?.units)
+        ? node.properties.grouping.units
+        : [];
+    });
+  
+    return units;
+  }
+  useEffect(() => {
+    console.log(!stagedTask && !child && !allGroupIds.length > 0);
+    if (!stagedTask && !child && !allGroupIds) return;
+
+    refreshGroupedUnits(stagedTask, child, allGroupIds);
+  }, [allGroupIds, child, stagedTask]);
+
+  const refreshGroupedUnits = (stagedTask, child, allGroupIds) => {
+    console.log("refresh");
+    console.log(stagedTask);
+    console.log(child);
+    console.log(allGroupIds);
+    const groupedUnits =  getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
+
+    console.log(groupedUnits);
+    setGroupedUnits(groupedUnits);
+  }
   const updateField = (field, value) => {
     updateChild(child._id || child.tempId || child.id, {
       ...child,
@@ -50,7 +98,7 @@ const ChildEditor = ({ child, updateChild, removeChild, groupingEnabled }) => {
     const newChild = {
       id: uuidv4(),
       name: "",
-      properties: { checkbox: false, input: true, preset: true },
+      properties: { checkbox: false, input: false, group: false, preset: false },
       values: { checkbox: false, input: {} },
       children: [],
     };
@@ -58,11 +106,15 @@ const ChildEditor = ({ child, updateChild, removeChild, groupingEnabled }) => {
       ...child,
       children: [...(child.children || []), newChild],
     });
+
   };
 
+
+  
   const addUnit = () => {
+    const currentUnits = child.properties.grouping?.units || [];
     const updatedUnits = [
-      ...(child.properties.grouping?.units || []),
+      ...currentUnits,
       {
         name: "",
         key: "",
@@ -70,37 +122,53 @@ const ChildEditor = ({ child, updateChild, removeChild, groupingEnabled }) => {
         suffix: "",
         type: "float",
         enabled: true,
-        isMulti: false
-      }
+        isMulti: false,
+      },
     ];
     updateField("properties", {
       ...child.properties,
-      grouping: { ...child.properties.grouping, units: updatedUnits },
+      grouping: {
+        ...child.properties.grouping,
+        units: updatedUnits,
+      },
     });
   };
-
+  
   const updateUnit = (index, field, value) => {
     const updatedUnits = [...(child.properties.grouping?.units || [])];
     updatedUnits[index][field] = value;
     updateField("properties", {
       ...child.properties,
-      grouping: { ...child.properties.grouping, units: updatedUnits },
+      grouping: {
+        ...child.properties.grouping,
+        units: updatedUnits,
+      },
     });
   };
-
+  
   const deleteUnit = (index) => {
-    const updatedUnits = child.properties.grouping.units.filter((_, i) => i !== index);
+    const updatedUnits = (child.properties.grouping?.units || []).filter((_, i) => i !== index);
     updateField("properties", {
       ...child.properties,
-      grouping: { ...child.properties.grouping, units: updatedUnits },
+      grouping: {
+        ...child.properties.grouping,
+        units: updatedUnits,
+      },
     });
   };
 
   return (
     <div className="child-editor">
-      <div className="child-editor-row">
+      <div className={`category-children-header ${isHovered ? 'hovered-title' : ''}`}>{`${child.name}`}</div>
+      <div className={`child-editor-row ${isHovered ? 'hovered' : ''}`}>
         <div className="child-editor-header">
-          <div className="child-name-row">
+          <EmojiIconPicker
+            value={child?.properties?.icon}
+            onChange={(val) =>
+              updateField("properties", { ...child.properties, icon: val })
+            }
+          />
+          <div className="child-name-column">
             <Tag minimal>Name</Tag>
             <InputGroup
               value={child.name}
@@ -108,199 +176,221 @@ const ChildEditor = ({ child, updateChild, removeChild, groupingEnabled }) => {
               onChange={(e) => updateField("name", e.target.value)}
             />
           </div>
-          <Button
-            icon="cross"
-            minimal
-            onClick={() => removeChild(child._id || child.tempId || child.id)}
-          />
-        </div>
-        <div className="child-input-options">
-          <Switch
-            large
-            innerLabel="Checkbox"
-            checked={child.properties?.checkbox || false}
-            onChange={(e) => updateField("properties", { ...child.properties, checkbox: e.target.checked })}
-          />
-          <Switch
-            large
-            innerLabel="Input"
-            checked={child.properties?.input || false}
-            onChange={(e) => updateField("properties", { ...child.properties, input: e.target.checked })}
-          />
-          <Switch
-            large
-            innerLabel="Category"
-            checked={child.properties?.category || false}
-            onChange={(e) => updateField("properties", { ...child.properties, category: e.target.checked })}
-          />
-          {child.properties?.category && (
-            <Switch
-              large
-              innerLabel="Group"
-              checked={child.properties?.grouping?.enabled || false}
-              onChange={(e) =>
-                updateField("properties", {
-                  ...child.properties,
-                  grouping: {
-                    ...(child.properties.grouping || {}),
-                    enabled: e.target.checked,
-                    units: child.properties.grouping?.units || [],
-                  },
-                })
-              }
-            />
-          )}
-          {groupingEnabled && (
-            <Switch
-              large
-              innerLabel="Preset"
-              checked={child.properties?.preset || false}
-              onChange={(e) =>
-                updateField("properties", {
-                  ...child.properties,
-                  preset: e.target.checked,
-                })
-              }
-            />
-          )}
-        </div>
-      </div>
+          <div className="child-input-options-container">
 
-      {child.properties?.grouping?.units && (
-        <div className="grouping-container">
-          <div className="grouping-unit-header">Grouping Units</div>
-          <div className="grouping-units-list">
-            {(child.properties.grouping?.units || []).map((unit, i) => (
-              <div className="grouping-unit-row" key={`${child.name}-${i}`}>
-                <InputGroup placeholder="Name" value={unit.key} onChange={(e) => updateUnit(i, "key", e.target.value)} />
-                <InputGroup placeholder="Label" value={unit.label} onChange={(e) => updateUnit(i, "label", e.target.value)} />
-                <InputGroup placeholder="Prefix" value={unit.prefix} onChange={(e) => updateUnit(i, "prefix", e.target.value)} />
-                <InputGroup placeholder="Suffix" value={unit.suffix} onChange={(e) => updateUnit(i, "suffix", e.target.value)} />
-                <HTMLSelect
-                  options={[
-                    { label: "Decimal", value: "decimal" },
-                    { label: "Number", value: "number" },
-                    { label: "Text", value: "text" }
-                  ]}
-                  value={unit.type}
-                  onChange={(e) => updateUnit(i, "type", e.target.value)}
-                />
-                <Button icon="cross" minimal onClick={() => deleteUnit(i)} />
-              </div>
-            ))}
-            <Button icon="plus" minimal onClick={addUnit} />
-          </div>
-        </div>
-      )}
+            <div className="child-input-options-header">Options</div>
+            <div className="child-input-options">
+              <Switch
+                large
+                innerLabel="Checkbox"
+                checked={child.properties?.checkbox || false}
+                onChange={(e) => updateField("properties", { ...child.properties, checkbox: e.target.checked })}
+              />
+              <Switch
+                large
+                innerLabel="Input"
+                checked={child.properties?.input || false}
+                onChange={(e) => updateField("properties", { ...child.properties, input: e.target.checked })}
+              />
+              <Switch
+                large
+                innerLabel="Category"
+                checked={child.properties?.category || false}
+                onChange={(e) => {
+                  updateField("properties", {
+                    ...child.properties,
+                    category: e.target.checked,
+                  });
 
-      {child.children?.length > 0 && (
-        <div className="category-children-container">
-          <div className="category-children-header">Children</div>
-          <div className="nested-children">
-            {(child.children || []).map((nested) => (
-              <ChildEditor
-                key={getTaskKey(nested)}
-                child={{
-                  ...nested,
-                  parentGroupingUnits: child.properties?.grouping?.units || []
-                }}
-                updateChild={updateNestedChild}
-                groupingEnabled={child.properties?.grouping?.enabled || false}
-                removeChild={(id) => {
-                  const updated = child.children.filter((c) => getTaskKey(c) !== id);
-                  updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
+                  if (e.target.checked && !child.children) {
+                    updateChild(child._id || child.tempId || child.id, {
+                      ...child,
+                      children: [],
+                    });
+                  }
                 }}
               />
-            ))}
-            <div className="nested-button">
-              <Button icon="plus" minimal onClick={addNestedChild} />
-            </div>
-          </div>
-        </div>
-      )}
-      {child.properties?.preset && child.parentGroupingUnits?.length > 0 && (
-        <div className="preset-inputs">
-          <div className="preset-inputs-header">Preset Values</div>
-          {child.parentGroupingUnits.map((unit) => {
-            const field = child.values?.input?.[unit.key];
-            const value = typeof field === "object" ? field.value : field;
-            const flow = typeof field === "object" ? field.flow : "in";
-            const enabled = typeof field === "object" ? field.enabled !== false : true;
-
-            console.log(unit);
-
-            if (unit.key === "name") return;
-
-            return (
-              <div key={unit.key} className="preset-input-row">
+              {child.properties?.category && (
                 <Switch
-                  checked={enabled}
+                  large
+                  innerLabel="Group"
+                  checked={child.properties?.group || false}
                   onChange={(e) =>
-                    updateField("values", {
-                      ...child.values,
-                      input: {
-                        ...child.values?.input,
-                        [unit.key]: {
-                          ...(typeof field === "object" ? field : { value }),
-                          enabled: e.target.checked,
-                          flow,
-                        },
+                    updateField("properties", {
+                      ...child.properties,
+                      group: e.target.checked,
+                      grouping: {
+                        ...(child.properties.grouping || {}),
+                        units: child.properties.grouping?.units || [],
                       },
                     })
                   }
                 />
-                <Tag minimal>{unit.label || unit.key}</Tag>
-                {unit.type === "text" ? (
-                  <InputGroup
-                    value={value || ""}
+              )}
+              {(groupedUnits?.length > 0) && (
+                <Switch
+                  large
+                  innerLabel="Preset"
+                  checked={child.properties?.preset || false}
+                  onChange={(e) =>
+                    updateField("properties", {
+                      ...child.properties,
+                      preset: e.target.checked,
+                    })
+                  }
+                />
+              )}
+            </div>
+          </div>
+          <Button
+            icon="cross"
+            minimal
+            className="child-remove-button"
+            onClick={() => removeChild(child._id || child.tempId || child.id)}
+          />
+        </div>
+
+        {child.properties?.group && child.properties?.grouping?.units && (
+          <div className="category-children-container">
+            <div className="category-children-header">{`${child.name} > Grouping Units`}</div>
+            <div className="nested-children">
+              {(child.properties.grouping?.units || []).map((unit, i) => (
+                <div className="grouping-unit-row" key={`${child.name}-${i}`}>
+                  <EmojiIconPicker
+                    value={unit.icon}
+                    onChange={(val) => updateUnit(i, "icon", val)}
+                  />
+                  <InputGroup placeholder="Name" value={unit.key} onChange={(e) => updateUnit(i, "key", e.target.value)} />
+                  <InputGroup placeholder="Label" value={unit.name} onChange={(e) => updateUnit(i, "name", e.target.value)} />
+                  <InputGroup placeholder="Prefix" value={unit.prefix} onChange={(e) => updateUnit(i, "prefix", e.target.value)} />
+                  <InputGroup placeholder="Suffix" value={unit.suffix} onChange={(e) => updateUnit(i, "suffix", e.target.value)} />
+                  <HTMLSelect
+                    options={[
+                      { label: "Decimal", value: "float" },
+                      { label: "Number", value: "integer" },
+                      { label: "Text", value: "string" }
+                    ]}
+                    value={unit.type}
+                    onChange={(e) => updateUnit(i, "type", e.target.value)}
+                  />
+                  <Button icon="cross" minimal onClick={() => deleteUnit(i)} />
+                </div>
+              ))}
+              <Button icon="plus" minimal onClick={addUnit} text={`Add ${child.name} Grouped Unit`}/>
+            </div>
+          </div>
+        )}
+
+        {child.properties?.preset && groupedUnits?.length > 0 && (
+          <div className="preset-inputs">
+            <div className="preset-inputs-header">{`${child.name} > Preset Values`}</div>
+            {groupedUnits.map((unit) => {
+              const field = child.values?.input?.[unit.key];
+              const value = typeof field === "object" ? field.value : field;
+              const flow = typeof field === "object" ? field.flow : "in";
+              const enabled = typeof field === "object" ? field.enabled !== false : true;
+
+              if (unit.key === "name") return;
+
+              return (
+                <div key={unit.key} className="preset-input-row">
+                  <Switch
+                    checked={enabled}
                     onChange={(e) =>
                       updateField("values", {
                         ...child.values,
                         input: {
                           ...child.values?.input,
-                          [unit.key]: e.target.value,
+                          [unit.key]: {
+                            ...(typeof field === "object" ? field : { value }),
+                            enabled: e.target.checked,
+                            flow,
+                          },
                         },
                       })
                     }
                   />
-                ) : (
-                  <>
-                    <NumericInput
-                      fill
-                      value={value || 0}
-                      onValueChange={(num) =>
-                        updateField("values", {
-                          ...child.values,
-                          input: {
-                            ...child.values?.input,
-                            [unit.key]: { value: num, flow },
-                          },
-                        })
-                      }
-                      buttonPosition="none"
-                    />
-                    <Switch
-                      innerLabel="In"
-                      innerLabelChecked="Out"
-                      checked={flow === "out"}
+                  <Tag minimal>{unit.label || unit.key}</Tag>
+                  {unit.type === "text" ? (
+                    <InputGroup
+                      value={value || ""}
                       onChange={(e) =>
                         updateField("values", {
                           ...child.values,
                           input: {
                             ...child.values?.input,
-                            [unit.key]: { value, flow: e.target.checked ? "out" : "in" },
+                            [unit.key]: e.target.value,
                           },
                         })
                       }
                     />
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <NumericInput
+                        fill
+                        value={value || 0}
+                        onValueChange={(num) =>
+                          updateField("values", {
+                            ...child.values,
+                            input: {
+                              ...child.values?.input,
+                              [unit.key]: { value: num, flow },
+                            },
+                          })
+                        }
+                        buttonPosition="none"
+                      />
+                      <Switch
+                        innerLabel="In"
+                        innerLabelChecked="Out"
+                        checked={flow === "out"}
+                        onChange={(e) =>
+                          updateField("values", {
+                            ...child.values,
+                            input: {
+                              ...child.values?.input,
+                              [unit.key]: { value, flow: e.target.checked ? "out" : "in" },
+                            },
+                          })
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        {child.properties?.category && (
+          <div className="category-children-container">
+            <div className="category-children-header">{`${child.name} > Children`}</div>
+            <div className="nested-children">
+              {(child.children || []).map((nested) => (
+                <ChildEditor
+                  key={getTaskKey(nested)}
+                  child={{
+                    ...nested,
+                  }}
+                  updateChild={updateNestedChild}
+                  allGroupIds={allGroupIds}
+                  stagedTask={stagedTask}
+                  removeChild={(id) => {
+                    const updated = child.children.filter((c) => getTaskKey(c) !== id);
+                    updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
+                  }}
+                />
+              ))}
+              <div className="nested-button"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                >
+                <Button icon="plus" minimal onClick={addNestedChild} text={`Add ${child.name} Child`}/>
               </div>
-            );
-          })}
-        </div>
-      )}
-
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -399,10 +489,13 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
   const [previewAssignments, setPreviewAssignments] = useState({ "7:30 AM": [] });
 
   const dispatch = useDispatch();
-
+  const [ancestorGroupingIds, setAncestorGroupingIds] = useState([]);
   useEffect(() => {
     if (task) {
       const clone = structuredClone(task);
+      // Ensure ID fields persist
+      clone._id = task._id;
+      clone.tempId = task.tempId || task._id;
       setStagedTask(clone);
       stagedTaskRef.current = clone;
     } else {
@@ -417,6 +510,15 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
       stagedTaskRef.current = temp;
     }
   }, [task]);
+
+  useEffect(() => {
+    if (!stagedTask) return;
+    console.log(stagedTask);
+    const allGroupIds = getAllGroupEnabledIds(stagedTask);
+
+    console.log(allGroupIds);
+    setAncestorGroupingIds(allGroupIds);
+  }, [stagedTask]);
 
   const addChild = () => {
     const newChild = {
@@ -444,41 +546,56 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
   };
 
   const handleSave = () => {
-    if (!stagedTaskRef.current || !stagedTask) return;
-
-    const { additions, updates, deletions } = diffTaskChildren(stagedTaskRef.current.children, stagedTask.children);
-
-    additions.forEach((task) => dispatch(createTask(task)));
-    updates.forEach(({ id, updates }) => dispatch(updateTask({ id, updates })));
-    deletions.forEach((id) => {
-      dispatch(deleteTaskOptimistic(id));
-      dispatch(deleteTask(id));
-    });
-
-    const topLevelTask = {
-      ...(stagedTask._id ? { _id: stagedTask._id } : {}),
-      name: stagedTask.name,
-      tempId: stagedTask.tempId,
-      properties: stagedTask.properties || { card: true, category: true },
-      children: stagedTask.children,
-    };
-
-    dispatch(updateTask({ id: topLevelTask._id || topLevelTask.tempId, updates: topLevelTask }));
-    onSave(topLevelTask);
+    if (!stagedTask) return;
+    
+    if (stagedTask._id) {
+      dispatch(updateTaskOptimistic({ id: stagedTask._id, updates: stagedTask }));
+      dispatch(updateTask({ id: stagedTask._id, updates: stagedTask }));
+    } else {
+      dispatch(addTaskOptimistic(stagedTask));
+      dispatch(createTask(stagedTask));
+    }
+  
+    onSave?.(stagedTask);
   };
+  // const handleSave = () => {
+  //   if (!stagedTaskRef.current || !stagedTask) return;
+
+  //   const {additions, updates, deletions} = diffTaskChildren(stagedTaskRef.current.children, stagedTask.children);
+
+  //   additions.forEach((task) => dispatch(createTask(task)));
+  //   updates.forEach(({id, updates}) => dispatch(updateTask({id, updates})));
+  //   deletions.forEach((id) => {
+  //     dispatch(deleteTaskOptimistic(id));
+  //     dispatch(deleteTask(id));
+  //   });
+
+  //   const topLevelTask = {
+  //     ...(stagedTask._id ? {_id: stagedTask._id } : { }),
+  //     name: stagedTask.name,
+  //     tempId: stagedTask.tempId,
+  //     properties: stagedTask.properties || {card: true, category: true },
+  //     children: stagedTask.children,
+  //   };
+
+  //   if (topLevelTask._id) {
+  //     dispatch(updateTask({id: topLevelTask._id, updates: topLevelTask }));
+  //   } else {
+  //     dispatch(createTask(topLevelTask));
+  //   }
+  //   onSave(topLevelTask); 
+  // };
 
   const handlePreviewTaskUpdate = (updatedTask) => {
     setPreviewTask(updatedTask);
   };
-
   return (
     <div className="task-form">
       <div className="task-form-edit-panel task-form-panel">
         <div className="edit-panel-header">{task ? "Edit Task" : "Create New Task"}</div>
         <div className="task-card-name">
-          <Tag>Icon (emoji or BlueprintJS name)</Tag>
-          <InputGroup
-            placeholder="e.g. 🍽️ or symbol-circle"
+          {/* <InputGroup
+            placeholder="icon"
             value={stagedTask?.properties?.icon || ""}
             onChange={(e) =>
               setStagedTask({
@@ -486,6 +603,18 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
                 properties: {
                   ...stagedTask.properties,
                   icon: e.target.value,
+                },
+              })
+            }
+          /> */}
+          <EmojiIconPicker
+            value={stagedTask?.properties?.icon}
+            onChange={(val) =>
+              setStagedTask({
+                ...stagedTask,
+                properties: {
+                  ...stagedTask.properties,
+                  icon: val,
                 },
               })
             }
@@ -499,7 +628,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
         </div>
         <div className="task-form-children-section">
           <div className="form-section-header">
-            <div className="children-header">Children</div>
+            <div className="children-header">{`${stagedTask?.name} > Children`}</div>
             <Button intent="primary" icon="plus" text="Add Subtask" onClick={addChild} />
           </div>
           <div className="task-form-children-list">
@@ -513,12 +642,12 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
                 <ChildEditor
                   key={getTaskKey(child)}
                   child={{
-                    ...liveChild,
-                    parentGroupingUnits: stagedTask.properties?.grouping?.units || []
+                    ...liveChild
                   }}
-                  groupingEnabled={stagedTask.properties?.grouping?.enabled || false}
+                  allGroupIds={ancestorGroupingIds}
                   updateChild={updateChild}
                   removeChild={removeChild}
+                  stagedTask={{...stagedTask}}
                 />
               );
             })}

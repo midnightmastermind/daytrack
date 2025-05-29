@@ -21,7 +21,6 @@ const TaskCard = ({
   task,
   index,
   onEditTask,
-  onOpenDrawer,
   onTaskUpdate,
   onInsertAdhoc,
   draggedTaskId,
@@ -37,21 +36,20 @@ const TaskCard = ({
   const toggleCollapse = () => setIsOpen(!isOpen);
 
   useEffect(() => {
-    taskStateRef.current = task;
-    setLocalTask(task);
-  }, [task]);
-
-  useEffect(() => {
-    const isValid = newPresetDraft.name?.trim() && newPresetDraft.checkbox;
-
-    if (isValid && onInsertAdhoc) {
-      const tempId = newPresetDraft.tempId || `adhoc_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
-      const draft = buildAdhocChildFromDraft({ ...newPresetDraft, tempId });
-
-      onInsertAdhoc(tempId, draft);
-    }
-  }, [newPresetDraft]);
-
+    if (!onInsertAdhoc) return;
+  
+    const tempId = newPresetDraft.tempId || `adhoc_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
+    const updatedDraft = { ...newPresetDraft, tempId };
+    onInsertAdhoc(tempId, updatedDraft); // ✅ always send draft changes
+    setNewPresetDraft((prev) => ({ ...prev, tempId }));
+  }, [
+    newPresetDraft.name,
+    newPresetDraft.checkbox,
+    ...Object.keys(newPresetDraft)
+      .filter(k => !['name', 'checkbox', 'parentId', 'tempId', 'inserted'].includes(k))
+      .map(k => typeof newPresetDraft[k] === 'object' ? JSON.stringify(newPresetDraft[k]) : newPresetDraft[k])
+  ]);
+  
   useEffect(() => {
     const myId = (task._id || task.tempId || task.id || "").toString();
     if (draggedTaskId === myId) {
@@ -91,37 +89,76 @@ const TaskCard = ({
   };
 
   const handleNewPresetChange = (key, value, parentId) => {
-    setNewPresetDraft((prev) => {
-      const tempId = prev.tempId;
-      return {
-        ...prev,
-        [key]: value,
-        parentId,
-        tempId,
+    const tempId = newPresetDraft.tempId || `adhoc_${task._id}_${parentId}_${Date.now()}`;
+  
+    // Update draft (for local input box rendering)
+    setNewPresetDraft((prev) => ({
+      ...prev,
+      [key]: value,
+      parentId,
+      tempId,
+      inserted: prev.inserted,
+    }));
+  
+    // Update live taskStateRef so that inputs are in sync with the actual task
+    const children = taskStateRef.current.children || [];
+    const targetIndex = children.findIndex(c => c.tempId === tempId);
+    if (targetIndex !== -1) {
+      const target = { ...children[targetIndex] };
+      target.values = {
+        ...target.values,
+        input: {
+          ...(target.values.input || {}),
+          [key]: value
+        }
       };
-    });
+      const updatedChildren = [...children];
+      updatedChildren[targetIndex] = target;
+  
+      taskStateRef.current = {
+        ...taskStateRef.current,
+        children: updatedChildren,
+      };
+      setLocalTask({ ...taskStateRef.current }); // trigger re-render
+    }
   };
-
-  const buildAdhocChildFromDraft = (draft) => {
+  
+  const buildAdhocChildFromDraft = (draft, groupingUnits = []) => {
     if (!draft.name?.trim()) return null;
+  
+    const input = {};
 
+    groupingUnits.forEach(unit => {
+      input[unit.key] = draft[unit.key] ?? (
+        unit.type === "text" ? "" : { value: 0, flow: "in" }
+      );
+    });
+    
+  
     return {
       id: draft.tempId,
       tempId: draft.tempId,
       name: draft.name.trim(),
-      properties: { group: true, checkbox: true, input: true, card: false, category: false },
+      parentId: draft.parentId,
+      properties: {
+        preset: true,
+        group: false,
+        checkbox: true,
+        input: true,
+        card: false,
+        category: false,
+      },
       values: {
         checkbox: draft.checkbox || false,
-        input: { ...draft },
+        input // ✅ Only includes unit keys now
       },
       children: [],
       goals: [],
       counters: [],
-      parentId: draft.parentId,
     };
   };
-
-
+  
+  
   const saveNewPreset = () => {
     if (!newPresetDraft.name?.trim()) return;
     const tempId = newPresetDraft.tempId || `preset_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
@@ -153,9 +190,10 @@ const TaskCard = ({
           return (
             <div key={childKey} className="category-container">
               <div className="category-name">
+                {child.properties.icon?.type === "emoji" ? <div className="task-icon">{child.properties.icon?.value}</div> : <Icon icon={child.properties.icon?.value} />}
                 <Tag minimal>{child.name}</Tag>
               </div>
-              {child.children?.length > 0 && (
+              {(child.children?.length > 0 || groupingUnits) && (
                 <Collapse isOpen keepChildrenMounted>
                   <div className={`category-collapse ${groupingUnits.length > 0 ? "grouped-category" : ""}`}>
                     {renderChildren(child.children, groupingUnits, child._id)}
@@ -182,6 +220,7 @@ const TaskCard = ({
                 }
               />
             )}
+            {child.properties.icon?.type === "emoji" ? <div className="task-icon">{child.properties.icon?.value}</div> : <Icon icon={child.properties.icon?.value} />}
             <div className="child-task-name">{child.name}</div>
             {/* 👇 Fallback for simple input tasks (not grouped or category) */}
             {child.properties?.input &&
@@ -227,13 +266,14 @@ const TaskCard = ({
                 </div>
               ) : (
                 parentGroupingUnits.map((unit) => {
+
                   const field = child.values?.input?.[unit.key];
                   const value =
                     typeof field === "object" ? field.value : field;
                   const flow =
                     typeof field === "object" ? field.flow : "in";
-
-                  return (
+                  console.log(field);
+                  return (  
                     <div
                       key={`${childKey}-${unit.key}`}
                       style={{
@@ -257,9 +297,10 @@ const TaskCard = ({
                         />
                       ) : (
                         <>
+                          {unit.prefix && <Tag minimal className="unit-prefix">{unit.prefix}</Tag>}
                           <NumericInput
                             fill
-                            value={value || ""}
+                            value={value || 0}
                             onValueChange={(num) =>
                               handleChildChange(childKey, "input", {
                                 ...child.values?.input,
@@ -271,6 +312,7 @@ const TaskCard = ({
                             }
                             buttonPosition="none"
                           />
+                          {unit.suffix && <Tag minimal className="unit-suffix">{unit.suffix}</Tag>}
                           <Switch
                             className={`flow-switch-${flow}`}
                             innerLabel="In"
@@ -335,7 +377,7 @@ const TaskCard = ({
                   key={`new-${unit.key}`}
                   className="preset-input"
                 >
-                  <Tag minimal intent="primary">{unit.label}</Tag>
+                  <Tag minimal intent="primary">{unit.key}</Tag>
                   {unit.type === "text" ? (
                     <InputGroup
                       value={newPresetDraft[unit.key] || ""}
@@ -345,9 +387,11 @@ const TaskCard = ({
                     />
                   ) : (
                     <>
+                      {unit.prefix && <Tag minimal className="unit-prefix">{unit.prefix}</Tag>}
+
                       <NumericInput
                         fill
-                        value={newPresetDraft[unit.key]?.value || ""}
+                        value={Number(newPresetDraft[unit.key]?.value) || 0}
                         onValueChange={(num) =>
                           handleNewPresetChange(unit.key, {
                             value: num,
@@ -356,6 +400,8 @@ const TaskCard = ({
                         }
                         buttonPosition="none"
                       />
+                      {unit.suffix && <Tag minimal className="unit-suffix">{unit.suffix}</Tag>}
+
                       <Switch
                         className={`flow-switch-${newPresetDraft[unit.key]?.flow || "in"}`}
                         innerLabel="In"
@@ -385,7 +431,7 @@ const TaskCard = ({
 
   const taskId =
     (task._id || task.tempId || task.id || "unknown-task").toString();
-  const selectedLeaves = getSelectedLeaves(localTask) .filter((leaf) => leaf._id !== localTask._id); // exclude fallback parent;
+  const selectedLeaves = getSelectedLeaves(localTask).filter((leaf) => leaf._id !== localTask._id); // exclude fallback parent;
 
   // const cardContent = (
   //   <Card
@@ -467,7 +513,9 @@ const TaskCard = ({
               ) : (
                 <Icon icon="dot" />
               )}
-              <div className="task-name">{task.name}</div>
+              <div className="task-name">
+                {task.properties.icon?.type === "emoji" ? <div className="task-icon">{task.properties.icon?.value}</div> : <Icon icon={task.properties.icon?.value} />}
+                {task.name}</div>
             </div>
             {selectedLeaves.length > 0 && (
               <div className="taskcard-leaf-preview">
@@ -493,7 +541,6 @@ const TaskCard = ({
                   minimal
                   onClick={() => {
                     onEditTask(task);
-                    onOpenDrawer();
                   }}
                 />
               )}

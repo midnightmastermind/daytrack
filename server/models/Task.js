@@ -21,7 +21,10 @@ const TaskSchema = new mongoose.Schema({
     input: { type: Boolean, default: false },
     category: { type: Boolean, default: false },
     preset: { type: Boolean, default: false }, // Subtask is preset
-    icon: { type: String, default: "" },       // Emoji or Blueprint icon
+    icon: {
+      type: mongoose.Schema.Types.Mixed, // allows object like { type, value }
+      default: null,
+    },
     grouping: {
       input: { type: mongoose.Schema.Types.Mixed, default: "" },
       units: { type: [UnitSchema], default: [] } // Full unit definitions

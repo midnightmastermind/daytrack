@@ -264,7 +264,7 @@ const ActualPanel = ({
     if (!selected || selectedTasks.find((t) => t.task_id === selected.id)) return;
 
     const originalTask = findTaskByIdDeep(selected.id, tasks);
-    const groupingEnabled = originalTask?.properties?.grouping?.enabled;
+    const groupingEnabled = originalTask?.properties?.group;
     const units = originalTask?.properties?.grouping?.units || [];
 
     const goalItem = {
@@ -349,6 +349,7 @@ const ActualPanel = ({
 
       <div className="goal-tasks-actual">
         {(selectedTasks || []).map((t, idx) => {
+          console.log(t);
           return (
             <div key={`${t.task_id}-${idx}`}>
               {t.grouping && Array.isArray(t.units) ? (

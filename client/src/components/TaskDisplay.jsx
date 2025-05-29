@@ -69,6 +69,57 @@ const groupChains = (chains) => {
 };
 
 const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
+  let hasRenderedTasks = false;
+
+  const slotCards = timeSlots.map((timeSlot) => {
+    const tasksForSlot = assignments[timeSlot] || [];
+    const flatChains = tasksForSlot.flatMap(extractChains).filter((chain) => chain.length > 0);
+    if (flatChains.length === 0) return null;
+
+    hasRenderedTasks = true;
+    const grouped = groupChains(flatChains);
+
+    return (
+      <Card key={timeSlot} elevation={Elevation.FOUR} className="display-card">
+        <div className="timeslot">
+          <strong>{timeSlot}</strong>
+        </div>
+        <div className="task-tags-completed">
+          {grouped.map(({ ancestors, leaves }, index) => (
+            <div key={index} className="tag-chain">
+              {ancestors.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2px" }}>
+                  {ancestors.map((tag) => (
+                    <Tag
+                      key={`${tag.key}-${index}`}
+                      minimal
+                      intent={tag.intent}
+                      style={{ marginRight: "5px", marginBottom: "5px" }}
+                    >
+                      {tag.name}
+                    </Tag>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", flexWrap: "wrap" }}>
+                {leaves.map((leaf) => (
+                  <Tag
+                    key={leaf.assignmentId || `${leaf.key}-${timeSlot}-${index}`}
+                    intent={leaf.intent}
+                    minimal={false}
+                    style={{ marginRight: "5px", marginBottom: "8px" }}
+                  >
+                    {leaf.name}
+                  </Tag>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  });
+
   return (
     <div className="display-container">
       <div className="display-header">Completed Tasks</div>
@@ -110,9 +161,13 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
             </Card>
           );
         })}
+        {hasRenderedTasks ? slotCards : (
+          <div className="empty-container">No tasks completed</div>
+        )}
       </CardList>
     </div>
   );
 };
+
 
 export default TaskDisplay;

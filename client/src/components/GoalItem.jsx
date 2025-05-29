@@ -7,7 +7,6 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
   const tasks = useSelector((state) => state.tasks.tasks || []);
   const [changeIndicators, setChangeIndicators] = useState({});
   const prevValuesRef = useRef({});
-
   const getLiveTaskName = (taskId) => {
     const match = findTaskByIdDeep(taskId, tasks);
     return match?.name || "(unknown)";
@@ -92,12 +91,14 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                       const key = `${taskKey}__${unitKey}`;
                       const change = changeIndicators[key];
                       const current = getProgressValue(taskKey, unitKey);
-                      const target = t.unitSettings?.[unitKey]?.target || 0;
-                      const operator = t.unitSettings?.[unitKey]?.operator || "=";
+                      const unitSettings = t.unitSettings?.[unitKey];
+                      const target = unitSettings?.target || 0;
+                      const operator = unitSettings?.operator || "=";
                       const isComplete =
                         (operator === "=" && current === target) ||
                         (operator === ">" && current > target) ||
-                        (operator === "<" && current < target);
+                        (operator === "<" && current < target) || 
+                        (operator === "=" && target === null && current < 0);
                       const intent = isComplete ? "success" : "danger";
                       
                       console.log("Label", label)
@@ -105,9 +106,13 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                       return (
                         <div key={unitKey} className="goal-unit" style={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <Tag className="unit-tag" minimal>{label}</Tag>
-                          <Tag className="unit-progress" intent={intent} minimal={!isComplete}>
+                          {unit.prefix && <Tag minimal className="unit-prefix">{unit.prefix}</Tag>}
+                          {unitSettings?.hasTarget === false
+                            ? <Tag intent={intent} minimal>{current}</Tag>
+                            : <Tag className="unit-progress" intent={intent} minimal={!isComplete}>
                             {current} / {target}
-                          </Tag>
+                          </Tag>}
+                          {unit.suffix && <Tag minimal className="unit-suffix">{unit.suffix}</Tag>}
                           {change === "up" && <span className="triangle-indicator success">▲</span>}
                           {change === "down" && <span className="triangle-indicator danger">▼</span>}
                         </div>
@@ -117,14 +122,16 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
               </div>
             );
           }
-
+                  
           const current = getProgressValue(taskKey);
           const target = t.target || 0;
           const operator = t.operator || "=";
+          console.log(t);
           const isComplete =
             (operator === "=" && current === target) ||
             (operator === ">" && current > target) ||
-            (operator === "<" && current < target);
+            (operator === "<" && current < target) || 
+            (operator === "=" && target === null && current < 0);
           const intent = isComplete ? "success" : "danger";
           const key = taskKey;
           const change = changeIndicators[key];
@@ -132,8 +139,8 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
           return (
             <div key={`regular-${key}-${index}`} className="goal-task" style={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Tag intent="primary">{displayName}</Tag>
-              {t.type === "tracker"
-                ? <Tag intent="primary" minimal>{current}</Tag>
+              {t.hasTarget == false
+                ? <Tag intent={intent} minimal>{current}</Tag>
                 : <Tag intent={intent} minimal={!isComplete}>{current} / {target}</Tag>}
               {change === "up" && <span className="triangle-indicator success">▲</span>}
               {change === "down" && <span className="triangle-indicator danger">▼</span>}

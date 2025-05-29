@@ -3,6 +3,7 @@
   gap: 20px;
   padding: 20px;
   color: white;
+
 }
 
 .task-form-edit-panel {
@@ -16,7 +17,6 @@
 }
 
 .task-form-preview-panel {
-  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #1A2129;
@@ -52,12 +52,14 @@
   border: 1px solid #2b2f3a;
 }
 
-.task-form .preview-taskbank .task-form .task-card,
-.task-form .preview-schedule .task-form .schedule-card {
+.task-form .preview-taskbank .task-card,
+.task-form .preview-schedule .timeslot {
   background-color: #1e1f24;
   border-radius: 4px;
   padding: 0;
   font-size: 0.task-form .9rem;
+  max-width: 400px;
+  width: 100%;
 }
 
 /* Reuse schedule task box look */
@@ -163,12 +165,10 @@
   flex-direction: row;
   justify-content: start;
   align-items: center;
-  margin-bottom: 5px;
 }
 
 .task-form .child-editor-header {
   display: flex;
-  justify-content: space-between;
   width: 100%;
   align-items: center;
 }
@@ -176,17 +176,22 @@
 .task-form .child-input-options {
   display: flex;
   width: 100%;
-  justify-content: space-between;
+  padding: 3px 0px;
 }
 
+.task-form .child-remove-button {
+  align-self: end;
+  margin-left: auto;
+}
+.task-form .child-input-options-header {
+  font-size: 11px;
+  color: gray;
+  display: flex;
+}
 .task-form .child-input {
-  flex: 1;
   min-width: 150px;
 }
 
-.task-form .nested-button {
-  margin: 4px 0 4px 22px;
-}
 
 /* .task-form .nested-children {
     margin-left: 20px;
@@ -301,6 +306,7 @@
   align-items: start;
   padding: 5px;
   background-color: var(--color-surface-light);
+  flex-wrap: wrap;
 }
 
 .task-form .preview-taskbank .task-children-collapse {
@@ -451,14 +457,12 @@
 
 .child-editor {
   background-color: #1A2129;
-  border: 1px solid #30363D;
-  border-radius: 4px;
-  padding: 10px;
   font-size: 11px;
   font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  padding: 3px;
+  border: 1px solid #30363D;
 }
 
 .child-editor-row {
@@ -466,8 +470,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  border-radius: 4px;
+  padding: 3px;
 }
-
+.child-editor-row.hovered {
+  background-color: #161a20;
+}
+.category-children-header.hovered-title {
+  font-size: 12px;
+}
 .child-editor-row .bp5-input-group {
   max-width: 100px;
 }
@@ -478,8 +489,8 @@
 }
 
 .child-editor-row .bp5-button {
-  padding: 4px 8px;
-  font-size: 10px;
+  color: gray !important;
+  font-size: 12px;
 }
 
 .nested-button {
@@ -538,15 +549,17 @@
   display: flex;
   flex-direction: row;
   margin-bottom: 10px;
+  align-items: center;
 }
 
 .task-card-name .bp5-tag {
   height: 9px;
   font-size: 11px;
+  padding: 15px 6px !important;
 }
 
 .task-card-name .bp5-input-group input {
-  height: 20px;
+  /* height: 20px; */
   font-size: 11px;
 }
 
@@ -559,8 +572,7 @@
 }
 
 .form-section-header .bp5-button {
-  font-size: 11px;
-  padding: 3px 3px !important;
+  font-size: 12px;
 }
 
 .task-form .children-header {
@@ -574,10 +586,10 @@
   height: 12px !important;
 }
 
-.form-section-header .bp5-button {
+/* .form-section-header .bp5-button {
   min-width: 12px;
   min-height: 12px;
-}
+} */
 
 .task-form-children-list {
   overflow-y: scroll;
@@ -587,7 +599,7 @@
 }
 
 .task-form-children-list input {
-  height: 20px;
+  /* height: 20px; */
   font-size: 11px;
 }
 
@@ -598,6 +610,7 @@
 .grouping-container {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .grouping-unit-header {
@@ -610,9 +623,9 @@
   background-color: #1A2129;
   border: 1px solid #30363D;
   border-radius: 4px;
-  margin: 5px;
-  padding: 5px;
   justify-content: center;
+  width: 100%;
+  margin: 10px;
 }
 
 .grouping-unit-row {
@@ -632,23 +645,23 @@
 }
 
 .grouping-unit-row .bp5-tag {
-  height: 20px;
-  width: 50%;
+  /* height: 20px; */
+  /* width: 50%; */
   color: white !important;
 }
 
 .grouping-unit-row select {
   font-size: 11px;
-  height: 20px;
+  /* height: 20px; */
 }
 
-.grouping-unit-row .bp5-input-group {
+/* .grouping-unit-row .bp5-input-group {
   height: 20px !important;
 }
 
 .grouping-unit-row .bp5-html-select .bp5-icon {
   top: 2px;
-}
+} */
 
 .preset-input-row {
   display: flex;
@@ -686,11 +699,12 @@
   padding: 5px;
 }
 
-.child-name-row {
+.child-name-column {
   display: flex;
+  min-width: 150px;
 }
 
-.child-name-row .bp5-tag .bp5-fill {
+.child-name-column .bp5-tag .bp5-fill {
   color: white !important;
   font-size: 11px;
 }
@@ -700,7 +714,6 @@
   color: gray;
   display: flex;
   border-bottom: 2px solid #30363D;
-  margin-bottom: 5px;
 }
 
 .category-children-container .nested-children {
@@ -713,4 +726,8 @@
 
 .category-children-container .child-editor {
   margin: 3px;
+}
+
+.category-children-container {
+  width: 100%;
 }
