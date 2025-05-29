@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, CardList, Elevation, Tag } from "@blueprintjs/core";
 import { useSelector } from "react-redux";
+import TaskSummary from "./TaskSummary";
 
 const getInputSummary = (input) => {
   if (typeof input === "string") {
@@ -86,34 +87,24 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
               </div>
               <div className="task-tags-completed">
                 {grouped.map(({ ancestors, leaves }, index) => (
-                  <div key={index} className="tag-chain">
-                    {ancestors.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2px" }}>
-                        {ancestors.map((tag) => (
-                          <Tag
-                            key={`${tag.key}-${index}`}
-                            minimal
-                            intent={tag.intent}
-                            style={{ marginRight: "5px", marginBottom: "5px" }}
-                          >
-                            {tag.name}
-                          </Tag>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", flexDirection: "column", flexWrap: "wrap" }}>
-                      {leaves.map((leaf) => (
-                        <Tag
-                          key={leaf.assignmentId || `${leaf.key}-${timeSlot}-${index}`}
-                          intent={leaf.intent}
-                          minimal={false}
-                          style={{ marginRight: "5px", marginBottom: "8px" }}
-                        >
-                          {leaf.name}
-                        </Tag>
-                      ))}
-                    </div>
-                  </div>
+  <div key={index} className="tag-chain">
+    {leaves.map((leaf, leafIndex) => {
+      // Reconstruct full ancestry for the TaskSummary
+      const fullAncestry = [...ancestors, leaf];
+      const fakeTask = {
+        ...leaf,
+        assignmentAncestry: fullAncestry,
+      };
+      return (
+        <TaskSummary
+          key={leaf.assignmentId || `${leaf.key}-${timeSlot}-${index}-${leafIndex}`}
+          task={fakeTask}
+          showAncestry
+          className="task-tags-completed"
+        />
+      );
+    })}
+  </div>
                 ))}
               </div>
             </Card>

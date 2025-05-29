@@ -3,7 +3,7 @@ import { Card, Elevation, Tag, Button } from "@blueprintjs/core";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurrentTime
-
+import { TaskSummary } from './TaskSummary.jsx'
 const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
   const cutoff = useCurrentCutoff(); 
@@ -84,7 +84,7 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
                           />
                         }
                       >
-                        {taskDisplay}
+                        {<TaskSummary task={task} />}
                       </Tag>
                     </div>
                   )}
