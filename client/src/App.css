@@ -305,6 +305,7 @@ p {
   flex-direction: row;
   justify-content: space-between;
   background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .container .task-bank-header {
@@ -459,6 +460,7 @@ p {
   flex-direction: row;
   justify-content: start;
   align-items: start;
+  flex-wrap: wrap;
   background-color: var(--color-surface-light);
 }
 
@@ -589,6 +591,12 @@ p {
 .container .task-bank .child-task .bp5-control-indicator {
   margin-inline-start: 0px;
   margin-inline-end: 3px;
+}
+
+.child-task .bp5-checkbox .bp5-control-indicator {
+  height: 20px;
+  width: 20px;
+  margin-top: 2px;
 }
 
 .container .task-bank .child-task .child-task-input .bp5-input {
@@ -813,10 +821,6 @@ p {
 
 .bp5-control {
   margin-bottom: 0px;
-}
-
-.bp5-switch {
-  align-self: start;
 }
 
 .goal-display-container .goals-container {
@@ -1091,6 +1095,16 @@ p {
   margin: 3px;
 }
 
+.preset-input-row .bp5-control-indicator {
+  margin-inline-start: -26px !important;
+}
+.preset-input-row .bp5-control{
+  margin-top: 5px;
+}
+
+.bp5-tag {
+  min-height: 30px;
+}
 .preset-unit .unit-label {
   margin-right: 3px;
 }
@@ -1121,6 +1135,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: end;
+  margin-top: 1px;
 }
 
 .new-entry .preset-inputs {
@@ -1128,9 +1143,9 @@ p {
 }
 .preset-input .bp5-tag {
   color: white !important;
-  font-size: 10px;
-  min-width: 65px;
+  font-size: 11px;
   width: auto;
+  min-width: unset;
 }
 
 .grouping-unit-row .bp5-tag .bp5-fill {
@@ -1142,14 +1157,14 @@ p {
 
 .new-entry .preset-input .bp5-input-group input, 
 .new-entry .preset-name-input input{
-  height: 20px;
+  height: 30px;
   font-size: 11px;
 }
 
-.new-entry .preset-save {
-  align-self: end;
+.new-entry .control-inputs .bp5-control-indicator::before {
+  height: 20px;
+  width: 20px;
 }
-
 .preset-input .bp5-switch {
   padding-inline-start: unset !important;
   margin-left: 5px;
@@ -1173,14 +1188,10 @@ p {
 
 .preset-save-container {
   display: flex;
-  width: 21px;
+  width: 30px;
+  height: 30px;
   align-self: flex-end;
   margin-right: 2px;
-}
-
-.preset-save-container button {
-  min-height: unset;
-  min-width: unset;
 }
 
 .preset-save-container svg {
@@ -1206,6 +1217,7 @@ p {
 
 .task-form-drawer {
   width: auto !important;
+  max-width: 60%;
 }
 
 .goal-task {
@@ -1255,3 +1267,49 @@ p {
   }
 }
 
+.empty-container {
+  width: 100%;
+  font-size: 20px;
+  color: gray;
+  margin-top: 20%;
+}
+
+.icon-picker-container {
+  background-color: #1A2129;
+  border: 1px solid #30363D;
+  border-radius: 4px;
+  color: #5f6b7c;
+  padding: 5px;
+}
+
+.icon-picker-container .bp5-icon {
+  color: #5f6b7c;
+}
+
+
+.icon-picker-button {
+  font-size: 10px;
+  color: #5f6b7c !important;
+}
+
+.icon-picker-popover {
+  border-radius: 4px;
+  border: 1px solid #30363D;
+  border-radius: 4px;
+}
+
+.task-header .task-name {
+  display: flex;
+}
+
+.task-card .edit-task-button {
+  visibility: hidden;
+}
+.task-card:hover .edit-task-button {
+  visibility: visible;
+}
+
+.unit-prefix, 
+.unit-suffix {
+  color: white !important;
+}

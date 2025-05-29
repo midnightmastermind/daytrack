@@ -65,7 +65,6 @@ function App() {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
-  console.log(goalsWithProgress);
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
@@ -103,7 +102,11 @@ function App() {
     }
     return slots;
   };
+
+  
+
   const timeSlots = generateTimeSlots();
+
 
   useEffect(() => {
     const found = dayplans.find((plan) =>
@@ -127,11 +130,45 @@ function App() {
     setPlanDirty(false);
   }, [selectedDate, dayplans]);
 
-  const handleInsertAdhoc = (tempId, draftTask) => {
-    if (!adhocDraftMapRef.current.has(tempId)) {
-      adhocDraftMapRef.current.set(tempId, draftTask);
-    }
+
+  function buildAdhocChildFromDraft(draft, groupingUnits = []) {
+    const tempId = draft.tempId;
+    const input = { ...draft };
+  
+    groupingUnits.forEach(unit => {
+      if (!input[unit.key]) {
+        input[unit.key] = unit.type === "text" ? "" : { value: 0, flow: "in" };
+      }
+    });
+  
+    return {
+      id: tempId,
+      tempId,
+      name: draft.name?.trim() || "",
+      parentId: draft.parentId,
+      properties: {
+        group: false,
+        preset: true,
+        checkbox: true,
+        input: true,
+        card: false,
+        category: false,
+      },
+      values: {
+        checkbox: draft.checkbox || false,
+        input, // Includes all units + name + tempId
+      },
+      children: [],
+      goals: [],
+      counters: [],
+    };
   }
+  
+  const handleInsertAdhoc = (tempId, draftTask) => {
+    const groupingUnits = findTaskByIdDeep(draftTask.parentId, taskSnapshotRef.current)?.properties?.grouping?.units || [];
+    const structuredTask = buildAdhocChildFromDraft(draftTask, groupingUnits);
+    adhocDraftMapRef.current.set(tempId, structuredTask);
+  };
 
   const insertAdhocTask = (task) => {
     console.log("insert adhoc task: ", task);
@@ -143,7 +180,7 @@ function App() {
     setTaskSnapshot(updatedSnapshot);
     taskSnapshotRef.current = updatedSnapshot;
   };
-
+  console.log(tasks);
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
 
@@ -246,24 +283,20 @@ function App() {
     if (fromTaskBank) {
       let taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
 
-      // if (taskFromBank && adhocDraftMapRef.current.size > 0) {
-      //   const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
-      //     .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
-      //     .map(([_, task]) => task);
-
-      //   if (matchingAdhocs.length > 0) {
-      //     matchingAdhocs.forEach((adhocTask) => {
-      //       insertAdhocTask(adhocTask); // Inserts + updates snapshot
-      //       console.log("⚡️Inserted adhoc on drag:", adhocTask.name);
-      //     });
-      //     adhocDraftMapRef.current.clear();
-
-      //     // Re-fetch parent from updated snapshot after insertion
-      //     taskFromBank = taskSnapshotRef.current.find((t) =>
-      //       (t._id || t.tempId)?.toString() === draggableId
-      //     );
-      //   }
-      // }
+      if (taskFromBank && adhocDraftMapRef.current.size > 0) {
+        const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
+          .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
+          .map(([_, task]) => task);
+      
+        if (matchingAdhocs.length > 0) {
+          matchingAdhocs.forEach((adhocTask) => {
+            insertAdhocTask(adhocTask);
+            adhocDraftMapRef.current.delete(adhocTask.id);
+          });
+          taskFromBank = taskSnapshotRef.current.find((t) => (t._id || t.tempId)?.toString() === draggableId);
+        }
+      }
+      
       if (!taskFromBank) return;
       console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
@@ -314,8 +347,14 @@ function App() {
                   tasks={tasks}
                   draggedTaskId={draggedTaskId}
                   onInsertAdhoc={handleInsertAdhoc}
-                  onEditTask={(task) => setTask(task)}
-                  onOpenDrawer={() => setIsDrawerOpen(true)}
+                  onEditTask={(task) => {
+                    setTask(task);
+                    setIsDrawerOpen(true); // edit flow keeps the task
+                  }}
+                  onNewTask={() => {
+                    setTask(null); // ← clear any previously selected task
+                    setIsDrawerOpen(true);
+                  }}
                   onTaskUpdate={(updatedTask) => {
                     const newSnapshot = taskSnapshotRef.current.map((t) =>
                       t._id === updatedTask._id ? updatedTask : t
@@ -379,10 +418,8 @@ function App() {
             <NewTaskForm
               task={task}
               onSave={(taskData) => {
-                const tempId = `temp_${Date.now()}`;
-                dispatch(addTaskOptimistic({ ...taskData, tempId }));
-                dispatch(createTask({ ...taskData, tempId }));
                 setIsDrawerOpen(false);
+                setTask(null);
               }}
               onDelete={(t) => {
                 dispatch(deleteTaskOptimistic(t._id));

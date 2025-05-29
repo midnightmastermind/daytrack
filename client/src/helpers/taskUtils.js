@@ -1,6 +1,32 @@
 import { v4 as uuidv4 } from "uuid";
 import { buildCompoundKey, buildCompoundChildKey } from "./goalUtils";
 
+// helpers/taskUtils.js
+export function getAllGroupEnabledIds(taskTree) {
+  const groupIds = [];
+
+  function walk(task) {
+    if (!task) return;
+
+    const id = task._id?.toString?.() || task.tempId || task.id;
+    if (task.properties?.group === true && id) {
+      groupIds.push(id);
+    }
+
+    if (Array.isArray(task.children)) {
+      task.children.forEach(walk);
+    }
+
+    if (Array.isArray(task.categories)) {
+      task.categories.forEach(walk);
+    }
+  }
+
+  walk(taskTree);
+  return groupIds;
+}
+
+
 export function findTaskByIdDeep(id, tasks) {
   if (!id || !Array.isArray(tasks)) return null;
 
@@ -272,6 +298,21 @@ export const getTaskAncestryByIdDeep = (taskTree = [], taskId, ancestry = []) =>
     if (foundInChildren) return foundInChildren;
 
     const foundInCategories = getTaskAncestryByIdDeep(task.categories || [], taskId, path);
+    if (foundInCategories) return foundInCategories;
+  }
+  return null;
+};
+
+export const getTaskAncestryIdsByIdDeep = (taskTree = [], taskId, ancestry = []) => {
+  for (const task of taskTree) {
+    const id = task._id?.toString?.() || task.tempId || task.id;
+    const path = [...ancestry, id];
+    if (id === taskId) return path;
+
+    const foundInChildren = getTaskAncestryIdsByIdDeep(task.children || [], taskId, path);
+    if (foundInChildren) return foundInChildren;
+
+    const foundInCategories = getTaskAncestryIdsByIdDeep(task.categories || [], taskId, path);
     if (foundInCategories) return foundInCategories;
   }
   return null;
