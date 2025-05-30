@@ -292,6 +292,7 @@
 
 .grouped-unit-row .bp5-fill {
   color: white !important;
+  font-size: 11px;
 }
 
 .grouped-unit-row select,
@@ -343,7 +344,7 @@
 .goal-task-settings {
   width: 100%;
   display: flex;
-  gap: 10px !important;
+  justify-content: space-between;
 }
 
 .grouped-units-container,
@@ -359,7 +360,7 @@
 }
 
 .switch-container .bp5-switch {
-  padding-inline-start: 46px !important;
+  padding-inline-start: 39px !important;
   margin-top: 0px !important;
 }
 
@@ -405,9 +406,10 @@
 }
 
 .flow-container .switch-container {
-  width: 82px;
+  width: 62px;
   margin-top: 2px;
-  height: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .flow-container .bp5-html-select {

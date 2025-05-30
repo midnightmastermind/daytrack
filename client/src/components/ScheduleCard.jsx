@@ -3,8 +3,8 @@ import { Card, Elevation, Tag, Button } from "@blueprintjs/core";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurrentTime
-import { TaskSummary } from './TaskSummary.jsx'
-const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
+import TaskTag from "./TaskTag";
+const ScheduleCard = ({ tasks, label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
   const cutoff = useCurrentCutoff(); 
 
@@ -22,7 +22,6 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
     setAssignments(updated);
     onAssignmentsChange(updated);
   };
-
   return (
     <Droppable className={'droppable-container'} droppableId={`${label}_${timeSlot}`} ignoreContainerClipping={true}>
       {(provided, snapshot) => (
@@ -40,58 +39,24 @@ const ScheduleCard = ({ label, timeSlot, assignments = {}, setAssignments, onAss
         >
           <div className="timeslot-title">{timeSlot}</div>
           <div className="tag-container">
-            {tasksForSlot.map((task, index) => {
-              let taskDisplay = task.name;
-              console.log(task);
-              if (task?.values?.input) {
-                if (typeof task.values.input === "string") {
-                  taskDisplay = `${taskDisplay}: ${task.values.input}`;
-                } else if (typeof task.values.input === "object") {
-                  const parts = Object.entries(task.values.input)
-                    .filter(([_, val]) => typeof val?.value === "number")
-                    .map(([key, val]) => `${key}: ${val.value}`);
-                  taskDisplay = `${taskDisplay}: ${parts.join(", ")}`;
-                }
-              }
-            //   <div className={"task-tag-content"}>
-            //   <div className={"task-tag-name"}>
-            //     {task.name}
-            //   </div>
-            //   { task?.values?.input && task?.values.input == string 
-                
-            //   }
-
-            // </div>
-              return (
-                <Draggable key={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} draggableId={`${(taskPreview ? 'preview-' : '')}${task.assignmentId}`} index={index}>
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="tag-wrapper"
-                    >
-                      <Tag
-                        minimal={false}
-                        intent="primary"
-                        className="task-tag"
-                        rightIcon={
-                          <Button
-                            icon="cross"
-                            minimal
-                            small
-                            onClick={() => removeTask(index)}
-                          />
-                        }
-                      >
-                        {<TaskSummary task={task} />}
-                      </Tag>
-                    </div>
-                  )}
-                </Draggable>
-              )
-            }
-            )}
+          {tasksForSlot.map((task, index) => (
+              <Draggable
+                key={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
+                draggableId={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
+                index={index}
+              >
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    className="tag-wrapper"
+                  >
+                    <TaskTag tasks={tasks} task={task} minimalValues={true} onRemove={() => removeTask(index)} />
+                  </div>
+                )}
+              </Draggable>
+            ))}
             {provided.placeholder}
           </div>
         </Card>

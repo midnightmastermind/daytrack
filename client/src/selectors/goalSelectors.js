@@ -9,8 +9,9 @@ export const makeSelectGoalsWithProgress = (selectedDate) =>
   createSelector([(state) => state.goals.goals], (goals) => {
     return goals.map((goal) => ({
       ...goal,
-      totals: getGoalUnitTotals(goal, { date: selectedDate.toISOString().slice(0, 10) }),
+      totals: getGoalUnitTotals(goal),
       totalsByDate: getGoalUnitTotalsByDate(goal),
       totalsByTask: getGoalUnitTotalsByTask(goal),
+      totalsForSelectedDate: getGoalUnitTotals(goal, { date: selectedDate }),
     }));
   });

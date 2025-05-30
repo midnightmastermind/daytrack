@@ -1,8 +1,8 @@
 import React from "react";
 import { useCurrentTime } from "../context/TimeProvider";
 
-const SLOT_HEIGHT = 50; // px per 30min block
-const START_HOUR = 7;   // Schedule starts at 7:00 AM
+const SLOT_HEIGHT = 80; // px per 30min block
+const START_HOUR = 0;   // Schedule starts at 7:00 AM
 
 const CurrentTimeIndicator = () => {
   const now = useCurrentTime(); // 👈 using your custom hook

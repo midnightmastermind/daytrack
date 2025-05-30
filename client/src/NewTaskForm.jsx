@@ -1,5 +1,5 @@
 // NewTaskForm.jsx
-import React, { useState, useEffect, useRef, useCallback, useMemo} from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Button,
   InputGroup,
@@ -21,7 +21,8 @@ import {
   updateTaskByIdDeep,
   getAllGroupEnabledIds,
   findTaskByIdDeep,
-  getTaskAncestryIdsByIdDeep
+  getTaskAncestryIdsByIdDeep,
+  formatValueWithAffixes
 } from "./helpers/taskUtils";
 import "./NewTaskForm.css";
 
@@ -35,6 +36,7 @@ import {
   updateTask,
 } from "./store/tasksSlice";
 import { diffTaskChildren } from "./helpers/taskUtils";
+import TaskIcon from "./components/TaskIcon";
 
 const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild, groupingEnabled }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -42,15 +44,15 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
   console.log(allGroupIds);
   function getRelevantParentUnitsForChild(stagedTask, childId, allGroupIds) {
     if (!stagedTask || !childId || !Array.isArray(allGroupIds)) return [];
-  
+
     const ancestryIds = getTaskAncestryIdsByIdDeep([stagedTask], childId);
     if (!Array.isArray(ancestryIds)) return [];
-  
+
     // Filter for group-enabled ancestors, excluding the child itself
     const matchingAncestorIds = ancestryIds.filter(
       (id) => id !== childId && allGroupIds.includes(id)
     );
-  
+
     // Collect units from those matching ancestor tasks
     const units = matchingAncestorIds.flatMap((id) => {
       const node = findTaskByIdDeep(id, [stagedTask]);
@@ -58,7 +60,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
         ? node.properties.grouping.units
         : [];
     });
-  
+
     return units;
   }
   useEffect(() => {
@@ -73,7 +75,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
     console.log(stagedTask);
     console.log(child);
     console.log(allGroupIds);
-    const groupedUnits =  getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
+    const groupedUnits = getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
 
     console.log(groupedUnits);
     setGroupedUnits(groupedUnits);
@@ -110,7 +112,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
   };
 
 
-  
+
   const addUnit = () => {
     const currentUnits = child.properties.grouping?.units || [];
     const updatedUnits = [
@@ -123,6 +125,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
         type: "float",
         enabled: true,
         isMulti: false,
+        icon: {}
       },
     ];
     updateField("properties", {
@@ -133,7 +136,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
       },
     });
   };
-  
+
   const updateUnit = (index, field, value) => {
     const updatedUnits = [...(child.properties.grouping?.units || [])];
     updatedUnits[index][field] = value;
@@ -145,7 +148,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
       },
     });
   };
-  
+
   const deleteUnit = (index) => {
     const updatedUnits = (child.properties.grouping?.units || []).filter((_, i) => i !== index);
     updateField("properties", {
@@ -276,7 +279,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                   <Button icon="cross" minimal onClick={() => deleteUnit(i)} />
                 </div>
               ))}
-              <Button icon="plus" minimal onClick={addUnit} text={`Add ${child.name} Grouped Unit`}/>
+              <Button icon="plus" minimal onClick={addUnit} text={`Add ${child.name} Grouped Unit`} />
             </div>
           </div>
         )}
@@ -310,8 +313,10 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                       })
                     }
                   />
+                  <TaskIcon icon={unit.icon} />
                   <Tag minimal>{unit.label || unit.key}</Tag>
                   {unit.type === "text" ? (
+                    <>
                     <InputGroup
                       value={value || ""}
                       onChange={(e) =>
@@ -324,6 +329,24 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                         })
                       }
                     />
+                    <HTMLSelect
+                        value={flow || "in"}
+                        onChange={(e) =>
+                          updateField("values", {
+                            ...child.values,
+                            input: {
+                              ...child.values?.input,
+                              [unit.key]: { value, flow: e.target.value },
+                            },
+                          })
+                        }
+                        options={[
+                          { label: "Append", value: "in" },
+                          { label: "Retract", value: "out" },
+                          { label: "Replace", value: "replace" }
+                        ]}
+                      />
+                      </>
                   ) : (
                     <>
                       <NumericInput
@@ -340,20 +363,24 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                         }
                         buttonPosition="none"
                       />
-                      <Switch
-                        innerLabel="In"
-                        innerLabelChecked="Out"
-                        checked={flow === "out"}
+                      <HTMLSelect
+                        value={flow || "in"}
                         onChange={(e) =>
                           updateField("values", {
                             ...child.values,
                             input: {
                               ...child.values?.input,
-                              [unit.key]: { value, flow: e.target.checked ? "out" : "in" },
+                              [unit.key]: { value, flow: e.target.value },
                             },
                           })
                         }
+                        options={[
+                          { label: "In", value: "in" },
+                          { label: "Out", value: "out" },
+                          { label: "Replace", value: "replace" }
+                        ]}
                       />
+
                     </>
                   )}
                 </div>
@@ -361,7 +388,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
             })}
           </div>
         )}
-        
+
         {child.properties?.category && (
           <div className="category-children-container">
             <div className="category-children-header">{`${child.name} > Children`}</div>
@@ -384,8 +411,8 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
               <div className="nested-button"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                >
-                <Button icon="plus" minimal onClick={addNestedChild} text={`Add ${child.name} Child`}/>
+              >
+                <Button icon="plus" minimal onClick={addNestedChild} text={`Add ${child.name} Child`} />
               </div>
             </div>
           </div>
@@ -547,7 +574,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
 
   const handleSave = () => {
     if (!stagedTask) return;
-    
+    console.log(stagedTask);
     if (stagedTask._id) {
       dispatch(updateTaskOptimistic({ id: stagedTask._id, updates: stagedTask }));
       dispatch(updateTask({ id: stagedTask._id, updates: stagedTask }));
@@ -555,7 +582,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
       dispatch(addTaskOptimistic(stagedTask));
       dispatch(createTask(stagedTask));
     }
-  
+
     onSave?.(stagedTask);
   };
   // const handleSave = () => {
@@ -647,7 +674,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
                   allGroupIds={ancestorGroupingIds}
                   updateChild={updateChild}
                   removeChild={removeChild}
-                  stagedTask={{...stagedTask}}
+                  stagedTask={{ ...stagedTask }}
                 />
               );
             })}

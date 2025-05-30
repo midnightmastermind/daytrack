@@ -35,6 +35,13 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
             </Tag>
           ))}
         </div>
+        <div className="label-container">
+              <InputGroup
+                value={task.label || ""}
+                onChange={(e) => updateGoalItem(task.task_id, "label", e.target.value)}
+                placeholder="Label"
+              />
+            </div>
       </div>
       <div className="goal-task">
         <div className="goal-task-settings">
@@ -46,6 +53,7 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
             >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
               <option value="overall">Overall</option>
             </HTMLSelect>
             {/* STARTING AMOUNT (ALWAYS SHOWN) */}
@@ -74,6 +82,11 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
                 onChange={(e) => updateGoalItem(task.task_id, "reverseFlow", e.target.checked)}
                 innerLabel="Reverse"
               />
+              <Switch
+                checked={task.replaceable ?? false}
+                onChange={(e) => updateGoalItem(task.task_id, "replaceable", e.target.checked)}
+                innerLabel="Replaceable"
+              />
             </div>
           </div>
           <div className="input-check-container">
@@ -88,6 +101,7 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
             </div>
           </div>
           {/* TARGET SETTINGS */}
+          
           <div className="target-container">
             <div className="target-header">Target</div>
             <div className="target-conditional">
@@ -124,7 +138,7 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
 };
 
 const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
-  if (!unit || unit.type === "text") return null;
+  if (!unit) return null;
 
   return (
     <div className="grouped-unit-row">
@@ -138,8 +152,16 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
             innerLabel="Disabled"
           />
         </div>
-        <Tag>{unit.label}</Tag>
+        <Tag>{unit.key}</Tag>
+        <div className="label-container">
+          <InputGroup
+            value={unitState.label || ""}
+            onChange={(e) => updateUnitSettings(unitKey, "label", e.target.value)}
+            placeholder="label"
+          />
+        </div>
       </div>
+      
       <div className="time-settings">
         <div className="time-settings-header">Time</div>
         <HTMLSelect
@@ -148,6 +170,7 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
         >
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
           <option value="overall">Overall</option>
         </HTMLSelect>
         {/* ALWAYS RENDER STARTING */}
@@ -176,6 +199,11 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
             onChange={(e) => updateUnitSettings(unitKey, "reverseFlow", e.target.checked)}
             innerLabel="Reverse"
           />
+          <Switch
+            checked={unitState.replaceable ?? false}
+            onChange={(e) => updateUnitSettings(unitKey, "replaceable", e.target.checked)}
+            innerLabel="Replaceable"
+          />
         </div>
       </div>
       <div className="input-check-container">
@@ -190,6 +218,7 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
         </div>
       </div>
       {/* TARGET SETTINGS */}
+      {unit.type !== "text" && (
       <div className="target-container">
         <div className="target-header">Target</div>
         <div className="target-conditional">
@@ -219,6 +248,7 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
           ) : null}
         </div>
       </div>
+      )}
     </div>
   );
 };
@@ -362,8 +392,15 @@ const ActualPanel = ({
                         </Tag>
                       ))}
                     </div>
+                    <div className="label-container">
+                      <InputGroup
+                        value={t.label || ""}
+                        onChange={(e) => updateGoalItem(t.task_id, "label", e.target.value)}
+                        placeholder="Label"
+                      />
+                    </div>
                   </div>
-
+              
                   <div className="grouped-units-container">
                     {t.units.map((unit) => {
                       const unitKey = unit.key;
@@ -488,6 +525,7 @@ console.log(goal);
             operator: settings.operator || "=",
             target: settings.target ?? 0,
             starting: settings.starting ?? 0,
+            replaceable: settings.replaceable ?? false,
           };
         }
     

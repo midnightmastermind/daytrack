@@ -227,16 +227,31 @@ p {
 }
 
 .container .right-side {
-  width: 480px;
+  flex: 1;
+  margin-right: 10px;
   display: flex;
   flex-direction: column;
   align-items: start;
   height: 100%;
   margin-left: 10px;
-  max-height: calc(100vh - 30px); /* adjust for your layout */
+  max-height: calc(100vh); /* adjust for your layout */
 
 }
 
+.simple-input {
+  margin-left: 3px;
+  max-width: 100px;
+}
+.right-side-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
 .current-time-indicator {
   position: absolute;
   left: 0;
@@ -266,17 +281,16 @@ p {
 }
 .container .goal-display-container {
   width: 100%;
-  min-height: 64vh;
+  height: 100%;
   border: 1px solid var(--color-border);
+  border-top: unset;
   background-color: var(--color-bg);
   overflow: hidden;
 }
 
 .container .display {
   width: 100%;
-  height: 100%;
-  min-height: 41.45vh;
-  max-height: 41.45vh;
+  height: 100vh;
   overflow-y: scroll;
 }
 
@@ -292,7 +306,7 @@ p {
 
 .container .task-bank-container {
   height: 100%;
-  width: 315px;
+  width: 380px;
   background-color: var(--color-bg);
   margin-right: 10px;
   border: 1px solid var(--color-border);
@@ -320,7 +334,7 @@ p {
 .task-bank-header-container .bp5-button {
   color: white !important;
   font-size: 12px;
-  border: 1px solid var(--color-border)
+  border-left: 1px solid var(--color-border)
 }
 
 .container .main-content-container {
@@ -383,7 +397,7 @@ p {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0px 2px;
+  padding: 2px;
   background-color: var(--color-bg);
   overflow: visible !important;
 }
@@ -471,6 +485,9 @@ p {
   align-items: start;
 }
 
+.numeric-input {
+  display: flex;
+}
 .container .task-bank .taskcard-leaf-preview {
   display: flex;
   flex-direction: column;
@@ -571,11 +588,21 @@ p {
   min-width: unset;
   color: white;
 }
-
+.child-task .preset-input {
+  display: flex;
+  justify-content: end;
+}
 .container .task-bank .child-task .bp5-fill {
   display: flex;
-  align-items: center;
+  align-items: center !important;
   justify-content: space-between;
+}
+
+.grouped-category .bp5-fill {
+  flex-direction: column;
+}
+.preset-input .bp5-fill {
+  flex-direction: row !important;
 }
 
 .container .task-bank .child-task .bp5-checkbox {
@@ -586,6 +613,8 @@ p {
 .container .task-bank .child-task .child-task-name {
   display: flex;
   margin-left: 2px;
+  align-items: center;
+  text-wrap: wrap;
 }
 
 .container .task-bank .child-task .bp5-control-indicator {
@@ -616,10 +645,9 @@ p {
   height: 100%;
   background-color: var(--color-bg);
   width: 100%;
-  min-width: 615px;
+  min-width: 800px;
   border: 1px solid var(--color-border);
   padding: 1px;
-  max-width: 615px;
   flex: 1;            /* let it grow with layout */
   min-height: 0;      /* important for scroll to calculate properly */
   overflow: visible;
@@ -676,7 +704,7 @@ p {
 
 .container .schedule-container .timeslot {
   width: 100%;
-  height: 50px;
+  height: 80px;
   min-height: unset;
   display: flex;
   flex-direction: row;
@@ -717,7 +745,6 @@ p {
 
 .container .display-container {
   width: 100%;
-  min-height: 47vh;
   margin-top: 10px;
   border: 1px solid var(--color-border);
 }
@@ -833,6 +860,7 @@ p {
   margin: 5px;
   align-content: start;
   height: 100%;
+  container-type: inline-size;
 }
 
 .goal-display-container .goal-header-preview {
@@ -854,7 +882,7 @@ p {
 .goal-display-header .bp5-button {
   color: white !important;
   font-size: 12px;
-  border: 1px solid var(--color-border)
+  border-left: 1px solid var(--color-border)
 }
 .edit-goal-button {
   margin-left: auto;
@@ -941,13 +969,18 @@ p {
   display: flex;
   flex-direction: column;
   margin-left: 5px;
+  align-items: end;
 }
 
 .goal-display-container .bp5-tag,
 .goal-form .goal-preview .bp5-tag {
   font-size: 11px !important;
 }
-
+.goal-task .bp5-fill {
+  display: flex;
+  align-items: center;
+  line-height: 23px;
+}
 .goal-display-container .goal-task,
   .goal-form .goal-preview .goal-task {
     justify-content: end;
@@ -1013,15 +1046,18 @@ p {
 .task-tags-completed {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 10px;
+  align-items: end;
 }
 
 .tag-chain {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 2px;
 }
 
+.task-content {
+  width: 100%;
+}
 .tag-chain .bp5-minimal {
   color: gray !important;
 }
@@ -1066,6 +1102,9 @@ p {
   padding-left: 10px;
 }
 
+.grouped-unit-input-container .grouped-unit-row {
+  justify-content: end !important;
+}
 .grouped-category {
   flex-direction: column;
 }
@@ -1150,17 +1189,25 @@ p {
 
 .grouping-unit-row .bp5-tag .bp5-fill {
   font-size: 11px;
+  display: flex !important;
+  align-items: center !important;
 }
 .new-entry .preset-input .bp5-numeric-input {
   max-width: 50px;
 }
-
+.new-entry .preset-name-input input {
+  width: 100px;
+}
 .new-entry .preset-input .bp5-input-group input, 
 .new-entry .preset-name-input input{
   height: 30px;
   font-size: 11px;
 }
 
+.bp5-html-select select {
+  font-size: 11px !important;
+  min-width: 55px;
+}
 .new-entry .control-inputs .bp5-control-indicator::before {
   height: 20px;
   width: 20px;
@@ -1200,6 +1247,8 @@ p {
 
 .grouped-category .child-task-name {
   font-size: 11px;
+  display: flex;
+  align-items: center;
 }
 
 .increased-value {
@@ -1207,7 +1256,6 @@ p {
 }
 
 .child-task .bp5-input {
-  height: 20px;
   font-size: 11px;
 }
 
@@ -1234,6 +1282,11 @@ p {
   gap: 5px;
 }
 
+.task-content .main-task-tag .bp5-fill {
+  display: flex;
+  align-items: center;
+  line-height: 23px !important;
+}
 .triangle-indicator {
   position: absolute;
   right: -8px; /* adjust as needed */
@@ -1244,6 +1297,26 @@ p {
   animation: popFade 1.2s ease-in-out forwards;
 }
 
+.grouped-category .child-header {
+  display: flex;
+  width: 100%;
+}
+
+.child-header {
+  display: flex;
+}
+
+.flow-select select {
+  min-width: 41px !important;
+  width: 40px;
+  font-size: 14px !important;
+  padding-right: 20px;
+  padding-left: 3px;
+}
+
+.flow-select .bp5-icon {
+  right: 3px !important;
+}
 .triangle-indicator.success {
   color: #0f9960;
 }
@@ -1300,6 +1373,7 @@ p {
 
 .task-header .task-name {
   display: flex;
+  align-items: center;
 }
 
 .task-card .edit-task-button {
@@ -1309,7 +1383,42 @@ p {
   visibility: visible;
 }
 
-.unit-prefix, 
-.unit-suffix {
+.goal-task .unit-tag {
   color: white !important;
+}
+
+.task-tag {
+ display: flex; 
+}
+
+.task-summary .bp5-tag {
+  color: white !important;
+  font-size: 11px;
+}
+
+.task-summary {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+}
+
+.close-button span {
+  color: white !important;
+}
+.close-button {
+  margin-right: 5px !important;
+}
+
+.task-ancestry .bp5-tag span {
+  color: white !important;
+}
+
+
+
+/* Then, write a container query */
+@container (max-width: 450px) {
+  .goal-item-container {
+    /* styles when .parent is at least 600px wide */
+    flex: 1;
+  }
 }

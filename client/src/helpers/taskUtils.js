@@ -1,7 +1,66 @@
 import { v4 as uuidv4 } from "uuid";
-import { buildCompoundKey, buildCompoundChildKey } from "./goalUtils";
 
 // helpers/taskUtils.js
+
+export function getAncestorGroupingUnits(taskTree = [], targetId) {
+  const ancestry = getTaskAncestryByIdDeep(taskTree, targetId) || [];
+  const units = [];
+
+  for (const task of ancestry) {
+    const grouping = task.properties?.grouping;
+    if (grouping?.units && Array.isArray(grouping.units)) {
+      units.push(...grouping.units);
+    }
+  }
+
+  return units;
+}
+
+export function formatValueWithAffixes(prefix = "", value, type = "string", suffix = "") {
+  if (value === null || typeof value === "undefined") return "";
+
+  let formattedValue;
+
+  switch (type) {
+    case "integer":
+      formattedValue = parseInt(value, 10);
+      if (isNaN(formattedValue)) return "";
+      break;
+    case "float":
+      formattedValue = parseFloat(value).toFixed(2);
+      if (isNaN(formattedValue)) return "";
+      break;
+    case "string":
+    default:
+      formattedValue = String(value);
+  }
+
+  return `${prefix || ""}${formattedValue}${suffix || ""}`;
+}
+export function sanitizeInputValues(input = {}, groupingUnits = []) {
+  const clean = {};
+
+  for (const [key, val] of Object.entries(input)) {
+    const unitMeta = groupingUnits.find(u => u.key === key);
+    if (!unitMeta) continue;
+
+    const isValidObject = typeof val === "object" && val !== null;
+    const value = isValidObject ? val.value : val;
+
+    if (typeof value !== "undefined" && value !== 0) {
+      clean[key] = {
+        value,
+        flow: isValidObject && val.flow ? val.flow : "in",
+        prefix: unitMeta.prefix || "",
+        suffix: unitMeta.suffix || "",
+        type: unitMeta.type || "number"
+      };
+    }
+  }
+
+  return clean;
+}
+
 export function getAllGroupEnabledIds(taskTree) {
   const groupIds = [];
 
@@ -145,9 +204,10 @@ export function getSelectedLeaves(task) {
           Object.values(node.values.input).some((val) =>
             typeof val === "object" ? typeof val.value === "number" && val.value !== 0 : !!val
           );
-
+    
     const isValid =
-      (isGrouped ? isChecked && hasValidInput : isChecked || hasValidInput);
+      (node.properties?.checkbox ? isChecked : false) ||
+      (node.properties?.input && !node.properties?.checkbox ? hasValidInput : false);
 
     if (isLeaf && isValid) {
       selected.push({

@@ -2,7 +2,12 @@ const mongoose = require("mongoose");
 
 const UnitSchema = new mongoose.Schema({
   name: { type: String, required: true },       // Display name
+  label: { type: String, default: "" },       // Display name
   key: { type: String, required: true },        // Internal ID
+  icon: {
+    type: mongoose.Schema.Types.Mixed, // allows object like { type, value }
+    default: null,
+  },
   prefix: { type: String, default: "" },        // Display prefix (e.g., "$")
   suffix: { type: String, default: "" },        // Display suffix (e.g., "g")
   type: { type: String, enum: ["string", "integer", "float"], default: "float" },

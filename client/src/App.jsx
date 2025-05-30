@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { DragDropContext } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
-import { Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
+import { Button, Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
-import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById } from './helpers/taskUtils.js';
-import { buildCompoundKey, splitCompoundKey, calculateGoalProgress, buildProgressEntriesFromTask } from "./helpers/goalUtils";
+import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById, sanitizeInputValues } from './helpers/taskUtils.js';
+import {  buildProgressEntriesFromTask } from "./helpers/goalUtils";
 
 import {
   fetchTasks,
@@ -66,9 +66,11 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
   const [taskSnapshot, setTaskSnapshot] = useState([]);
+  const [rightPanelMode, setRightPanelMode] = useState("goals");
+
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
-  
+
   const [assignments, setAssignments] = useState({ actual: {}, preview: {} });
   const [lastSavedAssignments, setLastSavedAssignments] = useState({ actual: {}, preview: {} });
   const [task, setTask] = useState(null);
@@ -77,7 +79,7 @@ function App() {
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
-
+  console.log(adhocDraftMapRef);
   useEffect(() => {
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
@@ -86,15 +88,14 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
-    // console.log("New Tasks: ", tasks);
-    setTaskSnapshot(tasks);
-    taskSnapshotRef.current = tasks;
+    const cleaned = tasks.map(deepResetAdhocCheckboxes); // from earlier
+    setTaskSnapshot(cleaned);
+    taskSnapshotRef.current = cleaned;
   }, [tasks]);
-
 
   const generateTimeSlots = () => {
     let slots = [];
-    let start = DateTime.local().set({ hour: 7, minute: 0 });
+    let start = DateTime.local().set({ hour: 0, minute: 0 });
     let end = DateTime.local().set({ hour: 23, minute: 30 });
     while (start <= end) {
       slots.push(start.toFormat("h:mm a"));
@@ -103,7 +104,7 @@ function App() {
     return slots;
   };
 
-  
+
 
   const timeSlots = generateTimeSlots();
 
@@ -130,17 +131,16 @@ function App() {
     setPlanDirty(false);
   }, [selectedDate, dayplans]);
 
+  const toggleRightPanelMode = () => {
+    setRightPanelMode((prev) => (prev === "goals" ? "history" : "goals"));
+  };
+
 
   function buildAdhocChildFromDraft(draft, groupingUnits = []) {
     const tempId = draft.tempId;
-    const input = { ...draft };
-  
-    groupingUnits.forEach(unit => {
-      if (!input[unit.key]) {
-        input[unit.key] = unit.type === "text" ? "" : { value: 0, flow: "in" };
-      }
-    });
-  
+    // Sanitize the input using those keys
+    const cleanInput = sanitizeInputValues(draft, groupingUnits);
+
     return {
       id: tempId,
       tempId,
@@ -156,31 +156,38 @@ function App() {
       },
       values: {
         checkbox: draft.checkbox || false,
-        input, // Includes all units + name + tempId
+        input: cleanInput, // ✅ this is now cleaned properly
       },
       children: [],
       goals: [],
       counters: [],
     };
   }
-  
+
+
   const handleInsertAdhoc = (tempId, draftTask) => {
     const groupingUnits = findTaskByIdDeep(draftTask.parentId, taskSnapshotRef.current)?.properties?.grouping?.units || [];
     const structuredTask = buildAdhocChildFromDraft(draftTask, groupingUnits);
+    console.log("save to adhocmap");
     adhocDraftMapRef.current.set(tempId, structuredTask);
+    console.log(adhocDraftMapRef.current)
   };
 
   const insertAdhocTask = (task) => {
     console.log("insert adhoc task: ", task);
+  
+    // Don't reset checkbox yet
     dispatch(addTaskOptimistic(task));
-
+  
     const updatedSnapshot = insertTaskById(taskSnapshotRef.current, task.parentId, task);
-    console.log("updated snapshot: ", task);
-
-    setTaskSnapshot(updatedSnapshot);
     taskSnapshotRef.current = updatedSnapshot;
+    setTaskSnapshot(updatedSnapshot);
+  
+    // Remove from adhoc map AFTER insert
+    adhocDraftMapRef.current.delete(task.id);
   };
-  console.log(tasks);
+  
+
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
 
@@ -206,32 +213,28 @@ function App() {
       const countArray = countTasks(assignmentsToSave[type]);
       const valueArray = countValues(assignmentsToSave[type]);
       const prevCountArray = countTasks(lastSavedAssignments[type] || {});
-      console.log(assignments);
       const progressUpdates = {};
 
       for (const goal of goals) {
         let newEntries = [];
-      
+
         for (const slotTasks of Object.values(assignmentsToSave[type])) {
           if (!Array.isArray(slotTasks)) continue;
-      
+
           for (const task of slotTasks) {
             const entries = buildProgressEntriesFromTask(task, goal, date, task.assignmentId);
-            console.log(task);
-            console.log(goal);
-            console.log(entries);
             newEntries = [...newEntries, ...entries];
           }
         }
-      
+
         // 🧼 Determine removed assignmentIds
         const prevAssignments = Object.values(lastSavedAssignments[type] || {}).flat();
         const newAssignments = Object.values(assignmentsToSave[type] || {}).flat();
-      
+
         const removedAssignmentIds = prevAssignments
           .map(t => t.assignmentId)
           .filter(id => id && !newAssignments.some(nt => nt.assignmentId === id));
-      
+
         // 🧽 Filter out removed AND duplicate assignmentIds
         const newAssignmentIds = new Set(newEntries.map(e => e.assignmentId));
         const cleanedProgress = (goal.progress || []).filter(
@@ -239,9 +242,9 @@ function App() {
             !removedAssignmentIds.includes(entry.assignmentId) &&
             !newAssignmentIds.has(entry.assignmentId) // <- prevent duplicates
         );
-      
+
         const updatedProgress = [...cleanedProgress, ...newEntries];
-      
+
         if (newEntries.length > 0 || removedAssignmentIds.length > 0) {
           dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: updatedProgress } }));
           dispatch(updateGoal({ id: goal._id, goalData: { progress: updatedProgress } }));
@@ -263,7 +266,6 @@ function App() {
         : `❌ Failed to save ${type} schedule`,
       intent: response?.payload ? Intent.SUCCESS : Intent.DANGER,
     });
-
   };
 
   const onDragEnd = (result) => {
@@ -281,13 +283,15 @@ function App() {
     const destSlot = updated[type][slotKey] || [];
 
     if (fromTaskBank) {
-      let taskFromBank = taskSnapshotRef.current.find((t) => t._id?.toString() === draggableId);
+      console.log(taskSnapshotRef.current);
+      let taskFromBank = findTaskByIdDeep(draggableId, taskSnapshotRef.current);
 
+      console.log(taskFromBank);
       if (taskFromBank && adhocDraftMapRef.current.size > 0) {
         const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
           .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
           .map(([_, task]) => task);
-      
+
         if (matchingAdhocs.length > 0) {
           matchingAdhocs.forEach((adhocTask) => {
             insertAdhocTask(adhocTask);
@@ -296,7 +300,9 @@ function App() {
           taskFromBank = taskSnapshotRef.current.find((t) => (t._id || t.tempId)?.toString() === draggableId);
         }
       }
-      
+
+      console.log(taskFromBank)
+
       if (!taskFromBank) return;
       console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
@@ -315,6 +321,10 @@ function App() {
     }
 
     setAssignments(updated);
+    const cleared = taskSnapshotRef.current.map((t) => deepResetAdhocCheckboxes(t));
+    console.log(cleared);
+    taskSnapshotRef.current = cleared;
+    setTaskSnapshot(cleared);
     saveDayPlan(updated, type);
   };
 
@@ -330,6 +340,32 @@ function App() {
     const taskId = before.draggableId;
     setDraggedTaskId(taskId); // set it early
   };
+
+  function deepResetAdhocCheckboxes(task) {
+    let changed = false;
+  
+    // Only clear if it's a preset adhoc task
+    let updated = { ...task };
+    if (task.properties?.preset && task.values?.checkbox) {
+      updated = {
+        ...updated,
+        values: {
+          ...updated.values,
+          checkbox: false,
+        },
+      };
+      changed = true;
+    }
+  
+    // Recurse into children
+    if (Array.isArray(task.children)) {
+      const updatedChildren = task.children.map(deepResetAdhocCheckboxes);
+      updated.children = updatedChildren;
+    }
+  
+    return updated;
+  }
+  
   return (
     <TimeProvider>
       <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
@@ -401,15 +437,30 @@ function App() {
                 </div>
               </div>
               <div className="right-side">
-                <GoalDisplay
-                  key={selectedDate.toISOString()}
-                  goals={goalsWithProgress}
-                  onEditGoal={(goal) => {
-                    setEditingGoal(goal);
-                    setGoalDrawerOpen(true);
-                  }}
-                />
-                <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+                <div className="right-side-header">
+                  <div className="section-header">
+                    Display
+                  </div>
+                  <Button
+                    icon="exchange"
+                    onClick={toggleRightPanelMode}
+                    minimal
+                    title="Switch between Goals and Task History"
+                  />
+                </div>
+
+                {rightPanelMode === "goals" ? (
+                  <GoalDisplay
+                    key={selectedDate.toISOString()}
+                    goals={goalsWithProgress}
+                    onEditGoal={(goal) => {
+                      setEditingGoal(goal);
+                      setGoalDrawerOpen(true);
+                    }}
+                  />
+                ) : (
+                  <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+                )}
               </div>
             </div>
           </div>

@@ -5,179 +5,18 @@ export const selectGoalTotals = (id) =>
     (state) => state.goals.goals.find(g => g._id === id || g.tempId === id),
     (goal) => getGoalUnitTotals(goal)
   );
-
-export function enrichGoalWithProgress(goal) {
-  return {
-    ...goal,
-    totals: getGoalUnitTotals(goal),
-    totalsByDate: getGoalUnitTotalsByDate(goal),
-    totalsByTask: getGoalUnitTotalsByTask(goal),
-  };
-}
-
-export function flattenGoalTasksForSave(tasks = []) {
-  const flattened = [];
-
-  for (const t of tasks) {
-    if (t.grouping && t.unitSettings) {
-      for (const [unitKey, unit] of Object.entries(t.unitSettings)) {
-        if (!unit?.enabled) continue;
-
-        const base = {
-          task_id: t.task_id,
-          path: t.path,
-          grouping: true,
-          type: t.type,
-          unit: unitKey,
-          flow: unit.flow || "any",
-          reverseFlow: unit.reverseFlow ?? false,
-          useInput: unit.useInput ?? true,
-          hasTarget: unit.hasTarget ?? true,
-        };
-
-        if (unit.hasTarget ?? true) {
-          flattened.push({
-            ...base,
-            operator: unit.operator || "=",
-            target: Number(unit.target || 0),
-            timeScale: unit.timeScale || "daily",
-          });
-        } else {
-          flattened.push({
-            ...base,
-            starting: Number(unit.starting || 0),
-          });
-        }
-      }
-    } else {
-      // 📌 Fix regular non-grouped tasks to save flow/reverseFlow/useInput/hasTarget
-      flattened.push({
-        task_id: t.task_id,
-        path: t.path,
-        type: t.type || "goal",
-        flow: t.flow || "any",
-        reverseFlow: t.reverseFlow ?? false,
-        useInput: t.useInput ?? true,
-        hasTarget: t.hasTarget ?? true,
-        starting: Number(t.starting || 0),
-        ...(t.hasTarget ?? true
-          ? {
-            operator: t.operator || "=",
-            target: Number(t.target || 0),
-            timeScale: t.timeScale || "daily",
-          }
-          : {}),
-      });
-    }
+  export function enrichGoalWithProgress(goal, selectedDate = null) {
+    return {
+      ...goal,
+      totals: getGoalUnitTotals(goal),
+      totalsByDate: getGoalUnitTotalsByDate(goal),
+      totalsByTask: getGoalUnitTotalsByTask(goal),
+      totalsForSelectedDate: selectedDate
+        ? getGoalUnitTotals(goal, { date: selectedDate })
+        : {},
+    };
   }
 
-  return flattened;
-}
-
-
-/**
- * Build a consistent compound key for grouped unit progress tracking.
- * Uses double underscore as a delimiter.
- */
-
-export const buildCompoundKey = (taskId, unit) => {
-  if (!taskId || !unit) {
-    console.warn("⚠️ buildCompoundKey: missing taskId or unitKey", { taskId, unit });
-    return "";
-  }
-  return `${taskId}__${unit}`;
-};
-
-export const buildCompoundChildKey = (taskId, child, unit) => {
-  if (!taskId || !unit) {
-    console.warn("⚠️ buildCompoundKey: missing taskId or unitKey", { taskId, unit });
-    return "";
-  }
-  return `${taskId}__${child}__${unit}`;
-};
-
-
-export function splitCompoundKey(compoundKey) {
-  if (!compoundKey) return [null, null];
-  const parts = compoundKey.split("__");
-  if (parts.length < 2) return [compoundKey, null];
-  const unit = parts.pop();
-  const baseId = parts.join("__");
-  return [baseId, unit];
-}
-
-export function calculateGoalProgressForGoal(goal, dayplans, taskMap) {
-  const progress = {};
-
-  for (const goalTask of goal.tasks || []) {
-    const taskId = goalTask.task_id?.toString?.();
-    if (!taskId) continue;
-
-    const baseTask = taskMap.get(taskId);
-    if (!baseTask) continue;
-
-    const isGrouped = goalTask.grouping === true && Array.isArray(goalTask.units);
-
-    if (isGrouped) {
-      // Handle grouped goal
-      for (const dayplan of dayplans) {
-        for (const slot of dayplan.result || []) {
-          for (const assigned of slot.assignedTasks || []) {
-            const assignedTaskId = assigned.originalId || assigned.task_id;
-            const assignedTask = taskMap.get(assignedTaskId);
-            if (!assignedTask) continue;
-
-            // Only include tasks under the same grouped parent
-            const ancestryMatch = assigned.assignmentAncestry?.some(
-              a => a._id?.toString?.() === baseTask._id?.toString?.()
-            );
-            if (!ancestryMatch) continue;
-
-            const input = assigned.values?.input || {};
-            for (const [unitKey, unitConfig] of Object.entries(goalTask.unitSettings || {})) {
-              if (!unitConfig.enabled || typeof input[unitKey]?.value !== "number") continue;
-
-              // flow filtering
-              const matchesFlow =
-                unitConfig.flow === "any" || input[unitKey].flow === unitConfig.flow;
-              if (!matchesFlow) continue;
-
-              progress[unitKey] = (progress[unitKey] || 0) + input[unitKey].value;
-            }
-          }
-        }
-      }
-    } else {
-      // Handle regular goal
-      const trackCheckbox = goalTask.useInput === false;
-      const trackInput = goalTask.useInput === true;
-
-      for (const dayplan of dayplans) {
-        for (const slot of dayplan.result || []) {
-          for (const assigned of slot.assignedTasks || []) {
-            const assignedTaskId = assigned.originalId || assigned.task_id;
-            if (assignedTaskId !== taskId) continue;
-
-            const values = assigned.values || {};
-            if (trackCheckbox && values.checkbox) {
-              progress[taskId] = (progress[taskId] || 0) + 1;
-            }
-
-            if (trackInput && typeof values.input === "number") {
-              progress[taskId] = (progress[taskId] || 0) + values.input;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Return array format (ready for goal.progress = [...])
-  return Object.entries(progress).map(([unitKey, value]) => ({
-    unitKey,
-    value,
-  }));
-}
 // === 🔁 Shared Helpers ===
 
 function getGoalTaskAndSettings(goal, entry) {
@@ -198,19 +37,42 @@ function getGoalTaskAndSettings(goal, entry) {
   return [goalTask, settings];
 }
 
+export function getWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+}
 
 function shouldIncludeEntry(entry, settings, { date, task_id, flow }) {
-  if (!settings) return false; // 🛑 Fix: prevent crash
+  if (!settings) return false;
 
-  if (date && entry.date?.slice(0, 10) !== date.slice(0, 10)) return false;
   if (task_id && entry.task_id?.toString?.() !== task_id) return false;
   if (flow && entry.flow !== flow) return false;
+
+  // ✅ Match by time scale
+  if (date && settings.timeScale && settings.timeScale !== "overall") {
+    const entryDate = new Date(entry.date || date);
+    const targetDate = new Date(date);
+
+    const samePeriod = {
+      daily: entryDate.toDateString() === targetDate.toDateString(),
+      weekly: entryDate.getFullYear() === targetDate.getFullYear() &&
+              getWeek(entryDate) === getWeek(targetDate),
+      monthly: entryDate.getFullYear() === targetDate.getFullYear() &&
+               entryDate.getMonth() === targetDate.getMonth(),
+    };
+
+    if (!samePeriod[settings.timeScale]) return false;
+  }
 
   const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
   return direction !== 0;
 }
 
 function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
+  if (inputFlow === "replace") return 0; // handled separately
   let direction = 0;
   if (goalFlow === "any") {
     direction = inputFlow === "in" ? 1 : -1;
@@ -219,19 +81,28 @@ function getFlowMultiplier(goalFlow, inputFlow, reverseFlow = false) {
   }
   return reverseFlow ? -direction : direction;
 }
-
 // === ✅ Totals: Flat
-
 export function getGoalUnitTotals(goal, options = {}) {
   const totals = {};
 
   for (const entry of goal.progress || []) {
     const [goalTask, settings] = getGoalTaskAndSettings(goal, entry);
+    if (!goalTask || !settings) continue;
 
-    if (!goalTask || !shouldIncludeEntry(entry, settings, options)) continue;
+    const key = entry.unitKey;
+
+    if (entry.flow === "replace") {
+      // ✅ Only apply replace if explicitly allowed
+      const isReplaceable = settings.replaceable === true;
+      if (!isReplaceable) continue;
+
+      totals[key] = entry.value;
+      continue;
+    }
+
+    if (!shouldIncludeEntry(entry, settings, options)) continue;
 
     const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
-    const key = entry.unitKey;
     totals[key] = (totals[key] || 0) + entry.value * direction;
   }
 
@@ -239,19 +110,29 @@ export function getGoalUnitTotals(goal, options = {}) {
 }
 
 // === 📅 Totals: By Date
-
 export function getGoalUnitTotalsByDate(goal, options = {}) {
   const byDate = {};
 
   for (const entry of goal.progress || []) {
     const [goalTask, settings] = getGoalTaskAndSettings(goal, entry);
-    if (!goalTask || !shouldIncludeEntry(entry, settings, options)) continue;
+    if (!goalTask || !settings) continue;
 
-    const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
     const dateKey = entry.date || "unknown";
+    const unitKey = entry.unitKey;
+
     if (!byDate[dateKey]) byDate[dateKey] = {};
 
-    const unitKey = entry.unitKey;
+    if (entry.flow === "replace") {
+      const isReplaceable = settings.replaceable === true;
+      if (!isReplaceable) continue;
+
+      byDate[dateKey][unitKey] = entry.value;
+      continue;
+    }
+
+    if (!shouldIncludeEntry(entry, settings, options)) continue;
+
+    const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
     byDate[dateKey][unitKey] = (byDate[dateKey][unitKey] || 0) + entry.value * direction;
   }
 
@@ -259,24 +140,36 @@ export function getGoalUnitTotalsByDate(goal, options = {}) {
 }
 
 // === 🧠 Totals: By Task
-
 export function getGoalUnitTotalsByTask(goal, options = {}) {
   const byTask = {};
 
   for (const entry of goal.progress || []) {
     const [goalTask, settings] = getGoalTaskAndSettings(goal, entry);
-    if (!goalTask || !shouldIncludeEntry(entry, settings, options)) continue;
+    if (!goalTask || !settings) continue;
 
-    const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
     const taskId = entry.task_id?.toString?.() || "unknown";
+    const unitKey = entry.unitKey;
+
     if (!byTask[taskId]) byTask[taskId] = {};
 
-    const unitKey = entry.unitKey;
+    if (entry.flow === "replace") {
+      const isReplaceable = settings.replaceable === true;
+      if (!isReplaceable) continue;
+
+      byTask[taskId][unitKey] = entry.value;
+      continue;
+    }
+
+    if (!shouldIncludeEntry(entry, settings, options)) continue;
+
+    const direction = getFlowMultiplier(settings.flow || "any", entry.flow, settings.reverseFlow);
     byTask[taskId][unitKey] = (byTask[taskId][unitKey] || 0) + entry.value * direction;
   }
 
   return byTask;
 }
+
+
 export function getGroupParentId(task) {
   // ✅ This now looks for any ancestry node marked as a grouping parent
   return task.assignmentAncestry?.find(
@@ -293,21 +186,16 @@ export function buildProgressEntriesFromTask(task, goal, assignmentDate, assignm
     const goalTaskId = goalTask.task_id?.toString?.();
 
     if (goalTask.grouping) {
-      console.log(getGroupParentId(task));
       // ✅ Only match grouped goals if task is under the correct grouped parent
       if (goalTaskId !== getGroupParentId(task)) continue;
 
       const input = task.values?.input || {};
-      console.log(task);
-      console.log(goalTask);
-      console.log(input);
+
       for (const [unitKey, unitConfig] of Object.entries(goalTask.unitSettings || {})) {
-        console.log(unitKey);
-        console.log(unitConfig);
+
         if (!unitConfig.enabled) continue;
 
         const val = input[unitKey];
-        console.log(val);
         if (typeof val?.value !== "number") continue;
 
         const flowMatch = unitConfig.flow === "any" || val.flow === unitConfig.flow;
@@ -358,120 +246,7 @@ export function buildProgressEntriesFromTask(task, goal, assignmentDate, assignm
       }
     }
   }
-console.log(entries);
   return entries;
-}
-
-/**
- * Calculates progress for a single unit task (grouped or not).
- */
-export function calculateUnitProgress({
-  value = 0,
-  useInput = true,
-  taskFlow = "in",
-  flow = "any",
-  reverseFlow = false,
-  hasTarget = true,
-  starting = 0,
-}) {
-  const direction = getFlowMultiplier(flow, taskFlow, reverseFlow);
-  const delta = value;
-  const netChange = delta * direction;
-
-  // console.log("[📊 UnitCalc]", {
-  //   value,
-  //   useInput,
-  //   taskFlow,
-  //   flow,
-  //   reverseFlow,
-  //   hasTarget,
-  //   starting,
-  //   direction,
-  //   delta,
-  //   netChange,
-  //   result: hasTarget ? netChange : starting + netChange
-  // });
-
-  return hasTarget ? netChange : starting + netChange;
-}
-
-export function calculateGoalProgress(goalProgressParams) {
-  const {
-    goal,
-    countArray,
-    valueArray,
-    tasks,
-  } = goalProgressParams;
-  const newProgress = {};
-
-  for (const goalTask of goal.tasks) {
-    const taskId = goalTask.task_id;
-    if (goalTask.task_id in countArray) {
-      const taskCount = countArray[taskId];
-      const taskValue = valueArray[taskId];
-
-      if (goalTask.grouping) {
-        newProgress[taskId] = {};
-        for (const [unitIndex, unit] of Object.entries(goalTask.units || {})) {
-          const unitSettings = goalTask.unitSettings[unit.key];
-          newProgress[taskId][unit.key] = 0;
-          if (unitSettings && unitSettings.useInput) {
-            for (const [childKey, childObject] of Object.entries(taskValue || {})) {
-              if (childObject[unit.key]) {
-                const calculationParams = {
-                  taskFlow: childObject[unit.key].flow || "in",
-                  value: childObject[unit.key].value || 0,
-                  ...unitSettings
-                };
-
-                const progress = calculateUnitProgress(calculationParams);
-                if (unitSettings.flow === "any" || unitSettings.flow === taskFlow) {
-                  newProgress[taskId][unit.key] = newProgress[taskId][unit.key] + (parseInt(progress));
-                }
-              }
-            }
-          } else if (unitSettings && !unitSettings.useInput) {
-            // for (const [childKey, childObject] of Object.entries(taskCountObject || {})) {
-            //   if (childObject[unit.key]) {
-            //     const calculationParams = {
-            //       taskFlow: childObject[unit.key].flow || "in",
-            //       value: childObject[unit.key].value || 0,
-            //       ...unitSettings
-            //     };
-
-            //     const progress = calculateUnitProgress(calculationParams);
-            //     newProgress[unit.key] += progress;
-            //     console.log(newProgress);
-            //   }
-            // }
-          }
-        }
-
-      } else {
-        const realTask = findTaskByIdDeep(taskId, tasks);
-        newProgress[taskId] = 0;
-
-        if (goalTask.useInput) {
-          // console.log("useInput");
-        } else {
-          const value = taskCount;
-          if (typeof value == "number") {
-            const calculationParams = {
-              taskFlow: realTask.flow || "in",
-              value,
-              ...goalTask
-            };
-
-            const progress = calculateUnitProgress(calculationParams);
-            if (goalTask.flow === "any" || goalTask.flow === (realTask.flow || "in")) {
-              newProgress[taskId] = progress;
-            }
-          }
-        }
-      }
-    }
-  }
-  return newProgress;
 }
 
 
@@ -505,6 +280,7 @@ export function rehydrate_goal_tasks(goal, tasks) {
         useInput: task.useInput ?? true,
         hasTarget: task.hasTarget ?? true,
         timeScale: task.timeScale || "daily",
+        replaceable: task.replaceable ?? false,
         ...(task.hasTarget ?? true
           ? {
               operator: task.operator || "=",
@@ -532,6 +308,8 @@ export function rehydrate_goal_tasks(goal, tasks) {
         useInput: task.useInput ?? true,
         hasTarget: task.hasTarget ?? true,
         starting: task.starting ?? 0,
+        replaceable: task.replaceable ?? false, // ✅ ADD THIS
+
       };
 
       regularTasks.push(baseTask);
