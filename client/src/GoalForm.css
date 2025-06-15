@@ -208,6 +208,11 @@
   width: 100px;
 
 }
+
+.goal-tasks-actual {
+  height: 100%;
+  overflow-y: scroll;
+}
   .goal-tasks-actual .bp5-input-group {
     max-width: 64px;
   }

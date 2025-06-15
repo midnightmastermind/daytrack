@@ -152,14 +152,14 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
             innerLabel="Disabled"
           />
         </div>
-        <Tag>{unit.key}</Tag>
-        <div className="label-container">
+        <Tag>{unit.name}</Tag>
+        {/* <div className="label-container">
           <InputGroup
             value={unitState.label || ""}
             onChange={(e) => updateUnitSettings(unitKey, "label", e.target.value)}
             placeholder="label"
           />
-        </div>
+        </div> */}
       </div>
       
       <div className="time-settings">

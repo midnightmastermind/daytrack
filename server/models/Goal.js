@@ -32,7 +32,7 @@ const GoalSchema = new mongoose.Schema({
         unitKey: { type: String },
         value: { type: Number },
         date: { type: String },
-        flow: { type: String, enum: ["in", "out", "any"] },
+        flow: { type: String, enum: ["in", "out", "any", "replace"] },
         replaceable: { type: Boolean, default: false },
         assignmentId: { type: String }
       }

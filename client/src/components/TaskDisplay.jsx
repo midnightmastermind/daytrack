@@ -15,7 +15,7 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
             return (
               <Card key={timeSlot} elevation={Elevation.FOUR} className="display-card">
                 <div className="timeslot">
-                  <strong>{timeSlot}</strong>
+                  <div className="timeslot-title">{timeSlot}</div>
                 </div>
                 <div className="task-tags-completed">
                   {tasksForSlot.map((task, index) => (
@@ -24,7 +24,6 @@ const TaskDisplay = ({ timeSlots = [], assignments = {} }) => {
                       task={task}
                       showAncestry
                       minimalValues={true}
-                      className="task-tag-completed"
                     />
                   ))}
                 </div>

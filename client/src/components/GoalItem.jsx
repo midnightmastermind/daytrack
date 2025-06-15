@@ -135,7 +135,7 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
                   {t.units
                     .filter((unit) => unit.type !== "text" && t.unitSettings?.[unit.key]?.enabled)
                     .map((unit) => {
-                      const label = unit.label || unit.key;
+                      const label = unit.name;
                       const unitKey = unit.key;
                       const key = `${taskKey}__${unitKey}`;
                       const change = changeIndicators[key];

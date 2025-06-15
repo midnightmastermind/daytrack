@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
+const { syncGoalsWithTask } = require('../helper/goalSync');
 
 function buildDeepPopulate(levels = 4) {
   let root = { path: "children" };
@@ -70,7 +71,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-async function updateTaskTree(taskData, parentId = null) {
+async function updateTaskTree(taskData, parentId = null, options = {}) {
+  const { dryRun = false } = options;
   const { _id, children = [], ...rest } = taskData;
 
   let savedTask;
@@ -85,6 +87,7 @@ async function updateTaskTree(taskData, parentId = null) {
     savedTask = await newTask.save();
   }
 
+  await syncGoalsWithTask(savedTask, { dryRun });
   // Get existing child IDs from DB for comparison
   const existing = await Task.findById(savedTask._id).populate("children");
   const existingChildIds = existing?.children?.map(c => c._id.toString()) || [];
@@ -96,17 +99,16 @@ async function updateTaskTree(taskData, parentId = null) {
     incomingChildIds.push(savedChild._id.toString());
   }
 
-  // Delete any children that were removed
+  // Delete removed children
   const toDelete = existingChildIds.filter(id => !incomingChildIds.includes(id));
   if (toDelete.length > 0) {
     await Task.deleteMany({ _id: { $in: toDelete } });
   }
 
-  // Set and save the new children array
+  // Update child references
   savedTask.children = incomingChildIds;
   await savedTask.save();
 
-  // Attach to parent if nested
   if (parentId) {
     await Task.findByIdAndUpdate(parentId, {
       $addToSet: { children: savedTask._id }
@@ -117,14 +119,15 @@ async function updateTaskTree(taskData, parentId = null) {
 }
 
 
-// PUT a full task tree under a root task ID
+
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const dryRun = req.query.dryRun === 'true'; // ← get it here
     const rootTaskData = { ...req.body, _id: id };
-    const updatedTree = await updateTaskTree(rootTaskData);
+    const updatedTree = await updateTaskTree(rootTaskData, null, { dryRun }); // ← pass it in
     const populatedTree = await Task.findById(updatedTree._id).populate(buildDeepPopulate(6));
-    res.status(200).json(populatedTree)
+    res.status(200).json(populatedTree);
   } catch (err) {
     console.error("PUT error:", err);
     res.status(400).json({ error: 'Failed to update task tree', details: err.message });

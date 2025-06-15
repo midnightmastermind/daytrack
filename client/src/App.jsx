@@ -10,32 +10,19 @@ import {  buildProgressEntriesFromTask } from "./helpers/goalUtils";
 
 import {
   fetchTasks,
-  createTask,
-  updateTask,
   deleteTask,
   addTaskOptimistic,
-  updateTaskOptimistic,
   deleteTaskOptimistic
 } from "./store/tasksSlice";
 
 import {
   fetchGoals,
-  createGoal,
   updateGoal,
   deleteGoal,
-  addGoalOptimistic,
   updateGoalOptimistic,
   deleteGoalOptimistic
 } from "./store/goalSlice";
 
-import {
-  fetchGoalProgress,
-  createGoalProgress,
-  deleteGoalProgress,
-  updateGoalProgress,
-  addPendingProgress,
-  removePendingProgress
-} from "./store/goalProgressSlice";
 
 import {
   fetchAllDayPlans,
@@ -84,11 +71,10 @@ function App() {
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
     dispatch(fetchGoals());
-    // dispatch(fetchGoalProgress());
   }, [dispatch]);
 
   useEffect(() => {
-    const cleaned = tasks.map(deepResetAdhocCheckboxes); // from earlier
+    const cleaned = tasks.map(deepResetAdhocCheckboxes); 
     setTaskSnapshot(cleaned);
     taskSnapshotRef.current = cleaned;
   }, [tasks]);
@@ -104,10 +90,7 @@ function App() {
     return slots;
   };
 
-
-
   const timeSlots = generateTimeSlots();
-
 
   useEffect(() => {
     const found = dayplans.find((plan) =>
@@ -144,7 +127,7 @@ function App() {
     return {
       id: tempId,
       tempId,
-      name: draft.name?.trim() || "",
+      name: draft.name || "",
       parentId: draft.parentId,
       properties: {
         group: false,

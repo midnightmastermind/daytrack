@@ -111,15 +111,13 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
 
   };
 
-
-
   const addUnit = () => {
     const currentUnits = child.properties.grouping?.units || [];
     const updatedUnits = [
       ...currentUnits,
       {
-        name: "",
-        key: "",
+        name: "", // label
+        key: uuidv4(), // uniquely identifies the unit
         prefix: "",
         suffix: "",
         type: "float",
@@ -263,7 +261,6 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                     value={unit.icon}
                     onChange={(val) => updateUnit(i, "icon", val)}
                   />
-                  <InputGroup placeholder="Name" value={unit.key} onChange={(e) => updateUnit(i, "key", e.target.value)} />
                   <InputGroup placeholder="Label" value={unit.name} onChange={(e) => updateUnit(i, "name", e.target.value)} />
                   <InputGroup placeholder="Prefix" value={unit.prefix} onChange={(e) => updateUnit(i, "prefix", e.target.value)} />
                   <InputGroup placeholder="Suffix" value={unit.suffix} onChange={(e) => updateUnit(i, "suffix", e.target.value)} />
@@ -659,7 +656,9 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
             <Button intent="primary" icon="plus" text="Add Subtask" onClick={addChild} />
           </div>
           <div className="task-form-children-list">
-            {(stagedTask?.children || []).map((child) => {
+            {(stagedTask?.children || [])
+              .filter(child => !child.properties?.adhoc) // ✅ filter out adhoc children
+              .map((child) => {
               const id = child._id || child.tempId || child.id;
               const liveChild = stagedTask.children.find(
                 (c) => (c._id || c.tempId || c.id) === id
