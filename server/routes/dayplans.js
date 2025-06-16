@@ -31,8 +31,8 @@ router.get('/', async (req, res) => {
 // POST create a new day plan
 router.post('/', async (req, res) => {
   try {
-    const { date, plan, result } = req.body;
-    const newDayPlan = new DayPlan({ date, plan, result });
+    const { date, plan, result, name } = req.body;
+    const newDayPlan = new DayPlan({ date, plan, result, name });
     const savedDayPlan = await newDayPlan.save();
 
     console.log("📝 Saved new DayPlan:", savedDayPlan);

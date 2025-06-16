@@ -7,7 +7,6 @@ import {
   getAncestorGroupingUnits,
 } from "../helpers/taskUtils";
 import TaskIcon from "./TaskIcon";
-import AutoScrollWrapper from "../helpers/AutoScrollWrapper";
 /** === Helper: extract valid input entries === */
 const getValidInputEntries = (input = {}, { minimal = false } = {}) => {
   // If it's a primitive (string, number, etc), just return it as one entry
@@ -114,7 +113,7 @@ const TaskSummary = ({ task, entries = [], tasks = [] }) => {
   if (!entries || entries.length === 0) return null;
 
   return (
-    <AutoScrollWrapper className="task-summary" speed={0.5}>
+    <div className="task-summary" speed={0.5}>
       {entries.map(([key, val]) => {
         // Just print primitive string/number values directly
         if (typeof val !== "object" || val === null) {
@@ -149,7 +148,7 @@ const TaskSummary = ({ task, entries = [], tasks = [] }) => {
           </div>
         );
       })}
-    </AutoScrollWrapper>
+    </div>
   );
 };
 

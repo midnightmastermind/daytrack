@@ -409,7 +409,7 @@ const TaskCard = ({
 
     if (groupingUnits?.length > 0) {
       rendered.push(
-        <Tag key="virtual-new-entry" className="child-task new-entry" minimal intent="primary">
+        <div key="virtual-new-entry" className="child-task new-entry">
           <div className="new-entry-controls">
             <div className="control-inputs">
               <Checkbox
@@ -425,13 +425,10 @@ const TaskCard = ({
                 }
               />
               <EditableText
-                value={newPresetDraft.name}
+                value={newPresetDraft.name || ""}
                 onChange={(val) => {
                   console.log("🧠 onChange received:", JSON.stringify(val));
                   handleNewPresetChange("name", val, parentId);
-                }}                onConfirm={(value) => {
-                  console.log("🟢 Confirmed via Enter or blur:", value);
-                  handleNewPresetChange("name", value, parentId);
                 }}
                 selectAllOnFocus={true}
                 confirmOnEnterKey={true}
@@ -533,7 +530,7 @@ const TaskCard = ({
               )
             })}
           </div>
-        </Tag>
+        </div>
       );
 
       rendered = rendered.slice().reverse();

@@ -206,7 +206,7 @@ p {
   padding: 0px;
 }
 
-/* .bp5-editable-text,
+.bp5-editable-text,
 .bp5-editable-text::before {
   background-color: var(--color-bg) !important;
   color: white;
@@ -214,10 +214,13 @@ p {
   box-shadow: unset;
   text-align: left;
   height: 30px;
-  font-size: 12px;
+  font-size: 11px;
+  padding-top: 6px;
+  padding-left: 5px;
+  margin-top: 1px;
   /* display: flex;
-  align-items: center; 
-}*/
+  align-items: center; */
+}
 
 .bp5-editable-text-input {
   min-width: 60px !important;
@@ -701,11 +704,22 @@ p {
 }
 .container .plan-header {
   border-right: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding-right: 10px;
 }
 .container .agenda-header,
 .container .plan-header {
   width: 50%;
 }
+
+.container .agenda-header {
+  display: flex;
+  padding-left: 9px;
+}
+
 
 .container .schedule {
   background-color: var(--color-bg);
@@ -1087,11 +1101,22 @@ p {
   width: 40px;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-color: var(--color-bg-light);
 }
 
+.timeslot-button {
+  position: absolute;
+  display: none;
+  bottom: 0;
+  right: 4px;
+}
+
+.timeslot:hover .timeslot-button {
+  display: block;
+}
 .timeslot.past {
   opacity: 0.7;
 }
@@ -1215,14 +1240,25 @@ p {
   font-size: 11px;
 }
 
+.icon-picker-popover {
+  margin-right: 4px;
+}
+
 .bp5-html-select select {
   font-size: 11px !important;
   min-width: 55px;
 }
-.new-entry .control-inputs .bp5-control-indicator::before {
-  height: 20px;
-  width: 20px;
+.new-entry .control-inputs .bp5-control-indicator::before,
+.new-entry .bp5-control-indicator {
+  height: 20px !important;
+  width: 20px !important;
 }
+
+.new-entry .bp5-control-indicator {
+  margin-top: 5px !important;
+  margin-left: 2px;
+}
+
 .preset-input .bp5-switch {
   padding-inline-start: unset !important;
   margin-left: 5px;

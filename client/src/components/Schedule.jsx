@@ -10,6 +10,7 @@ const Schedule = ({
   assignments,
   setAssignments,
   onAssignmentsChange,
+  onCopyToAgenda = null
 }) => {
   const memoizedCards = useMemo(() => (
     timeSlots.map((slot) => (
@@ -20,6 +21,7 @@ const Schedule = ({
         assignments={assignments}
         setAssignments={setAssignments}
         onAssignmentsChange={onAssignmentsChange}
+        onCopyToAgenda={onCopyToAgenda}
       />
     ))
   ), [timeSlots, assignments, setAssignments, onAssignmentsChange]);

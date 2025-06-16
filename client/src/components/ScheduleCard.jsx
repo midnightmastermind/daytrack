@@ -4,16 +4,16 @@ import { Droppable, Draggable } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurrentTime
 import TaskTag from "./TaskTag";
-const ScheduleCard = ({ tasks, label, timeSlot, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
+const ScheduleCard = ({ tasks, label, timeSlot, onCopyToAgenda = null, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
   const tasksForSlot = assignments[timeSlot] || [];
-  const cutoff = useCurrentCutoff(); 
+  const cutoff = useCurrentCutoff();
 
   const isPast = useMemo(() => {
     const slotStart = DateTime.fromFormat(timeSlot, "h:mm a");
     const slotEnd = slotStart.plus({ minutes: 30 });
     return slotEnd <= cutoff;
-  }, [cutoff, timeSlot]); 
-  
+  }, [cutoff, timeSlot]);
+
   const removeTask = (index) => {
     const updated = { ...assignments };
     const updatedTasks = [...(updated[timeSlot] || [])];
@@ -37,9 +37,23 @@ const ScheduleCard = ({ tasks, label, timeSlot, assignments = {}, setAssignments
             backgroundColor: snapshot.isDraggingOver ? "#0E1115" : undefined,
           }}
         >
-          <div className="timeslot-title">{timeSlot}</div>
+          <div className={`timeslot-title timeslot-title-${label}`}>
+            <div>
+              {timeSlot}
+            </div>
+            {typeof onCopyToAgenda === "function" && (
+              <Button
+                icon="arrow-right"
+                minimal
+                small
+                title="Copy to Agenda"
+                className="timeslot-button"
+                onClick={() => onCopyToAgenda(timeSlot)}
+              />
+            )}
+          </div>
           <div className="tag-container">
-          {tasksForSlot.map((task, index) => (
+            {tasksForSlot.map((task, index) => (
               <Draggable
                 key={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
                 draggableId={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}

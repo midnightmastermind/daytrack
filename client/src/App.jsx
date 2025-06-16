@@ -27,7 +27,10 @@ import {
 import {
   fetchAllDayPlans,
   createDayPlan,
-  updateDayPlan
+  updateDayPlan,
+  deleteDayPlan,
+  deleteDayPlanOptimistic,
+  addDayPlanOptimistic
 } from "./store/dayPlanSlice";
 
 import Toolbar from "./components/Toolbar";
@@ -38,7 +41,7 @@ import GoalDisplay from "./components/GoalDisplay";
 import NewTaskForm from "./NewTaskForm";
 import GoalForm from "./GoalForm";
 import LiveTime from "./components/LiveTime";
-
+import PlanTemplateManager from "./components/PlanTemplateManager";
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
 import DatePickerPopover from "./components/DatePickerPopover.jsx";
 
@@ -54,6 +57,7 @@ function App() {
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const [rightPanelMode, setRightPanelMode] = useState("goals");
+  const [currentTemplate, setCurrentTemplate] = useState(null);
 
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
@@ -118,7 +122,72 @@ function App() {
     setRightPanelMode((prev) => (prev === "goals" ? "history" : "goals"));
   };
 
+  const handleCopyToAgenda = (slot) => {
+    const planTasks = assignments.preview[slot] || [];
+    const agendaTasks = assignments.actual[slot] || [];
+  
+    const agendaIds = new Set(agendaTasks.map((t) => t.assignmentId));
+    const newTasks = planTasks.filter((t) => !agendaIds.has(t.assignmentId));
+  
+    const updatedAgenda = {
+      ...assignments.actual,
+      [slot]: [...agendaTasks, ...newTasks],
+    };
+  
+    const updated = {
+      ...assignments,
+      actual: updatedAgenda,
+    };
+  
+    setAssignments(updated);
+  
+    // ✅ Save to DB
+    saveDayPlan(updated, "actual");
+  };
 
+  const deletePlanTemplate = async (id) => {
+    dispatch(deleteDayPlanOptimistic(id));
+    const res = await dispatch(deleteDayPlan(id));
+  
+    if (res?.payload) {
+      AppToaster.show({ message: `🗑️ Plan deleted`, intent: Intent.WARNING });
+    }
+  };
+  const saveNamedPlanTemplate = async (name, assignmentsData) => {
+    const tempId = `temp_${Date.now()}`;
+    const payload = {
+      _id: tempId, // or tempId field
+      name,
+      plan: Object.entries(assignmentsData).map(([timeSlot, assignedTasks]) => ({
+        timeSlot,
+        assignedTasks,
+      })),
+    };
+    dispatch(addDayPlanOptimistic(payload)); // ✅ Optimistic update
+  
+    const res = await dispatch(createDayPlan(payload));
+    if (res?.payload) {
+      AppToaster.show({ message: `✅ Plan "${name}" saved!`, intent: Intent.SUCCESS });
+      setCurrentTemplate(res.payload);
+    }
+  };
+  
+  const updateNamedPlanTemplate = async (id, assignmentsData) => {
+    const payload = {
+      _id: id,
+      plan: Object.entries(assignmentsData).map(([timeSlot, assignedTasks]) => ({
+        timeSlot,
+        assignedTasks,
+      })),
+    };
+  
+    dispatch(setDayPlanOptimistic(payload)); // ✅ optimistic
+    const res = await dispatch(updateDayPlan({ id, dayPlanData: payload }));
+  
+    if (res?.payload) {
+      AppToaster.show({ message: `✅ Plan "${res.payload.name}" updated!`, intent: Intent.SUCCESS });
+    }
+  };
   function buildAdhocChildFromDraft(draft, groupingUnits = []) {
     const tempId = draft.tempId;
     // Sanitize the input using those keys
@@ -396,12 +465,26 @@ function App() {
                     <div className="time-divider" />
                   </div>
                   <div className="schedule-header">
-                    <div className="plan-header">Plan</div>
+                    <div className="plan-header">
+                    <PlanTemplateManager
+                        assignments={assignments.preview}
+                        setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                        allDayPlans={dayplans.filter(dp => !dp.date && dp.name)}
+                        savePlanTemplate={saveNamedPlanTemplate}
+                        updatePlanTemplate={updateNamedPlanTemplate}
+                        currentTemplate={currentTemplate}
+                        deletePlanTemplate={deletePlanTemplate}
+                        setCurrentTemplate={setCurrentTemplate}
+                      />
+
+                      <div>Plan</div>
+                    </div>
                     <div className="agenda-header">Agenda</div>
                   </div>
                   <div className="schedules-scroll-wrapper">
                     <Schedule
                       label="Plan"
+                      onCopyToAgenda={handleCopyToAgenda}
                       timeSlots={timeSlots}
                       assignments={assignments.preview}
                       setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}

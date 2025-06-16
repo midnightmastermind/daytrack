@@ -17,16 +17,31 @@ export const updateDayPlan = createAsyncThunk("dayplans/updateDayPlan", async ({
   return response.data;
 });
 
+export const deleteDayPlan = createAsyncThunk("dayplans/deleteDayPlan", async (id) => {
+  const response = await dayPlanService.deleteDayPlan(id);
+  return { id, ...response.data };
+});
+
 const dayPlanSlice = createSlice({
   name: "dayplans",
   initialState: { dayplans: [] },
   reducers: {
     setDayPlanOptimistic: (state, action) => {
-      const idx = state.dayplans.findIndex((dp) => dp.date === action.payload.date);
-      if (idx !== -1) state.dayplans[idx] = action.payload;
-      else state.dayplans.push(action.payload);
+      const idx = state.dayplans.findIndex((dp) => dp._id === action.payload._id);
+      if (idx !== -1) {
+        state.dayplans[idx] = action.payload;
+      } else {
+        state.dayplans.push(action.payload);
+      }
+    },
+    deleteDayPlanOptimistic: (state, action) => {
+      state.dayplans = state.dayplans.filter((dp) => dp._id !== action.payload);
+    },
+    addDayPlanOptimistic: (state, action) => {
+      state.dayplans.push(action.payload);
     },
   },
+  
   extraReducers: (builder) => {
     builder
       .addCase(fetchAllDayPlans.fulfilled, (state, action) => {
@@ -40,9 +55,12 @@ const dayPlanSlice = createSlice({
       .addCase(updateDayPlan.fulfilled, (state, action) => {
         const idx = state.dayplans.findIndex((dp) => dp._id === action.payload._id);
         if (idx !== -1) state.dayplans[idx] = action.payload;
+      })
+      .addCase(deleteDayPlan.fulfilled, (state, action) => {
+        state.dayplans = state.dayplans.filter((dp) => dp._id !== action.payload.id);
       });
   },
 });
 
-export const { setDayPlanOptimistic } = dayPlanSlice.actions;
+export const { setDayPlanOptimistic, deleteDayPlanOptimistic, addDayPlanOptimistic } = dayPlanSlice.actions;
 export default dayPlanSlice.reducer;
