@@ -5,8 +5,10 @@ import TaskCard from "./TaskCard";
 
 const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onNewTask, onInsertAdhoc, draggedTaskId }) => {
 
-  const topLevelTasks = tasks.filter((task) => task.properties?.card);
-
+  const topLevelTasks = tasks
+  .filter((task) => task.properties?.card)
+  .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0));
+  console.log(topLevelTasks);
   return (
     <div className="task-bank-container">
       <div className="task-bank-header-container">
@@ -14,7 +16,7 @@ const TaskBank = ({ tasks, onTaskUpdate, onEditTask, onNewTask, onInsertAdhoc, d
         <Button icon="plus" text="New Task" minimal onClick={onNewTask} />
       </div>
       <div className={'task-bank-scroll-wrapper'}>
-        <Droppable className={'droppable-container'} droppableId="taskBank" isDropDisabled={true} ignoreContainerClipping={true}>
+        <Droppable className={'droppable-container'} droppableId="taskBank"  direction="vertical" ignoreContainerClipping={true}>
           {(provided) => (
             <CardList
               className="task-bank"

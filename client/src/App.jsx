@@ -11,8 +11,12 @@ import {  buildProgressEntriesFromTask } from "./helpers/goalUtils";
 import {
   fetchTasks,
   deleteTask,
+  updateTask,
   addTaskOptimistic,
-  deleteTaskOptimistic
+  deleteTaskOptimistic,
+  reorderTasksOptimistic,
+  bulkReorderTasks,
+  updateTaskOptimistic
 } from "./store/tasksSlice";
 
 import {
@@ -322,11 +326,43 @@ function App() {
 
   const onDragEnd = (result) => {
     console.log("====onDragEnd====");
-    setDraggedTaskId(null); // Reset after drop
-
+    setDraggedTaskId(null);
+  
     const { source, destination, draggableId } = result;
-    if (!destination || !source || destination.droppableId === "taskBank") return;
+    if (!destination || !source) return;
+    console.log(result);
+    // ✅ If reordering inside task bank
+    if (source.droppableId === "taskBank" && destination.droppableId === "taskBank") {
+      const taskBankTasks = taskSnapshotRef.current
+        .filter((task) => task.properties?.card)
+        .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0));
+    
+      const [moved] = taskBankTasks.splice(source.index, 1);
+      taskBankTasks.splice(destination.index, 0, moved);
+    
+      const reordered = taskBankTasks.map((task, index) => ({
+        ...task,
+        properties: {
+          ...task.properties,
+          order: index,
+        },
+      }));
+    
+      const updatedSnapshot = taskSnapshotRef.current.map((task) => {
+        const updated = reordered.find((t) => (t._id || t.tempId) === (task._id || task.tempId));
+        return updated || task;
+      });
+    
+      taskSnapshotRef.current = updatedSnapshot;
+      setTaskSnapshot(updatedSnapshot);
+    
+      dispatch(reorderTasksOptimistic(reordered)); // ✅ Optimistic update
+      dispatch(bulkReorderTasks(reordered));       // ✅ Server save
+    
+      return;
+    }
 
+    console.log("continued");
     const fromTaskBank = source.droppableId === "taskBank";
 
     const type = destination.droppableId.includes("preview") ? "preview" : "actual";
@@ -335,10 +371,8 @@ function App() {
     const destSlot = updated[type][slotKey] || [];
 
     if (fromTaskBank) {
-      console.log(taskSnapshotRef.current);
       let taskFromBank = findTaskByIdDeep(draggableId, taskSnapshotRef.current);
 
-      console.log(taskFromBank);
       if (taskFromBank && adhocDraftMapRef.current.size > 0) {
         const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
           .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
@@ -352,8 +386,6 @@ function App() {
           taskFromBank = taskSnapshotRef.current.find((t) => (t._id || t.tempId)?.toString() === draggableId);
         }
       }
-
-      console.log(taskFromBank)
 
       if (!taskFromBank) return;
       console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
@@ -374,7 +406,6 @@ function App() {
 
     setAssignments(updated);
     const cleared = taskSnapshotRef.current.map((t) => deepResetAdhocCheckboxes(t));
-    console.log(cleared);
     taskSnapshotRef.current = cleared;
     setTaskSnapshot(cleared);
     saveDayPlan(updated, type);
@@ -543,6 +574,7 @@ function App() {
                 dispatch(deleteTask(t._id));
                 setIsDrawerOpen(false);
               }}
+              taskListLength={tasks.length}
             />
           </Drawer>
 

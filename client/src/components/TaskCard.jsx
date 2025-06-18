@@ -65,8 +65,6 @@ const TaskCard = ({
       });
   }
   const updateChildValue = (childrenArray, childId, key, newValue) => {
-    console.log("update child value");
-    console.log(newValue);
     return childrenArray.map((child) => {
       const childKey = child._id || child.tempId || child.id;
       if (childKey?.toString() === childId?.toString()) {
@@ -83,8 +81,6 @@ const TaskCard = ({
   };
 
   const handleChildChange = (childId, key, newValue) => {
-    console.log("handleChildChange");
-    console.log(newValue);
     const updatedChildren = updateChildValue(
       taskStateRef.current.children || [],
       childId,
@@ -100,16 +96,11 @@ const TaskCard = ({
   };
 
   const handleNewPresetChange = (key, value, parentId) => {
-    console.log("📥 INPUT VALUE:", JSON.stringify(value), "TYPE:", typeof value);
-    console.trace("Trace");
-  
     // 🆕 If no draft ID yet, create a new session ID
     const tempId = draftSessionId || `adhoc_${task._id}_${parentId}_${Date.now()}`;
 
     // Set session ID only once per draft session
     if (!draftSessionId) setDraftSessionId(tempId);
-
-    console.log("setting preset name:", value, typeof value);
 
     // Update the draft
     if (key === "name") {
@@ -139,7 +130,7 @@ const TaskCard = ({
           [key]: value,
         },
       };
-      console.log(target)
+
       const updatedChildren = [...children];
       updatedChildren[targetIndex] = target;
 
@@ -210,9 +201,9 @@ const TaskCard = ({
 
   const renderChildren = (childrenArray, parentId = null) => {
     let rendered = childrenArray
-      .filter((child) => {
-        return !child.properties.adhoc;
-      })
+      .slice()
+      .filter((child) => !child.properties.adhoc)
+      .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
       .map((child) => {
         const childKey = child._id || child.tempId || child.id;
 
@@ -427,7 +418,6 @@ const TaskCard = ({
               <EditableText
                 value={newPresetDraft.name || ""}
                 onChange={(val) => {
-                  console.log("🧠 onChange received:", JSON.stringify(val));
                   handleNewPresetChange("name", val, parentId);
                 }}
                 selectAllOnFocus={true}

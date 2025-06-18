@@ -23,6 +23,11 @@ export const deleteTask = createAsyncThunk("tasks/deleteTask", async (id) => {
   return id;
 });
 
+export const bulkReorderTasks = createAsyncThunk("tasks/bulkReorder", async (tasks) => {
+  const response = await taskService.bulkReorderTasks(tasks);
+  return response.data;
+});
+
 const tasksSlice = createSlice({
   name: "tasks",
   initialState: {
@@ -49,6 +54,14 @@ const tasksSlice = createSlice({
     deleteTaskOptimistic: (state, action) => {
       const id = action.payload;
       state.tasks = state.tasks.filter((t) => t._id !== id && t.tempId !== id);
+    },
+    reorderTasksOptimistic: (state, action) => {
+      for (const updated of action.payload) {
+        const idx = state.tasks.findIndex(t => t._id === updated._id);
+        if (idx !== -1) {
+          state.tasks[idx].properties.order = updated.properties.order;
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -86,6 +99,22 @@ const tasksSlice = createSlice({
       })
       .addCase(deleteTask.fulfilled, (state, action) => {
         state.tasks = state.tasks.filter((t) => t._id !== action.payload);
+      }).addCase(bulkReorderTasks.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(bulkReorderTasks.fulfilled, (state, action) => {
+        state.loading = false;
+        // Optional: ensure the final order is reflected
+        for (const updated of action.payload) {
+          const idx = state.tasks.findIndex(t => t._id === updated._id);
+          if (idx !== -1) {
+            state.tasks[idx].properties.order = updated.properties.order;
+          }
+        }
+      })
+      .addCase(bulkReorderTasks.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       });
   },
 });
@@ -94,6 +123,7 @@ export const {
   addTaskOptimistic,
   updateTaskOptimistic,
   deleteTaskOptimistic,
+  reorderTasksOptimistic
 } = tasksSlice.actions;
 
 export default tasksSlice.reducer;

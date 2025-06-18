@@ -70,7 +70,25 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: 'Failed to create task tree', details: err.message });
   }
 });
+// routes/tasks.js
+router.put('/reorder', async (req, res) => {
+  console.log("reorder");
+  try {
+    const tasks = req.body; // array of task objects with _id and new order
+    const bulkOps = tasks.map(task => ({
+      updateOne: {
+        filter: { _id: task._id },
+        update: { $set: { 'properties.order': task.properties.order } },
+      },
+    }));
 
+    await Task.bulkWrite(bulkOps);
+    res.status(200).json({ message: 'Tasks reordered' });
+  } catch (err) {
+    console.error("Failed to reorder tasks:", err);
+    res.status(500).json({ error: "Failed to reorder tasks" });
+  }
+});
 async function updateTaskTree(taskData, parentId = null, options = {}) {
   const { dryRun = false } = options;
   const { _id, children = [], ...rest } = taskData;

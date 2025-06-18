@@ -21,7 +21,7 @@ import { v4 as uuidv4 } from "uuid";
 import GoalItem from "./components/GoalItem";
 import { findTaskByIdDeep, updateTaskByIdImmutable } from "./helpers/taskUtils";
 import { rehydrate_goal_tasks } from "./helpers/goalUtils";
-
+import DatePickerPopover from "./components/DatePickerPopover";
 /** Inline Components **/
 
 const GoalTaskRow = ({ task, updateGoalItem }) => {
@@ -288,6 +288,8 @@ const ActualPanel = ({
   isPopoverOpen,
   setIsPopoverOpen,
   tasks,
+  countdowns,
+  setCountdowns
 }) => {
   const addTaskToGoal = () => {
     const selected = taskOptions.find((t) => t.id === selectedTaskId);
@@ -330,7 +332,6 @@ const ActualPanel = ({
     );
   };
 
-  console.log(selectedTasks);
   return (
     <Card className="goal-actual" elevation={2}>
       <div className="goal-actual-header">Goal Editor</div>
@@ -375,11 +376,40 @@ const ActualPanel = ({
         >
           <Button icon="plus" intent="primary" text="Add Task" onClick={() => setIsPopoverOpen(true)} />
         </Popover>
+        <Button icon="time" text="Add Countdown" onClick={() =>
+          setCountdowns((prev) => [...prev, { name: "", date: new Date() }])
+        } />
       </div>
 
-      <div className="goal-tasks-actual">
+      {(countdowns.length > 0) && 
+          <div className="goal-countdowns-actual-container">
+            <div className="goal-countdowns-actual-header">Countdowns</div>
+            <div className="goal-countdowns-actual">
+            {(countdowns).map((c, i) => (
+            <CountdownRow
+              key={`countdown-${i}`}
+              index={i}
+              countdown={c}
+              updateCountdown={(index, key, value) =>
+                setCountdowns((prev) =>
+                  prev.map((item, idx) =>
+                    idx === index ? { ...item, [key]: value } : item
+                  )
+                )
+              }
+              removeCountdown={(index) =>
+                setCountdowns((prev) => prev.filter((_, idx) => idx !== index))
+              }
+            />
+          ))}
+          </div>
+          </div>
+        }
+
+      <div className="goal-tasks-actual-container">
+      <div className="goal-tasks-actual-header">Tasks</div>
+        <div className="goal-tasks-actual">
         {(selectedTasks || []).map((t, idx) => {
-          console.log(t);
           return (
             <div key={`${t.task_id}-${idx}`}>
               {t.grouping && Array.isArray(t.units) ? (
@@ -459,17 +489,34 @@ const ActualPanel = ({
           );
         })}
       </div>
+      </div>
     </Card>
   );
 };
-
-const PreviewPanel = ({ headerName, selectedTasks, headerEnabled }) => (
+const CountdownRow = ({ countdown, index, updateCountdown, removeCountdown }) => {
+  return (
+    <div className="countdown-row">
+      <InputGroup
+        placeholder="Countdown Name"
+        value={countdown.name}
+        onChange={(e) => updateCountdown(index, "name", e.target.value)}
+      />
+      <DatePickerPopover
+        selectedDate={new Date(countdown.date)}
+        setSelectedDate={(date) => updateCountdown(index, "date", date)}
+      />
+      <Button icon="cross" minimal onClick={() => removeCountdown(index)} />
+    </div>
+  );
+};
+const PreviewPanel = ({ headerName, countdowns, selectedTasks, headerEnabled }) => (
   <div className="goal-preview">
     <div className="goal-preview-header">Preview</div>
     <GoalItem
       goal={{
         header: headerEnabled ? headerName : "",
         tasks: selectedTasks,
+        countdowns
       }}
       showEditButton={false}
     />
@@ -482,9 +529,9 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const [headerEnabled, setHeaderEnabled] = useState(false);
   const [goalFlowDir, setGoalFlowDir] = useState("any");
   const [selectedTasks, setSelectedTasks] = useState([]);
+  const [countdowns, setCountdowns] = useState([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
-console.log(goal);
   const taskOptions = getTaskPaths(tasks || []);
 
   useEffect(() => {
@@ -499,13 +546,13 @@ console.log(goal);
   setHeaderName(goal.header || "");
   setHeaderEnabled(!!goal.header);
   setGoalFlowDir(goal.goalFlowDir || "any");
+  setCountdowns(goal?.countdowns || []);
 
   const rehydrated = rehydrate_goal_tasks(goal, tasks);
   setSelectedTasks(rehydrated);
 }, [goal, tasks]);
 
   const handleSaveGoal = () => {
-    console.log(selectedTasks);
     const enrichedTasks = selectedTasks.map((task) => {
       if (task.grouping && Array.isArray(task.units)) {
         const unitSettings = {};
@@ -549,12 +596,12 @@ console.log(goal);
     const newGoal = {
       header: headerEnabled ? headerName : "",
       tasks: enrichedTasks,
+      countdowns
     };
 
     const tempId = goal?.tempId || `temp_${uuidv4()}`;
     const fullGoal = { ...newGoal, tempId };
 
-    console.log(fullGoal);
     if (goal && goal._id) {
       dispatch(updateGoalOptimistic({ id: goal._id, updates: fullGoal }));
       dispatch(updateGoal({ id: goal._id, goalData: fullGoal }));
@@ -584,6 +631,8 @@ console.log(goal);
           isPopoverOpen={isPopoverOpen}
           setIsPopoverOpen={setIsPopoverOpen}
           tasks={tasks}
+          countdowns={countdowns}
+          setCountdowns={setCountdowns}
         />
         <PreviewPanel
           headerEnabled={headerEnabled}

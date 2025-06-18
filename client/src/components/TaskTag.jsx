@@ -101,14 +101,7 @@ const MainTaskTag = ({ task }) => {
 
 const TaskSummary = ({ task, entries = [], tasks = [] }) => {
   const taskId = task._id || task.id || task.tempId;
-
-
-  console.log("------");
-  console.log(tasks);
-  console.log(taskId);
   const units = getAncestorGroupingUnits(tasks, taskId.includes("adhoc") ? task.parentId : taskId );
-
-  console.log(units);
 
   if (!entries || entries.length === 0) return null;
 
@@ -123,8 +116,7 @@ const TaskSummary = ({ task, entries = [], tasks = [] }) => {
             </div>
           );
         }
-        console.log(key);
-        console.log(units);
+
         const unitMeta = units.find((u) => u.key === key) || {};
         const value = val.value;
         const flow = val.flow || "in";
@@ -164,8 +156,7 @@ const TaskTag = ({
   const input = task.values?.input || {};
   const ancestry = showAncestry ? task.assignmentAncestry || [] : [];
   const summaryEntries = getValidInputEntries(input, { minimal: minimalValues });
-  console.log(task);
-  console.log(tasks);
+
   const content = (
     <div className="task-content">
       {ancestry.length > 0 && (

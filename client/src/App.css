@@ -244,6 +244,14 @@ p {
   display: flex;
   flex-direction: row;
   height: 100%;
+  width: 75vw;
+}
+
+.drag-icon svg {
+  width: 39px;
+  height: 90px;
+  color: gray;
+  box-shadow: 0 2px 4px var(--color-shadow);
 }
 
 .container .right-side {
@@ -326,7 +334,7 @@ p {
 
 .container .task-bank-container {
   height: 100%;
-  width: 380px;
+  width: 33%;
   background-color: var(--color-bg);
   margin-right: 10px;
   border: 1px solid var(--color-border);
@@ -1119,6 +1127,12 @@ p {
 }
 .timeslot.past {
   opacity: 0.7;
+}
+.goal-countdown-tags {
+  margin: 10px 1px 0px 1px;
+}
+.goal-countdown-tags .bp5-fill {
+  color: white !important;
 }
 
 .Plan-schedule-container .tag-container {

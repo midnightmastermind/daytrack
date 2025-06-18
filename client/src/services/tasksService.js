@@ -10,4 +10,13 @@ const updateTask = (id, taskData) => axios.put(`${API_URL}/${id}`, taskData);
 
 const deleteTask = (id) => axios.delete(`${API_URL}/${id}`);
 
-export default { getTasks, createTask, updateTask, deleteTask };
+const bulkReorderTasks = (tasks) =>
+    axios.put(`${API_URL}/reorder`, tasks);
+  
+  export default {
+    getTasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    bulkReorderTasks // ✅ add this
+  };

@@ -38,10 +38,10 @@ import {
 import { diffTaskChildren } from "./helpers/taskUtils";
 import TaskIcon from "./components/TaskIcon";
 
-const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild, groupingEnabled }) => {
+const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild, groupingEnabled, siblingIndex, totalSiblings }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [groupedUnits, setGroupedUnits] = useState([]);
-  console.log(allGroupIds);
+
   function getRelevantParentUnitsForChild(stagedTask, childId, allGroupIds) {
     if (!stagedTask || !childId || !Array.isArray(allGroupIds)) return [];
 
@@ -64,20 +64,25 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
     return units;
   }
   useEffect(() => {
-    console.log(!stagedTask && !child && !allGroupIds.length > 0);
     if (!stagedTask && !child && !allGroupIds) return;
 
     refreshGroupedUnits(stagedTask, child, allGroupIds);
   }, [allGroupIds, child, stagedTask]);
 
-  const refreshGroupedUnits = (stagedTask, child, allGroupIds) => {
-    console.log("refresh");
-    console.log(stagedTask);
-    console.log(child);
-    console.log(allGroupIds);
-    const groupedUnits = getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
+  const moveOrder = (direction) => {
+    const newOrder = (child.properties?.order ?? 0) + direction;
+    if (newOrder < 0 || newOrder >= totalSiblings) return;
+    updateChild(child._id || child.tempId || child.id, {
+      ...child,
+      properties: {
+        ...child.properties,
+        order: newOrder
+      }
+    });
+  };
 
-    console.log(groupedUnits);
+  const refreshGroupedUnits = (stagedTask, child, allGroupIds) => {
+    const groupedUnits = getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
     setGroupedUnits(groupedUnits);
   }
   const updateField = (field, value) => {
@@ -100,7 +105,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
     const newChild = {
       id: uuidv4(),
       name: "",
-      properties: { checkbox: false, input: false, group: false, preset: false },
+      properties: { checkbox: false, input: false, group: false, preset: false, order: (child.children?.length || 0),      },
       values: { checkbox: false, input: {} },
       children: [],
     };
@@ -163,6 +168,10 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
       <div className={`category-children-header ${isHovered ? 'hovered-title' : ''}`}>{`${child.name}`}</div>
       <div className={`child-editor-row ${isHovered ? 'hovered' : ''}`}>
         <div className="child-editor-header">
+        <div className="child-order-arrows">
+          <Button icon="arrow-up" minimal disabled={siblingIndex === 0} onClick={() => moveOrder(-1)} />
+          <Button icon="arrow-down" minimal disabled={siblingIndex === totalSiblings - 1} onClick={() => moveOrder(1)} />
+        </div>
           <EmojiIconPicker
             value={child?.properties?.icon}
             onChange={(val) =>
@@ -390,21 +399,24 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
           <div className="category-children-container">
             <div className="category-children-header">{`${child.name} > Children`}</div>
             <div className="nested-children">
-              {(child.children || []).map((nested) => (
-                <ChildEditor
-                  key={getTaskKey(nested)}
-                  child={{
-                    ...nested,
-                  }}
-                  updateChild={updateNestedChild}
-                  allGroupIds={allGroupIds}
-                  stagedTask={stagedTask}
-                  removeChild={(id) => {
-                    const updated = child.children.filter((c) => getTaskKey(c) !== id);
-                    updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
-                  }}
-                />
+            {(child.children || [])
+                .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
+                .map((nested, index, array) => (
+                  <ChildEditor
+                    key={getTaskKey(nested)}
+                    child={{ ...nested }}
+                    updateChild={updateNestedChild}
+                    allGroupIds={allGroupIds}
+                    stagedTask={stagedTask}
+                    siblingIndex={index}
+                    totalSiblings={array.length}
+                    removeChild={(id) => {
+                      const updated = child.children.filter((c) => getTaskKey(c) !== id);
+                      updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
+                    }}
+                  />
               ))}
+
               <div className="nested-button"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
@@ -506,7 +518,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
   );
 };
 
-const NewTaskForm = ({ task, onSave, onDelete }) => {
+const NewTaskForm = ({ task, onSave, onDelete, taskListLength = 0 }) => {
   const [stagedTask, setStagedTask] = useState(null);
   const stagedTaskRef = useRef(null);
   const [previewTask, setPreviewTask] = useState(null);
@@ -527,7 +539,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
         id: uuidv4(),
         tempId: uuidv4(),
         name: "",
-        properties: { card: true, category: true },
+        properties: { card: true, category: true, order: taskListLength },
         children: [],
       };
       setStagedTask(temp);
@@ -537,10 +549,9 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
 
   useEffect(() => {
     if (!stagedTask) return;
-    console.log(stagedTask);
+
     const allGroupIds = getAllGroupEnabledIds(stagedTask);
 
-    console.log(allGroupIds);
     setAncestorGroupingIds(allGroupIds);
   }, [stagedTask]);
 
@@ -548,7 +559,7 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
     const newChild = {
       id: uuidv4(),
       name: "",
-      properties: { checkbox: false, input: false, category: false },
+      properties: { checkbox: false, input: false, category: false, order: (stagedTask?.children?.length || 0) },
       values: { checkbox: false, input: "" },
       children: [],
     };
@@ -657,8 +668,9 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
           </div>
           <div className="task-form-children-list">
             {(stagedTask?.children || [])
-              .filter(child => !child.properties?.adhoc) // ✅ filter out adhoc children
-              .map((child) => {
+  .filter(child => !child.properties?.adhoc)
+  .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
+  .map((child, index, array) => {
               const id = child._id || child.tempId || child.id;
               const liveChild = stagedTask.children.find(
                 (c) => (c._id || c.tempId || c.id) === id
@@ -674,6 +686,8 @@ const NewTaskForm = ({ task, onSave, onDelete }) => {
                   updateChild={updateChild}
                   removeChild={removeChild}
                   stagedTask={{ ...stagedTask }}
+                  siblingIndex={index}
+                  totalSiblings={array.length}
                 />
               );
             })}

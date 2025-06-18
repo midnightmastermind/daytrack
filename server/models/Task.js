@@ -21,6 +21,8 @@ const TaskSchema = new mongoose.Schema({
   children: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task", default: [] }],
   properties: {
     group: { type: Boolean, default: false },
+    adhoc: { type: Boolean, default: false },
+    order: { type: Number, default: 0, required: true},
     card: { type: Boolean, default: false },
     checkbox: { type: Boolean, default: false },
     input: { type: Boolean, default: false },

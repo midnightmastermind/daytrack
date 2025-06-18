@@ -221,6 +221,32 @@
     display: flex;
   }
 
+  .goal-form .goal-countdowns-actual-container {
+    margin-bottom: 10px;
+  }
+  .goal-form .goal-countdowns-actual {
+    display: flex;
+    padding: 10px;
+  }
+
+  .goal-form .countdown-row .tool-bar-datepicker .bp5-button-text {
+    color: #5f6b7c !important;
+  }
+
+  .goal-form .goal-countdowns-actual .countdown-row {
+    display: flex;
+  }
+
+  .goal-form .goal-countdowns-actual-header,
+  .goal-form .goal-tasks-actual-header {
+    font-size: 12px;
+  color: gray;
+  display: flex;
+  border-bottom: 1px solid #30363D;
+  margin-bottom: 1px;
+  align-self: start;
+  width: 100%;
+  }
   .goal-form .header-section .bp5-control {
     align-self: unset;
   }

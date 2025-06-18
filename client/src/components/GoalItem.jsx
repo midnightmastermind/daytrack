@@ -4,6 +4,26 @@ import { Card, Button, Tag, Elevation } from "@blueprintjs/core";
 import { findTaskByIdDeep, formatValueWithAffixes } from "../helpers/taskUtils";
 import { getWeek } from "../helpers/goalUtils";
 import TaskIcon from "./TaskIcon";
+
+import { DateTime } from "luxon";
+
+const formatCountdownPreview = (name, date) => {
+  if (!date || !name) return null;
+
+  const now = DateTime.now();
+  const then = DateTime.fromJSDate(new Date(date));
+  const diff = then.diff(now, ["days", "hours", "minutes"]).toObject();
+
+  if (diff.days < 0) return `⏳ ${name} has passed`;
+
+  const parts = [];
+  if (diff.days >= 1) parts.push(`${Math.floor(diff.days)}d`);
+  if (diff.hours >= 1) parts.push(`${Math.floor(diff.hours)}h`);
+  if (diff.minutes >= 1 && diff.days < 1) parts.push(`${Math.floor(diff.minutes)}m`);
+
+  return `⏳ ${parts.join(" ")} until ${name}`;
+};
+
 const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
   const tasks = useSelector((state) => state.tasks.tasks || []);
   const [changeIndicators, setChangeIndicators] = useState({});
@@ -118,7 +138,20 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
           <Button icon="cog" minimal className="edit-goal-button" onClick={() => onEdit?.(goal)} />
         )}
       </div>
-
+      {goal.countdowns?.length > 0 && (
+        <div className="goal-countdown-tags">
+          {goal.countdowns.map((cd, idx) => {
+            const label = formatCountdownPreview(cd.name, cd.date);
+            return (
+              label && (
+                <Tag key={`goal-cd-${idx}`} icon="time" minimal>
+                  {label}
+                </Tag>
+              )
+            );
+          })}
+        </div>
+      )}
       <div className="goal-tasks">
         {goal.tasks?.map((t, index) => {
           const displayName = getLiveTaskName(t.task_id || t._id || t.id);
