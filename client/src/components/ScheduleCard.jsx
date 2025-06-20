@@ -4,7 +4,7 @@ import { Droppable, Draggable } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { useCurrentCutoff } from "../context/TimeProvider"; // 👈 NOT useCurrentTime
 import TaskTag from "./TaskTag";
-const ScheduleCard = ({ tasks, label, timeSlot, onCopyToAgenda = null, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false }) => {
+const ScheduleCard = ({ tasks, label, timeSlot, onCopyToAgenda = null, assignments = {}, setAssignments, onAssignmentsChange, taskPreview = false, disableDrop }) => {
   const tasksForSlot = assignments[timeSlot] || [];
   const cutoff = useCurrentCutoff();
 
@@ -23,7 +23,7 @@ const ScheduleCard = ({ tasks, label, timeSlot, onCopyToAgenda = null, assignmen
     onAssignmentsChange(updated);
   };
   return (
-    <Droppable className={'droppable-container'} droppableId={`${label}_${timeSlot}`} ignoreContainerClipping={true}>
+    <Droppable className={'droppable-container'} droppableId={`${label}_${timeSlot}`} ignoreContainerClipping={true} isDropDisabled={disableDrop}>
       {(provided, snapshot) => (
         <Card
           className={`timeslot${isPast ? " past" : ""}`}

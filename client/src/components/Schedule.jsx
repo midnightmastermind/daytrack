@@ -10,11 +10,13 @@ const Schedule = ({
   assignments,
   setAssignments,
   onAssignmentsChange,
-  onCopyToAgenda = null
+  onCopyToAgenda = null, 
+  disableDrop
 }) => {
   const memoizedCards = useMemo(() => (
     timeSlots.map((slot) => (
       <ScheduleCard
+        disableDrop={disableDrop}
         key={slot}
         label={label === "Plan" ? "preview" : "actual"}
         timeSlot={slot}

@@ -49,7 +49,7 @@ import PlanTemplateManager from "./components/PlanTemplateManager";
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
 import DatePickerPopover from "./components/DatePickerPopover.jsx";
 
-const AppToaster = Toaster.create({ position: Position.TOP_RIGHT });
+export const AppToaster = Toaster.create({ position: Position.BOTTOM_RIGHT });
 
 function App() {
   const dispatch = useDispatch();
@@ -67,6 +67,8 @@ function App() {
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [shouldHideDrawer, setShouldHideDrawer] = useState(false);
+  const [pointerOverDrawer, setPointerOverDrawer] = useState(false);
+  const [scheduleTemporarilyDisabled, setScheduleTemporarilyDisabled] = useState(false);
 
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
@@ -79,6 +81,8 @@ function App() {
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const drawerRef = useRef(null);
+
   console.log(adhocDraftMapRef);
   useEffect(() => {
     dispatch(fetchTasks());
@@ -130,6 +134,33 @@ function App() {
   const toggleRightPanelMode = () => {
     setRightPanelMode((prev) => (prev === "goals" ? "history" : "goals"));
   };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerMove = (e) => {
+      if (!drawerRef.current) return;
+
+      const rect = drawerRef.current.getBoundingClientRect();
+      const cursorX = e.clientX;
+
+      // Console for debugging
+      console.log("PointerX", cursorX, "Drawer right edge", rect.right);
+
+      if (cursorX > rect.right + 50) {
+        setShouldHideDrawer(true);
+        setScheduleTemporarilyDisabled(false);
+      } else {
+        setShouldHideDrawer(false);
+        setScheduleTemporarilyDisabled(true);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+    };
+  }, [isDragging]);
 
   const handleCopyToAgenda = (slot) => {
     const planTasks = assignments.preview[slot] || [];
@@ -330,9 +361,6 @@ function App() {
   };
 
   const onDragEnd = (result) => {
-    setIsDragging(false);
-    setShouldHideDrawer(false); // reset
-    setLeftDrawerOpen(false)
     console.log("====onDragEnd====");
     setDraggedTaskId(null);
 
@@ -411,6 +439,9 @@ function App() {
 
       updated[type][slotKey] = [...destSlot, ...newTasks];
     }
+    setIsDragging(false);
+    setShouldHideDrawer(false); // reset
+    setLeftDrawerOpen(false);
 
     setAssignments(updated);
     const cleared = taskSnapshotRef.current.map((t) => deepResetAdhocCheckboxes(t));
@@ -459,6 +490,10 @@ function App() {
     return updated;
   }
 
+  // console.log("leftDrawerOpen", leftDrawerOpen);
+  // console.log("shouldHideDrawer", shouldHideDrawer);
+  // console.log("pointerOverDrawer", pointerOverDrawer);
+  // console.log("isDragging", isDragging);
   return (
     <TimeProvider>
       <div className="container">
@@ -494,13 +529,13 @@ function App() {
                     usePortal={false} // 👈 KEY CHANGE
                   >
                     <div
-                      onMouseLeave={() => {
-                        if (isDragging) setShouldHideDrawer(true);
+                      ref={drawerRef}
+                      onPointerEnter={() => {
+                        if (isDragging) setPointerOverDrawer(true);
                       }}
-                      onMouseEnter={() => {
-                        if (isDragging) setShouldHideDrawer(false);
-                      }}
-                    >
+                      onPointerLeave={() => {
+                        if (isDragging) setPointerOverDrawer(false);
+                      }}>
                       <TaskBank
                         tasks={tasks}
                         draggedTaskId={draggedTaskId}
@@ -577,6 +612,7 @@ function App() {
                   </div>
                   <div className="schedules-scroll-wrapper">
                     <Schedule
+                      disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
                       label="Plan"
                       onCopyToAgenda={handleCopyToAgenda}
                       timeSlots={timeSlots}
@@ -586,6 +622,7 @@ function App() {
                       onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
                     />
                     <Schedule
+                      disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
                       label="Agenda"
                       timeSlots={timeSlots}
                       assignments={assignments.actual}

@@ -551,18 +551,33 @@ const TaskCard = ({
         >
           <div className="task-header">
             <div className="task-header-left">
+              {!preview && (
+                <Button
+                  icon="cog"
+                  className="edit-task-button"
+                  minimal
+                  onClick={() => {
+                    onEditTask(task);
+                  }}
+                />
+              )}
               {task.children?.length > 0 ? (
                 <Button
                   icon={isOpen ? "caret-down" : "caret-right"}
                   onClick={toggleCollapse}
                   minimal
-                />
+                >  <div className="task-name">
+                    <TaskIcon icon={task.properties.icon} />{task.name}
+                  </div>
+                </Button>
               ) : (
-                <Icon icon="dot" />
+                <>
+                  <Icon icon="dot" />
+                  <div className="task-name">
+                    <TaskIcon icon={task.properties.icon} />{task.name}
+                  </div>
+                </>
               )}
-              <div className="task-name">
-                <TaskIcon icon={task.properties.icon} />{task.name}
-              </div>
             </div>
             {selectedLeaves.length > 0 && (
               <div className="taskcard-leaf-preview">
@@ -581,16 +596,6 @@ const TaskCard = ({
             )}
 
             <div className="task-header-right">
-              {!preview && (
-                <Button
-                  icon="cog"
-                  className="edit-task-button"
-                  minimal
-                  onClick={() => {
-                    onEditTask(task);
-                  }}
-                />
-              )}
               <Icon
                 icon="horizontal-inbetween"
                 className="drag-icon"

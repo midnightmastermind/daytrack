@@ -16,12 +16,15 @@ import {
   updateGoalOptimistic,
   createGoal,
   addGoalOptimistic,
+  deleteGoal, 
+  deleteGoalOptimistic
 } from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
 import GoalItem from "./components/GoalItem";
 import { findTaskByIdDeep, updateTaskByIdImmutable } from "./helpers/taskUtils";
 import { rehydrate_goal_tasks } from "./helpers/goalUtils";
 import DatePickerPopover from "./components/DatePickerPopover";
+
 /** Inline Components **/
 
 const GoalTaskRow = ({ task, updateGoalItem }) => {
@@ -706,18 +709,27 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           countdowns={countdowns}
           setCountdowns={setCountdowns}
         />
+        <div className="goal-form-actions">
+        <Button onClick={handleSaveGoal} text="Save Goal" intent="primary" />
+        {goal && goal._id && (
+          <Button
+            onClick={() => {
+              dispatch(deleteGoalOptimistic(goal._id));
+              dispatch(deleteGoal(goal._id));
+              onClose();
+            }}
+            className="delete-button"
+            text="Delete"
+            intent="danger"
+          />
+        )}
+      </div>
         <PreviewPanel
           headerEnabled={headerEnabled}
           headerName={headerName}
           selectedTasks={selectedTasks}
           countdowns={countdowns}
         />
-      </div>
-      <div className="goal-form-actions">
-        <Button onClick={handleSaveGoal} text="Save Goal" intent="primary" />
-        {onClose && (
-          <Button onClick={onClose} className="cancel-button" text="Cancel" />
-        )}
       </div>
     </div>
   );

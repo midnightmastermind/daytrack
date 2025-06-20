@@ -1,24 +1,29 @@
 import React from "react";
-import { Navbar, Button, Popover } from "@blueprintjs/core";
-import { DatePicker3 } from "@blueprintjs/datetime2";
-import { DateTime } from "luxon";
+import { Navbar } from "@blueprintjs/core";
 import appLogoPng from "../assets/app-logo-yinyang.png";
+import PomodoroTimer from "./PomodoroTimer"; // adjust path if needed
 
 const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan }) => {
   return (
     <Navbar className="tool-bar">
-      {/* App Logo PNG */}
-      <div className="app-logo-container">
-        <img src={appLogoPng} alt="App Logo" className="app-logo" />
+      <div className="toolbar-left">
+      {/* Left: Logo + Name */}
+        <div className="app-logo-container">
+          <img src={appLogoPng} alt="App Logo" className="app-logo" />
+        </div>
+        <div className="app-name">daytrack</div>
       </div>
-      <div className="app-name">daytrack</div>
-      {/* Save Button
-        <Button
+      {/* Right: Pomodoro Timer */}
+      <div className="toolbar-right">
+        <PomodoroTimer />
+        {/* Optional Save Button */}
+        {/* <Button
           icon="floppy-disk"
           minimal
           disabled={!planDirty}
           onClick={onSaveDayPlan}
         /> */}
+      </div>
     </Navbar>
   );
 };

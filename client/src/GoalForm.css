@@ -191,7 +191,9 @@
   .goal-form .goal-form-actions {
     margin-top: 20px;
     display: flex;
-    flex-direction: start;
+    justify-content: space-around;
+    width: 300px;
+    margin: 10px auto;  
   }
   .goal-form .goal-actual-header,
   .goal-form .goal-preview-header {
