@@ -38,6 +38,16 @@ import {
 import { diffTaskChildren } from "./helpers/taskUtils";
 import TaskIcon from "./components/TaskIcon";
 
+function reassignOrderToChildren(children) {
+  return children.map((child, index) => ({
+    ...child,
+    properties: {
+      ...child.properties,
+      order: index,
+    },
+  }));
+}
+
 const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild, groupingEnabled, siblingIndex, totalSiblings }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [groupedUnits, setGroupedUnits] = useState([]);
@@ -70,17 +80,23 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
   }, [allGroupIds, child, stagedTask]);
 
   const moveOrder = (direction) => {
-    const newOrder = (child.properties?.order ?? 0) + direction;
-    if (newOrder < 0 || newOrder >= totalSiblings) return;
-    updateChild(child._id || child.tempId || child.id, {
-      ...child,
-      properties: {
-        ...child.properties,
-        order: newOrder
-      }
-    });
+    const currentId = child._id || child.tempId || child.id;
+    const siblings = stagedTask?.children || [];
+  
+    const index = siblings.findIndex((c) => (c._id || c.tempId || c.id) === currentId);
+    const newIndex = index + direction;
+  
+    if (index === -1 || newIndex < 0 || newIndex >= siblings.length) return;
+  
+    const reordered = [...siblings];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(newIndex, 0, moved);
+  
+    const updatedSiblings = reassignOrderToChildren(reordered);
+  
+    // 🔁 Update the whole reordered array
+    updateChild(currentId, updatedSiblings);
   };
-
   const refreshGroupedUnits = (stagedTask, child, allGroupIds) => {
     const groupedUnits = getRelevantParentUnitsForChild(stagedTask, child._id || child.tempId || child.id, allGroupIds);
     setGroupedUnits(groupedUnits);
@@ -105,7 +121,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
     const newChild = {
       id: uuidv4(),
       name: "",
-      properties: { checkbox: false, input: false, group: false, preset: false, order: (child.children?.length || 0),      },
+      properties: { checkbox: false, input: false, group: false, preset: false, order: (child.children?.length || 0), },
       values: { checkbox: false, input: {} },
       children: [],
     };
@@ -168,10 +184,10 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
       <div className={`category-children-header ${isHovered ? 'hovered-title' : ''}`}>{`${child.name}`}</div>
       <div className={`child-editor-row ${isHovered ? 'hovered' : ''}`}>
         <div className="child-editor-header">
-        <div className="child-order-arrows">
-          <Button icon="arrow-up" minimal disabled={siblingIndex === 0} onClick={() => moveOrder(-1)} />
-          <Button icon="arrow-down" minimal disabled={siblingIndex === totalSiblings - 1} onClick={() => moveOrder(1)} />
-        </div>
+          <div className="child-order-arrows">
+            <Button icon="arrow-up" minimal disabled={siblingIndex === 0} onClick={() => moveOrder(-1)} />
+            <Button icon="arrow-down" minimal disabled={siblingIndex === totalSiblings - 1} onClick={() => moveOrder(1)} />
+          </div>
           <EmojiIconPicker
             value={child?.properties?.icon}
             onChange={(val) =>
@@ -323,19 +339,19 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                   <Tag minimal>{unit.label || unit.key}</Tag>
                   {unit.type === "text" ? (
                     <>
-                    <InputGroup
-                      value={value || ""}
-                      onChange={(e) =>
-                        updateField("values", {
-                          ...child.values,
-                          input: {
-                            ...child.values?.input,
-                            [unit.key]: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                    <HTMLSelect
+                      <InputGroup
+                        value={value || ""}
+                        onChange={(e) =>
+                          updateField("values", {
+                            ...child.values,
+                            input: {
+                              ...child.values?.input,
+                              [unit.key]: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                      <HTMLSelect
                         value={flow || "in"}
                         onChange={(e) =>
                           updateField("values", {
@@ -352,7 +368,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                           { label: "Replace", value: "replace" }
                         ]}
                       />
-                      </>
+                    </>
                   ) : (
                     <>
                       <NumericInput
@@ -399,7 +415,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
           <div className="category-children-container">
             <div className="category-children-header">{`${child.name} > Children`}</div>
             <div className="nested-children">
-            {(child.children || [])
+              {(child.children || [])
                 .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
                 .map((nested, index, array) => (
                   <ChildEditor
@@ -415,7 +431,7 @@ const ChildEditor = ({ child, updateChild, stagedTask, allGroupIds, removeChild,
                       updateChild(child._id || child.tempId || child.id, { ...child, children: updated });
                     }}
                   />
-              ))}
+                ))}
 
               <div className="nested-button"
                 onMouseEnter={() => setIsHovered(true)}
@@ -475,7 +491,7 @@ const PreviewPanel = ({ previewTask, previewAssignments, setPreviewAssignments, 
   };
 
   const previewTaskId = previewTask ? (previewTask._id || previewTask.tempId || previewTask.id || "").toString() : null;
-
+  console.log(previewTask);
   return (
     <div className="task-form-preview-panel">
       <h4>Preview</h4>
@@ -566,13 +582,25 @@ const NewTaskForm = ({ task, onSave, onDelete, taskListLength = 0 }) => {
     setStagedTask((prev) => ({ ...prev, children: [...(prev.children || []), newChild] }));
   };
 
-  const updateChild = useCallback((id, updatedChild) => {
-    setStagedTask((prev) => ({
-      ...prev,
-      children: updateTaskByIdDeep(prev.children || [], id, updatedChild),
-    }));
+  const updateChild = useCallback((id, updatedChildOrArray) => {
+    setStagedTask((prev) => {
+      let children;
+  
+      if (Array.isArray(updatedChildOrArray)) {
+        children = updatedChildOrArray;
+      } else {
+        children = [...(prev.children || [])].map((child) =>
+          (child._id || child.tempId || child.id) === id ? updatedChildOrArray : child
+        );
+      }
+  
+      const updatedTask = { ...prev, children };
+  
+      // ✅ Ensure both staged and preview task reflect the new structure
+      setPreviewTask(updatedTask);
+      return updatedTask;
+    });
   }, []);
-
   const removeChild = (id) => {
     const filteredChildren = stagedTask.children.filter(
       (c) => (c._id || c.tempId || c.id) !== id
@@ -582,7 +610,6 @@ const NewTaskForm = ({ task, onSave, onDelete, taskListLength = 0 }) => {
 
   const handleSave = () => {
     if (!stagedTask) return;
-    console.log(stagedTask);
     if (stagedTask._id) {
       dispatch(updateTaskOptimistic({ id: stagedTask._id, updates: stagedTask }));
       dispatch(updateTask({ id: stagedTask._id, updates: stagedTask }));
@@ -668,29 +695,29 @@ const NewTaskForm = ({ task, onSave, onDelete, taskListLength = 0 }) => {
           </div>
           <div className="task-form-children-list">
             {(stagedTask?.children || [])
-  .filter(child => !child.properties?.adhoc)
-  .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
-  .map((child, index, array) => {
-              const id = child._id || child.tempId || child.id;
-              const liveChild = stagedTask.children.find(
-                (c) => (c._id || c.tempId || c.id) === id
-              );
+              .filter(child => !child.properties?.adhoc)
+              .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
+              .map((child, index, array) => {
+                const id = child._id || child.tempId || child.id;
+                const liveChild = stagedTask.children.find(
+                  (c) => (c._id || c.tempId || c.id) === id
+                );
 
-              return (
-                <ChildEditor
-                  key={getTaskKey(child)}
-                  child={{
-                    ...liveChild
-                  }}
-                  allGroupIds={ancestorGroupingIds}
-                  updateChild={updateChild}
-                  removeChild={removeChild}
-                  stagedTask={{ ...stagedTask }}
-                  siblingIndex={index}
-                  totalSiblings={array.length}
-                />
-              );
-            })}
+                return (
+                  <ChildEditor
+                    key={getTaskKey(child)}
+                    child={{
+                      ...liveChild
+                    }}
+                    allGroupIds={ancestorGroupingIds}
+                    updateChild={updateChild}
+                    removeChild={removeChild}
+                    stagedTask={{ ...stagedTask }}
+                    siblingIndex={index}
+                    totalSiblings={array.length}
+                  />
+                );
+              })}
           </div>
         </div>
 

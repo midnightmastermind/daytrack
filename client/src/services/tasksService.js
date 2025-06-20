@@ -4,14 +4,13 @@ const API_URL = 'http://localhost:5000/api/tasks';
 
 const getTasks = () => axios.get(API_URL);
 
+const bulkReorderTasks = (tasks) => axios.put(`${API_URL}/reorder`, tasks);
+
 const createTask = (taskData) => axios.post(API_URL, taskData);
 
 const updateTask = (id, taskData) => axios.put(`${API_URL}/${id}`, taskData);
 
 const deleteTask = (id) => axios.delete(`${API_URL}/${id}`);
-
-const bulkReorderTasks = (tasks) =>
-    axios.put(`${API_URL}/reorder`, tasks);
   
   export default {
     getTasks,

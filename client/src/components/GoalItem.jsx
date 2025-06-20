@@ -9,11 +9,13 @@ import { DateTime } from "luxon";
 
 const formatCountdownPreview = (name, date) => {
   if (!date || !name) return null;
-
+  const parsed = date instanceof Date ? date : new Date(date);
   const now = DateTime.now();
-  const then = DateTime.fromJSDate(new Date(date));
-  const diff = then.diff(now, ["days", "hours", "minutes"]).toObject();
+  const then = DateTime.fromJSDate(parsed);
 
+  if (!then.isValid) return null;
+
+  const diff = then.diff(now, ["days", "hours", "minutes"]).toObject();
   if (diff.days < 0) return `⏳ ${name} has passed`;
 
   const parts = [];
@@ -24,7 +26,9 @@ const formatCountdownPreview = (name, date) => {
   return `⏳ ${parts.join(" ")} until ${name}`;
 };
 
-const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
+
+const GoalItem = ({ goal, onEdit, showEditButton = true, dragListeners = {}, dragAttributes = {}, preview = false }) => {
+  console.log(goal);
   const tasks = useSelector((state) => state.tasks.tasks || []);
   const [changeIndicators, setChangeIndicators] = useState({});
   const prevValuesRef = useRef({});
@@ -44,11 +48,11 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
     const task = goal.tasks.find(t => t.task_id === taskId || t._id === taskId || t.id === taskId);
     const unitSettings = unitKey ? task?.unitSettings?.[unitKey] : task;
     const timeScale = unitSettings?.timeScale || "overall";
-  
+
     if (timeScale === "overall") {
       return goal.totals?.[unitKey || taskId] || 0;
     }
-  
+
     if (timeScale === "daily" || timeScale === "weekly" || timeScale === "monthly") {
       // Use filtered values from totalsByDate
       for (const [date, totalsForDate] of Object.entries(goal.totalsByDate || {})) {
@@ -68,10 +72,9 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
         }
       }
     }
-  
+
     return 0;
   };
-  
 
   useEffect(() => {
     const next = {};
@@ -113,11 +116,11 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
     }
   }, [goal.totals]);
 
-   function isComplete({ current, target, operator = "=", hasTarget = true }) {
+  function isComplete({ current, target, operator = "=", hasTarget = true }) {
     if (!hasTarget || target == null) {
       return current > 0;
     }
-  
+
     switch (operator) {
       case "=":
         return current === target;
@@ -138,107 +141,120 @@ const GoalItem = ({ goal, onEdit, showEditButton = true }) => {
           <Button icon="cog" minimal className="edit-goal-button" onClick={() => onEdit?.(goal)} />
         )}
       </div>
-      {goal.countdowns?.length > 0 && (
-        <div className="goal-countdown-tags">
-          {goal.countdowns.map((cd, idx) => {
-            const label = formatCountdownPreview(cd.name, cd.date);
-            return (
-              label && (
-                <Tag key={`goal-cd-${idx}`} icon="time" minimal>
-                  {label}
-                </Tag>
-              )
-            );
-          })}
-        </div>
-      )}
-      <div className="goal-tasks">
-        {goal.tasks?.map((t, index) => {
-          const displayName = getLiveTaskName(t.task_id || t._id || t.id);
-          const taskKey = t.task_id || t._id || t.id;
-          const task = findTaskByIdDeep(taskKey, tasks);
-          if (t.grouping && Array.isArray(t.units)) {
-            return (
-              <div key={`group-${taskKey}-${index}`} className="goal-task-grouped">
-                <Tag className="group-unit-header" intent="primary">
-                  <TaskIcon icon={t.properties?.icon} />
-                  {displayName}
+      <div className="goal-content"  {...dragAttributes} {...dragListeners}>
+        {goal.countdowns?.length > 0 && (
+          <div className="goal-countdown-tags">
+            {goal.countdowns.map((cd, idx) => {
+              const label = formatCountdownPreview(cd.name, cd.date);
+              return (
+                label && (
+                  <Tag key={`goal-cd-${idx}`} icon="time" minimal>
+                    {label}
                   </Tag>
-                <div className="goal-units-container">
-                  {t.units
-                    .filter((unit) => unit.type !== "text" && t.unitSettings?.[unit.key]?.enabled)
-                    .map((unit) => {
-                      const label = unit.name;
-                      const unitKey = unit.key;
-                      const key = `${taskKey}__${unitKey}`;
-                      const change = changeIndicators[key];
-                      const current = getProgressValue(taskKey, unitKey) || 0;
-                      const unitSettings = t.unitSettings?.[unitKey];
-                      const target = unitSettings?.target || 0;
-                      const operator = unitSettings?.operator || "=";
-                      const complete = isComplete({
-                        current,
-                        target,
-                        operator,
-                        hasTarget: unitSettings?.hasTarget !== false,
-                      });
-                      
-                      const intent = complete ? "success" : "danger";
-                      
-                      const currentDisplay = formatValueWithAffixes(unit.prefix, current, unit.type, unit.suffix);
-                      const targetDisplay = formatValueWithAffixes(unit.prefix, target, unit.type, unit.suffix);
+                )
+              );
+            })}
+          </div>
+        )}
+        <div className="goal-tasks">
+          {(goal.tasks || [])
+            .slice()
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((task, index) => {
+              const displayName = getLiveTaskName(task.task_id || task._id || task.id);
+              const taskKey = task.task_id || task._id || task.id;
+              const actualTask = findTaskByIdDeep(taskKey, tasks);
+              if (task.grouping && Array.isArray(task.units)) {
+                return (
+                  <div key={`group-${taskKey}-${index}`} className="goal-task-grouped">
+                    <Tag className="group-unit-header" intent="primary">
+                      <TaskIcon icon={task.properties?.icon} />
+                      {displayName}
+                    </Tag>
+                    <div className="goal-units-container">
+                    {task?.units && Array.isArray(task.units) &&
+                        [...task.units]
+                          .sort((a, b) => {
+                            const orderA = task.unitSettings?.[a.key]?.order ?? a.index ?? 0;
+                            const orderB = task.unitSettings?.[b.key]?.order ?? b.index ?? 0;
+                            if (typeof orderA !== "number") return 1;
+                            if (typeof orderB !== "number") return -1;
+                            return orderA - orderB;
+                          })
+                        .filter((unit) => unit.type !== "text" && task.unitSettings?.[unit.key]?.enabled)
+                        .map((unit) => {
+                          const label = unit.name;
+                          const unitKey = unit.key;
+                          const key = `${taskKey}__${unitKey}`;
+                          const change = changeIndicators[key];
+                          const current = getProgressValue(taskKey, unitKey) || 0;
+                          const unitSettings = task.unitSettings?.[unitKey];
+                          const target = unitSettings?.target || 0;
+                          const operator = unitSettings?.operator || "=";
+                          const complete = isComplete({
+                            current,
+                            target,
+                            operator,
+                            hasTarget: unitSettings?.hasTarget !== false,
+                          });
 
-                      return (
-                        <div key={unitKey} className="goal-unit" style={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Tag className="unit-tag" intent={intent} minimal={!complete}>
-                            <TaskIcon icon={unit.icon} />
-                            {label}
-                          </Tag>
-                          {unitSettings?.hasTarget === false
-                            ? <Tag intent={intent} minimal={!complete}>{currentDisplay}</Tag>
-                            : <Tag className="unit-progress" intent={intent} minimal={!complete}>
-                            {currentDisplay} / {targetDisplay}
-                          </Tag>}
-                          {change === "up" && <span className="triangle-indicator success">▲</span>}
-                          {change === "down" && <span className="triangle-indicator danger">▼</span>}
-                        </div>
-                      );
-                    })}
+                          const intent = complete ? "success" : "danger";
+
+                          const currentDisplay = formatValueWithAffixes(unit.prefix, current, unit.type, unit.suffix);
+                          const targetDisplay = formatValueWithAffixes(unit.prefix, target, unit.type, unit.suffix);
+
+                          return (
+                            <div key={unitKey} className="goal-unit" style={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Tag className="unit-tag" intent={intent} minimal={!complete}>
+                                <TaskIcon icon={unit.icon} />
+                                {label}
+                              </Tag>
+                              {unitSettings?.hasTarget === false
+                                ? <Tag intent={intent} minimal={!complete}>{currentDisplay}</Tag>
+                                : <Tag className="unit-progress" intent={intent} minimal={!complete}>
+                                  {currentDisplay} / {targetDisplay}
+                                </Tag>}
+                              {change === "up" && <span className="triangle-indicator success">▲</span>}
+                              {change === "down" && <span className="triangle-indicator danger">▼</span>}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                );
+              }
+
+              const current = getProgressValue(taskKey) || 0;
+              const target = task.target || 0;
+              const operator = task.operator || "=";
+              const complete = isComplete({
+                current,
+                target,
+                operator,
+                hasTarget: task?.hasTarget !== false,
+              });
+              const intent = complete ? "success" : "danger";
+              const key = taskKey;
+              const change = changeIndicators[key];
+
+              const currentDisplay = formatValueWithAffixes("", current, task.type, "");
+              const targetDisplay = formatValueWithAffixes("", target, task.type, "");
+
+              return (
+                <div key={`regular-${key}-${index}`} className="goal-task" style={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Tag className="unit-tag" intent={intent} minimal={!complete}>
+                    <TaskIcon icon={actualTask?.properties?.icon} />
+                    {displayName}
+                  </Tag>
+                  {task.hasTarget == false
+                    ? <Tag intent={intent} minimal>{currentDisplay}</Tag>
+                    : <Tag intent={intent} minimal={!complete}>{currentDisplay} / {targetDisplay}</Tag>}
+                  {change === "up" && <span className="triangle-indicator success">▲</span>}
+                  {change === "down" && <span className="triangle-indicator danger">▼</span>}
                 </div>
-              </div>
-            );
-          }
-                  
-          const current = getProgressValue(taskKey) || 0;
-          const target = t.target || 0;
-          const operator = t.operator || "=";
-          const complete = isComplete({
-            current,
-            target,
-            operator,
-            hasTarget: t?.hasTarget !== false,
-          });
-          const intent = complete ? "success" : "danger";
-          const key = taskKey;
-          const change = changeIndicators[key];
-
-          const currentDisplay = formatValueWithAffixes("", current, t.type, "");
-          const targetDisplay = formatValueWithAffixes("", target, t.type, "");
-
-          return (
-            <div key={`regular-${key}-${index}`} className="goal-task" style={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Tag className="unit-tag" intent={intent} minimal={!complete}>
-                <TaskIcon icon={task?.properties?.icon} />
-                {displayName}
-                </Tag>
-              {t.hasTarget == false
-                ? <Tag intent={intent} minimal>{currentDisplay}</Tag>
-                : <Tag intent={intent} minimal={!complete}>{currentDisplay} / {targetDisplay}</Tag>}
-              {change === "up" && <span className="triangle-indicator success">▲</span>}
-              {change === "down" && <span className="triangle-indicator danger">▼</span>}
-            </div>
-          );
-        })}
+              );
+            })}
+        </div>
       </div>
     </Card>
   );

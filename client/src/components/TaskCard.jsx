@@ -32,7 +32,7 @@ const TaskCard = ({
 }) => {
   if (!task) return null;
   const dispatch = useDispatch();
-
+  console.log(task);
   const taskStateRef = useRef(task);
   const [isOpen, setIsOpen] = useState(false);
   const [newPresetDraft, setNewPresetDraft] = useState({});
@@ -40,7 +40,10 @@ const TaskCard = ({
 
   const [localTask, setLocalTask] = useState(task);
   const toggleCollapse = () => setIsOpen(!isOpen);
-
+  useEffect(() => {
+    setLocalTask(task);
+    taskStateRef.current = task; // ✅ keep ref updated with latest task prop
+  }, [task]);
   useEffect(() => {
     if (!onInsertAdhoc) return;
     if (isDraftEmpty(newPresetDraft)) return;
@@ -480,7 +483,7 @@ const TaskCard = ({
                   ) : (
                     <>
                       <div className="numeric-input">
-                        {unit.prefix && <Tag minimal>{unit.prefix}</Tag>}
+                        {unit.prefix && <Tag className="prefix-tag" minimal>{unit.prefix}</Tag>}
                         <NumericInput
                           fill
                           value={Number(newPresetDraft[unit.key]?.value) || 0}
@@ -492,7 +495,7 @@ const TaskCard = ({
                           }
                           buttonPosition="none"
                         />
-                        {unit.suffix && <Tag minimal>{unit.suffix}</Tag>}
+                        {unit.suffix && <Tag className="suffix-tag" minimal>{unit.suffix}</Tag>}
                       </div>
                       <HTMLSelect
                         className="flow-select"

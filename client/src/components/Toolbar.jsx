@@ -2,19 +2,16 @@ import React from "react";
 import { Navbar, Button, Popover } from "@blueprintjs/core";
 import { DatePicker3 } from "@blueprintjs/datetime2";
 import { DateTime } from "luxon";
-import appLogo from "../assets/app-logo.svg?raw";
+import appLogoPng from "../assets/app-logo-yinyang.png";
 
 const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan }) => {
   return (
     <Navbar className="tool-bar">
-      {/* App Logo SVG */}
+      {/* App Logo PNG */}
       <div className="app-logo-container">
-        <div
-          className="app-logo"
-          dangerouslySetInnerHTML={{ __html: appLogo }}
-        />
+        <img src={appLogoPng} alt="App Logo" className="app-logo" />
       </div>
-
+      <div className="app-name">daytrack</div>
       {/* Save Button
         <Button
           icon="floppy-disk"

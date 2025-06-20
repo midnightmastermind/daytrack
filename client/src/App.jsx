@@ -6,8 +6,8 @@ import { Button, Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprin
 import "./App.css";
 import { TimeProvider } from "./context/TimeProvider";
 import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById, sanitizeInputValues } from './helpers/taskUtils.js';
-import {  buildProgressEntriesFromTask } from "./helpers/goalUtils";
-
+import { buildProgressEntriesFromTask } from "./helpers/goalUtils";
+import useIsMobile from "./helpers/useIsMobile.js";
 import {
   fetchTasks,
   deleteTask,
@@ -62,6 +62,11 @@ function App() {
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const [rightPanelMode, setRightPanelMode] = useState("goals");
   const [currentTemplate, setCurrentTemplate] = useState(null);
+  const isMobile = useIsMobile();
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [shouldHideDrawer, setShouldHideDrawer] = useState(false);
 
   const taskSnapshotRef = useRef([]);
   const adhocDraftMapRef = useRef(new Map());
@@ -82,7 +87,7 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
-    const cleaned = tasks.map(deepResetAdhocCheckboxes); 
+    const cleaned = tasks.map(deepResetAdhocCheckboxes);
     setTaskSnapshot(cleaned);
     taskSnapshotRef.current = cleaned;
   }, [tasks]);
@@ -129,22 +134,22 @@ function App() {
   const handleCopyToAgenda = (slot) => {
     const planTasks = assignments.preview[slot] || [];
     const agendaTasks = assignments.actual[slot] || [];
-  
+
     const agendaIds = new Set(agendaTasks.map((t) => t.assignmentId));
     const newTasks = planTasks.filter((t) => !agendaIds.has(t.assignmentId));
-  
+
     const updatedAgenda = {
       ...assignments.actual,
       [slot]: [...agendaTasks, ...newTasks],
     };
-  
+
     const updated = {
       ...assignments,
       actual: updatedAgenda,
     };
-  
+
     setAssignments(updated);
-  
+
     // ✅ Save to DB
     saveDayPlan(updated, "actual");
   };
@@ -152,7 +157,7 @@ function App() {
   const deletePlanTemplate = async (id) => {
     dispatch(deleteDayPlanOptimistic(id));
     const res = await dispatch(deleteDayPlan(id));
-  
+
     if (res?.payload) {
       AppToaster.show({ message: `🗑️ Plan deleted`, intent: Intent.WARNING });
     }
@@ -168,14 +173,14 @@ function App() {
       })),
     };
     dispatch(addDayPlanOptimistic(payload)); // ✅ Optimistic update
-  
+
     const res = await dispatch(createDayPlan(payload));
     if (res?.payload) {
       AppToaster.show({ message: `✅ Plan "${name}" saved!`, intent: Intent.SUCCESS });
       setCurrentTemplate(res.payload);
     }
   };
-  
+
   const updateNamedPlanTemplate = async (id, assignmentsData) => {
     const payload = {
       _id: id,
@@ -184,10 +189,10 @@ function App() {
         assignedTasks,
       })),
     };
-  
+
     dispatch(setDayPlanOptimistic(payload)); // ✅ optimistic
     const res = await dispatch(updateDayPlan({ id, dayPlanData: payload }));
-  
+
     if (res?.payload) {
       AppToaster.show({ message: `✅ Plan "${res.payload.name}" updated!`, intent: Intent.SUCCESS });
     }
@@ -231,18 +236,18 @@ function App() {
 
   const insertAdhocTask = (task) => {
     console.log("insert adhoc task: ", task);
-  
+
     // Don't reset checkbox yet
     dispatch(addTaskOptimistic(task));
-  
+
     const updatedSnapshot = insertTaskById(taskSnapshotRef.current, task.parentId, task);
     taskSnapshotRef.current = updatedSnapshot;
     setTaskSnapshot(updatedSnapshot);
-  
+
     // Remove from adhoc map AFTER insert
     adhocDraftMapRef.current.delete(task.id);
   };
-  
+
 
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
@@ -325,9 +330,12 @@ function App() {
   };
 
   const onDragEnd = (result) => {
+    setIsDragging(false);
+    setShouldHideDrawer(false); // reset
+    setLeftDrawerOpen(false)
     console.log("====onDragEnd====");
     setDraggedTaskId(null);
-  
+
     const { source, destination, draggableId } = result;
     if (!destination || !source) return;
     console.log(result);
@@ -336,10 +344,10 @@ function App() {
       const taskBankTasks = taskSnapshotRef.current
         .filter((task) => task.properties?.card)
         .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0));
-    
+
       const [moved] = taskBankTasks.splice(source.index, 1);
       taskBankTasks.splice(destination.index, 0, moved);
-    
+
       const reordered = taskBankTasks.map((task, index) => ({
         ...task,
         properties: {
@@ -347,18 +355,18 @@ function App() {
           order: index,
         },
       }));
-    
+
       const updatedSnapshot = taskSnapshotRef.current.map((task) => {
         const updated = reordered.find((t) => (t._id || t.tempId) === (task._id || task.tempId));
         return updated || task;
       });
-    
+
       taskSnapshotRef.current = updatedSnapshot;
       setTaskSnapshot(updatedSnapshot);
-    
+
       dispatch(reorderTasksOptimistic(reordered)); // ✅ Optimistic update
       dispatch(bulkReorderTasks(reordered));       // ✅ Server save
-    
+
       return;
     }
 
@@ -413,6 +421,8 @@ function App() {
 
   const onDragStart = (start) => {
     const { draggableId, source } = start;
+    setIsDragging(true);
+
     console.log("🔥 Drag started for", draggableId, "from", source.droppableId);
     // setDraggedTaskId(draggableId);
 
@@ -426,7 +436,7 @@ function App() {
 
   function deepResetAdhocCheckboxes(task) {
     let changed = false;
-  
+
     // Only clear if it's a preset adhoc task
     let updated = { ...task };
     if (task.properties?.preset && task.values?.checkbox) {
@@ -439,49 +449,102 @@ function App() {
       };
       changed = true;
     }
-  
+
     // Recurse into children
     if (Array.isArray(task.children)) {
       const updatedChildren = task.children.map(deepResetAdhocCheckboxes);
       updated.children = updatedChildren;
     }
-  
+
     return updated;
   }
-  
+
   return (
     <TimeProvider>
-      <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="container">
-          <Toolbar
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            planDirty={planDirty}
-            onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
-          />
-          <div className="main-content">
-            <div className="content">
-              <div className="left-side">
-                <TaskBank
-                  tasks={tasks}
-                  draggedTaskId={draggedTaskId}
-                  onInsertAdhoc={handleInsertAdhoc}
-                  onEditTask={(task) => {
-                    setTask(task);
-                    setIsDrawerOpen(true); // edit flow keeps the task
-                  }}
-                  onNewTask={() => {
-                    setTask(null); // ← clear any previously selected task
-                    setIsDrawerOpen(true);
-                  }}
-                  onTaskUpdate={(updatedTask) => {
-                    const newSnapshot = taskSnapshotRef.current.map((t) =>
-                      t._id === updatedTask._id ? updatedTask : t
-                    );
-                    taskSnapshotRef.current = newSnapshot;
-                    setTaskSnapshot(newSnapshot);
-                  }}
-                />
+      <div className="container">
+        <Toolbar
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          planDirty={planDirty}
+          onSaveDayPlan={() => saveDayPlan(assignments, "actual")}
+        />
+        <div className="main-content">
+          <div className="content">
+            <div className="left-side">
+              {isMobile && (
+                <div className={"left-mobile-toolbar"}>
+                  <Button
+                    icon="menu"
+                    minimal
+                    onClick={() => setLeftDrawerOpen(true)}
+                    title="Open Task Bank"
+                  />
+                </div>
+              )}
+              <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+                {isMobile ? (
+
+                  <Drawer
+                    isOpen={leftDrawerOpen}
+                    onClose={() => setLeftDrawerOpen(false)}
+                    position={Position.LEFT}
+                    title="Tasks"
+                    className={`mobile-taskbank-drawer ${shouldHideDrawer ? "soft-hide" : ""}`}
+                    hasBackdrop={!shouldHideDrawer}
+                    usePortal={false} // 👈 KEY CHANGE
+                  >
+                    <div
+                      onMouseLeave={() => {
+                        if (isDragging) setShouldHideDrawer(true);
+                      }}
+                      onMouseEnter={() => {
+                        if (isDragging) setShouldHideDrawer(false);
+                      }}
+                    >
+                      <TaskBank
+                        tasks={tasks}
+                        draggedTaskId={draggedTaskId}
+                        onInsertAdhoc={handleInsertAdhoc}
+                        onEditTask={(task) => {
+                          setTask(task);
+                          setIsDrawerOpen(true); // edit flow keeps the task
+                        }}
+                        onNewTask={() => {
+                          setTask(null); // ← clear any previously selected task
+                          setIsDrawerOpen(true);
+                        }}
+                        onTaskUpdate={(updatedTask) => {
+                          const newSnapshot = taskSnapshotRef.current.map((t) =>
+                            t._id === updatedTask._id ? updatedTask : t
+                          );
+                          taskSnapshotRef.current = newSnapshot;
+                          setTaskSnapshot(newSnapshot);
+                        }}
+                      />
+                    </div>
+                  </Drawer>
+                ) : (
+                  <TaskBank
+                    tasks={tasks}
+                    draggedTaskId={draggedTaskId}
+                    onInsertAdhoc={handleInsertAdhoc}
+                    onEditTask={(task) => {
+                      setTask(task);
+                      setIsDrawerOpen(true); // edit flow keeps the task
+                    }}
+                    onNewTask={() => {
+                      setTask(null); // ← clear any previously selected task
+                      setIsDrawerOpen(true);
+                    }}
+                    onTaskUpdate={(updatedTask) => {
+                      const newSnapshot = taskSnapshotRef.current.map((t) =>
+                        t._id === updatedTask._id ? updatedTask : t
+                      );
+                      taskSnapshotRef.current = newSnapshot;
+                      setTaskSnapshot(newSnapshot);
+                    }}
+                  />
+                )}
                 <div className="schedule-container dual">
                   <div className="time-header">
                     <div className="selected-date">
@@ -497,7 +560,7 @@ function App() {
                   </div>
                   <div className="schedule-header">
                     <div className="plan-header">
-                    <PlanTemplateManager
+                      <PlanTemplateManager
                         assignments={assignments.preview}
                         setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
                         allDayPlans={dayplans.filter(dp => !dp.date && dp.name)}
@@ -532,68 +595,117 @@ function App() {
                     />
                   </div>
                 </div>
-              </div>
-              <div className="right-side">
-                <div className="right-side-header">
-                  <div className="section-header">
-                    Display
-                  </div>
+              </DragDropContext>
+            </div>
+            <div className="right-side">
+              {isMobile && (
+                <div className={"right-mobile-toolbar"}>
                   <Button
-                    icon="exchange"
-                    onClick={toggleRightPanelMode}
+                    icon="panel-stats"
                     minimal
-                    title="Switch between Goals and Task History"
+                    onClick={() => setRightDrawerOpen(true)}
+                    title="Open Right Panel"
                   />
                 </div>
+              )}
+              {isMobile ? (
+                <Drawer
+                  isOpen={rightDrawerOpen}
+                  onClose={() => setRightDrawerOpen(false)}
+                  position={Position.RIGHT}
+                  title={rightPanelMode === "goals" ? "Goals" : "Task History"}
+                  className="mobile-rightpanel-drawer"
+                  usePortal={false} // 👈 KEY CHANGE
 
-                {rightPanelMode === "goals" ? (
-                  <GoalDisplay
-                    key={selectedDate.toISOString()}
-                    goals={goalsWithProgress}
-                    onEditGoal={(goal) => {
-                      setEditingGoal(goal);
-                      setGoalDrawerOpen(true);
-                    }}
-                  />
-                ) : (
-                  <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
-                )}
-              </div>
+                >
+                  <div className="right-side-header">
+                    <div className="section-header">
+                      Display
+                    </div>
+                    <Button
+                      icon="exchange"
+                      onClick={toggleRightPanelMode}
+                      minimal
+                      title="Switch between Goals and Task History"
+                    />
+                  </div>
+
+                  {rightPanelMode === "goals" ? (
+                    <GoalDisplay
+                      key={selectedDate.toISOString()}
+                      goals={goalsWithProgress}
+                      onEditGoal={(goal) => {
+                        setEditingGoal(goal);
+                        setGoalDrawerOpen(true);
+                      }}
+                    />
+                  ) : (
+                    <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+                  )}
+                </Drawer>
+              ) : (
+                <>
+                  <div className="right-side-header">
+                    <div className="section-header">
+                      Display
+                    </div>
+                    <Button
+                      icon="exchange"
+                      onClick={toggleRightPanelMode}
+                      minimal
+                      title="Switch between Goals and Task History"
+                    />
+                  </div>
+
+                  {rightPanelMode === "goals" ? (
+                    <GoalDisplay
+                      key={selectedDate.toISOString()}
+                      goals={goalsWithProgress}
+                      onEditGoal={(goal) => {
+                        setEditingGoal(goal);
+                        setGoalDrawerOpen(true);
+                      }}
+                    />
+                  ) : (
+                    <TaskDisplay timeSlots={timeSlots} assignments={assignments.actual} />
+                  )}
+                </>
+              )}
             </div>
           </div>
-
-          <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task" className="task-form-drawer">
-            <NewTaskForm
-              task={task}
-              onSave={(taskData) => {
-                setIsDrawerOpen(false);
-                setTask(null);
-              }}
-              onDelete={(t) => {
-                dispatch(deleteTaskOptimistic(t._id));
-                dispatch(deleteTask(t._id));
-                setIsDrawerOpen(false);
-              }}
-              taskListLength={tasks.length}
-            />
-          </Drawer>
-
-          <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal" className="goal-form-drawer">
-            <GoalForm
-              goal={editingGoal}
-              tasks={tasks}
-              onSave={() => {
-                setGoalDrawerOpen(false);
-              }}
-              onDelete={(g) => {
-                dispatch(deleteGoalOptimistic(g._id));
-                dispatch(deleteGoal(g._id));
-                setGoalDrawerOpen(false);
-              }}
-            />
-          </Drawer>
         </div>
-      </DragDropContext>
+
+        <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.LEFT} title="Create / Edit Task" className="task-form-drawer">
+          <NewTaskForm
+            task={task}
+            onSave={(taskData) => {
+              setIsDrawerOpen(false);
+              setTask(null);
+            }}
+            onDelete={(t) => {
+              dispatch(deleteTaskOptimistic(t._id));
+              dispatch(deleteTask(t._id));
+              setIsDrawerOpen(false);
+            }}
+            taskListLength={tasks.length}
+          />
+        </Drawer>
+
+        <Drawer isOpen={goalDrawerOpen} onClose={() => setGoalDrawerOpen(false)} size={DrawerSize.MEDIUM} position={Position.RIGHT} title="Create / Edit Goal" className="goal-form-drawer">
+          <GoalForm
+            goal={editingGoal}
+            tasks={tasks}
+            onSave={() => {
+              setGoalDrawerOpen(false);
+            }}
+            onDelete={(g) => {
+              dispatch(deleteGoalOptimistic(g._id));
+              dispatch(deleteGoal(g._id));
+              setGoalDrawerOpen(false);
+            }}
+          />
+        </Drawer>
+      </div>
     </TimeProvider>
   );
 }

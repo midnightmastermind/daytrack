@@ -1,26 +1,21 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/goals/';
+const API_URL = 'http://localhost:5000/api/goals';
 
-const getGoals = () => {
-  return axios.get(API_URL);
-};
+const getGoals = () => axios.get(API_URL);
 
-const createGoal = (goalData) => {
-  return axios.post(API_URL, goalData);
-};
+const bulkReorderGoals = (goals) => axios.put(`${API_URL}/reorder`, goals);
 
-const updateGoal = (id, goalData) => {
-  return axios.put(API_URL + id, goalData);
-};
+const createGoal = (goalData) => axios.post(API_URL, goalData);
 
-const deleteGoal = (id) => {
-  return axios.delete(API_URL + id);
-};
+const updateGoal = (id, goalData) => axios.put(`${API_URL}/${id}`, goalData);
+
+const deleteGoal = (id) => axios.delete(`${API_URL}/${id}`);
 
 export default {
   getGoals,
   createGoal,
   updateGoal,
   deleteGoal,
+  bulkReorderGoals // ✅ now matches taskService.js format
 };

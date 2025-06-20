@@ -7,7 +7,8 @@ import {
 
 export const makeSelectGoalsWithProgress = (selectedDate) =>
   createSelector([(state) => state.goals.goals], (goals) => {
-    return goals.map((goal) => ({
+    const sortedGoals = [...goals].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return sortedGoals.map((goal) => ({
       ...goal,
       totals: getGoalUnitTotals(goal),
       totalsByDate: getGoalUnitTotalsByDate(goal),

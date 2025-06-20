@@ -36,12 +36,12 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
           ))}
         </div>
         <div className="label-container">
-              <InputGroup
-                value={task.label || ""}
-                onChange={(e) => updateGoalItem(task.task_id, "label", e.target.value)}
-                placeholder="Label"
-              />
-            </div>
+          <InputGroup
+            value={task.label || ""}
+            onChange={(e) => updateGoalItem(task.task_id, "label", e.target.value)}
+            placeholder="Label"
+          />
+        </div>
       </div>
       <div className="goal-task">
         <div className="goal-task-settings">
@@ -101,7 +101,7 @@ const GoalTaskRow = ({ task, updateGoalItem }) => {
             </div>
           </div>
           {/* TARGET SETTINGS */}
-          
+
           <div className="target-container">
             <div className="target-header">Target</div>
             <div className="target-conditional">
@@ -152,7 +152,7 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
             innerLabel="Disabled"
           />
         </div>
-        <Tag>{unit.name}</Tag>
+        <Tag intent="primary" style={{marginTop: "10px"}}>{unit.name}</Tag>
         {/* <div className="label-container">
           <InputGroup
             value={unitState.label || ""}
@@ -161,7 +161,7 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
           />
         </div> */}
       </div>
-      
+
       <div className="time-settings">
         <div className="time-settings-header">Time</div>
         <HTMLSelect
@@ -219,35 +219,35 @@ const GroupedUnitRow = ({ unit, unitState, unitKey, updateUnitSettings }) => {
       </div>
       {/* TARGET SETTINGS */}
       {unit.type !== "text" && (
-      <div className="target-container">
-        <div className="target-header">Target</div>
-        <div className="target-conditional">
-          <div className="switch-container">
-            <Switch
-              checked={unitState.hasTarget ?? true}
-              onChange={(e) => updateUnitSettings(unitKey, "hasTarget", e.target.checked)}
-              innerLabel="Goal Target"
-            />
-          </div>
-          {unitState.hasTarget ?? true ? (
-            <div className="target-settings">
-              <HTMLSelect
-                value={unitState.operator || "="}
-                onChange={(e) => updateUnitSettings(unitKey, "operator", e.target.value)}
-              >
-                <option value="=">=</option>
-                <option value=">">{" > "}</option>
-                <option value="<">{" < "}</option>
-              </HTMLSelect>
-              <InputGroup
-                value={unitState.target || ""}
-                onChange={(e) => updateUnitSettings(unitKey, "target", e.target.value)}
-                placeholder="Target"
+        <div className="target-container">
+          <div className="target-header">Target</div>
+          <div className="target-conditional">
+            <div className="switch-container">
+              <Switch
+                checked={unitState.hasTarget ?? true}
+                onChange={(e) => updateUnitSettings(unitKey, "hasTarget", e.target.checked)}
+                innerLabel="Goal Target"
               />
             </div>
-          ) : null}
+            {unitState.hasTarget ?? true ? (
+              <div className="target-settings">
+                <HTMLSelect
+                  value={unitState.operator || "="}
+                  onChange={(e) => updateUnitSettings(unitKey, "operator", e.target.value)}
+                >
+                  <option value="=">=</option>
+                  <option value=">">{" > "}</option>
+                  <option value="<">{" < "}</option>
+                </HTMLSelect>
+                <InputGroup
+                  value={unitState.target || ""}
+                  onChange={(e) => updateUnitSettings(unitKey, "target", e.target.value)}
+                  placeholder="Target"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
       )}
     </div>
   );
@@ -302,6 +302,7 @@ const ActualPanel = ({
     const goalItem = {
       task_id: selected.id,
       path: selected.pathArray,
+      order: selectedTasks.length,
       target: 0,
       operator: "=",
       valueType: "integer",
@@ -376,119 +377,171 @@ const ActualPanel = ({
         >
           <Button icon="plus" intent="primary" text="Add Task" onClick={() => setIsPopoverOpen(true)} />
         </Popover>
-        <Button icon="time" text="Add Countdown" onClick={() =>
+        <Button icon="time" intent="primary" text="Add Countdown" onClick={() =>
           setCountdowns((prev) => [...prev, { name: "", date: new Date() }])
         } />
       </div>
 
-      {(countdowns.length > 0) && 
-          <div className="goal-countdowns-actual-container">
-            <div className="goal-countdowns-actual-header">Countdowns</div>
-            <div className="goal-countdowns-actual">
+      {(countdowns.length > 0) &&
+        <div className="goal-countdowns-actual-container">
+          <div className="goal-countdowns-actual-header">Countdowns</div>
+          <div className="goal-countdowns-actual">
             {(countdowns).map((c, i) => (
-            <CountdownRow
-              key={`countdown-${i}`}
-              index={i}
-              countdown={c}
-              updateCountdown={(index, key, value) =>
-                setCountdowns((prev) =>
-                  prev.map((item, idx) =>
-                    idx === index ? { ...item, [key]: value } : item
+              <CountdownRow
+                key={`countdown-${i}`}
+                index={i}
+                countdown={c}
+                updateCountdown={(index, key, value) =>
+                  setCountdowns((prev) =>
+                    prev.map((item, idx) =>
+                      idx === index ? { ...item, [key]: value } : item
+                    )
                   )
-                )
-              }
-              removeCountdown={(index) =>
-                setCountdowns((prev) => prev.filter((_, idx) => idx !== index))
-              }
-            />
-          ))}
+                }
+                removeCountdown={(index) =>
+                  setCountdowns((prev) => prev.filter((_, idx) => idx !== index))
+                }
+              />
+            ))}
           </div>
-          </div>
-        }
+        </div>
+      }
 
       <div className="goal-tasks-actual-container">
-      <div className="goal-tasks-actual-header">Tasks</div>
+        <div className="goal-tasks-actual-header">Tasks</div>
         <div className="goal-tasks-actual">
-        {(selectedTasks || []).map((t, idx) => {
-          return (
-            <div key={`${t.task_id}-${idx}`}>
-              {t.grouping && Array.isArray(t.units) ? (
-                <div className="goal-task-row">
-                  <div className="goal-header-container">
-                    <div className="goal-tags">
-                      {t.path?.map((segment, i) => (
-                        <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
-                          {segment}
-                        </Tag>
-                      ))}
-                    </div>
-                    <div className="label-container">
-                      <InputGroup
-                        value={t.label || ""}
-                        onChange={(e) => updateGoalItem(t.task_id, "label", e.target.value)}
-                        placeholder="Label"
-                      />
-                    </div>
-                  </div>
+          {(selectedTasks || []).map((t, idx) => {
+            const moveTask = (dir) => {
+              const newIndex = idx + dir;
+              if (newIndex < 0 || newIndex >= selectedTasks.length) return;
+
+              const reordered = [...selectedTasks];
+              const [moved] = reordered.splice(idx, 1);
+              reordered.splice(newIndex, 0, moved);
               
-                  <div className="grouped-units-container">
-                    {t.units.map((unit) => {
-                      const unitKey = unit.key;
-                      const unitState = t.unitSettings?.[unitKey] || {};
-                      return (
-                        <GroupedUnitRow
-                          key={unitKey}
-                          unit={unit}
-                          unitKey={unitKey}
-                          unitState={unitState}
-                          updateUnitSettings={(unitKey, field, value) =>
-                            setSelectedTasks((prev) =>
-                              prev.map((item) => {
-                                if (item.task_id !== t.task_id) return item;
+              // Reassign order for all tasks after reorder
+              const updatedWithOrder = reordered.map((item, i) => ({
+                ...item,
+                order: i,
+              }));
+              
+              setSelectedTasks(updatedWithOrder);
+            };
 
-                                const prevUnit = item.unitSettings?.[unitKey] || {};
-
-                                const updatedUnit = {
-                                  ...prevUnit,
-                                  [field]: value,
-                                };
-
-                                // Sync children array with unitSettings
-                                const updatedChildren = (item.units || []).map((unit) => {
-                                  const key = unit.key;
-                                  const settings = key === unitKey ? updatedUnit : item.unitSettings?.[key] || {};
-
-                                  return {
-                                    unitKey: key,
-                                    unitLabel: unit.label,
-                                    ...settings,
-                                    value: 0, // optionally default
-                                  };
-                                });
-
-                                return {
-                                  ...item,
-                                  unitSettings: {
-                                    ...item.unitSettings,
-                                    [unitKey]: updatedUnit,
-                                  },
-                                  children: updatedChildren,
-                                };
-                              })
-                            )
-                          }
-                        />
-                      );
-                    })}
-                  </div>
+            return (
+              <div key={`${t.task_id}-${idx}`} className="goal-task-wrapper">
+                <div className="goal-task-reorder-buttons">
+                  <Button icon="arrow-up" minimal onClick={() => moveTask(-1)} disabled={idx === 0} />
+                  <Button icon="arrow-down" minimal onClick={() => moveTask(1)} disabled={idx === selectedTasks.length - 1} />
                 </div>
-              ) : (
-                <GoalTaskRow task={t} updateGoalItem={updateGoalItem} />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {t.grouping && Array.isArray(t.units) ? (
+                  <div className="goal-task-row">
+                    <div className="goal-header-container">
+                      <div className="goal-tags">
+                        {t.path?.map((segment, i) => (
+                          <Tag key={`${t.task_id}-segment-${i}`} intent={i === t.path.length - 1 ? "primary" : undefined}>
+                            {segment}
+                          </Tag>
+                        ))}
+                      </div>
+                      <div className="label-container">
+                        <InputGroup
+                          value={t.label || ""}
+                          onChange={(e) => updateGoalItem(t.task_id, "label", e.target.value)}
+                          placeholder="Label"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grouped-units-container">
+                      {t.units.map((unit, unitIndex) => {
+                        const unitKey = unit.key;
+                        const unitState = t.unitSettings?.[unitKey] || {};
+
+                        const moveUnit = (dir) => {
+                          const newIndex = unitIndex + dir;
+                          if (newIndex < 0 || newIndex >= t.units.length) return;
+                        
+                          const reorderedUnits = [...t.units];
+                          const [movedUnit] = reorderedUnits.splice(unitIndex, 1);
+                          reorderedUnits.splice(newIndex, 0, movedUnit);
+                        
+                          // Reorder unitSettings AND assign new .order
+                          const newUnitSettings = {};
+                          for (let i = 0; i < reorderedUnits.length; i++) {
+                            const key = reorderedUnits[i].key;
+                            newUnitSettings[key] = {
+                              ...(t.unitSettings?.[key] || {}),
+                              order: i, // ✅ assign updated order
+                            };
+                          }
+                        
+                          setSelectedTasks((prev) =>
+                            prev.map((item) =>
+                              item.task_id === t.task_id
+                                ? {
+                                    ...item,
+                                    units: reorderedUnits,
+                                    unitSettings: newUnitSettings,
+                                  }
+                                : item
+                            )
+                          );
+                        };
+                        
+                        return (
+                          <div key={unitKey} className="grouped-unit-wrapper">
+                            <div className="grouped-unit-reorder-buttons">
+                              <Button icon="arrow-up" minimal disabled={unitIndex === 0} onClick={() => moveUnit(-1)} />
+                              <Button icon="arrow-down" minimal disabled={unitIndex === t.units.length - 1} onClick={() => moveUnit(1)} />
+                            </div>
+                            <GroupedUnitRow
+                              unit={unit}
+                              unitKey={unitKey}
+                              unitState={unitState}
+                              updateUnitSettings={(unitKey, field, value) =>
+                                setSelectedTasks((prev) =>
+                                  prev.map((item) => {
+                                    if (item.task_id !== t.task_id) return item;
+                                    const prevUnit = item.unitSettings?.[unitKey] || {};
+                                    const updatedUnit = {
+                                      ...prevUnit,
+                                      [field]: value,
+                                    };
+                                    const updatedChildren = (item.units || []).map((unit) => {
+                                      const key = unit.key;
+                                      const settings = key === unitKey ? updatedUnit : item.unitSettings?.[key] || {};
+                                      return {
+                                        unitKey: key,
+                                        unitLabel: unit.label,
+                                        ...settings,
+                                        value: 0,
+                                      };
+                                    });
+                                    return {
+                                      ...item,
+                                      unitSettings: {
+                                        ...item.unitSettings,
+                                        [unitKey]: updatedUnit,
+                                      },
+                                      children: updatedChildren,
+                                    };
+                                  })
+                                )
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <GoalTaskRow task={t} updateGoalItem={updateGoalItem} />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </Card>
   );
@@ -496,16 +549,20 @@ const ActualPanel = ({
 const CountdownRow = ({ countdown, index, updateCountdown, removeCountdown }) => {
   return (
     <div className="countdown-row">
-      <InputGroup
-        placeholder="Countdown Name"
-        value={countdown.name}
-        onChange={(e) => updateCountdown(index, "name", e.target.value)}
-      />
-      <DatePickerPopover
-        selectedDate={new Date(countdown.date)}
-        setSelectedDate={(date) => updateCountdown(index, "date", date)}
-      />
-      <Button icon="cross" minimal onClick={() => removeCountdown(index)} />
+      <div className="countdown-row-content">
+        <InputGroup
+          placeholder="Countdown Name"
+          value={countdown.name}
+          onChange={(e) => updateCountdown(index, "name", e.target.value)}
+        />
+        <DatePickerPopover
+          selectedDate={new Date(countdown.date)}
+          setSelectedDate={(date) => updateCountdown(index, "date", date)}
+        />
+      </div>
+      <div className="countdown-delete">
+        <Button className="countdown-delete" icon="cross" minimal onClick={() => removeCountdown(index)} />
+      </div>
     </div>
   );
 };
@@ -519,6 +576,7 @@ const PreviewPanel = ({ headerName, countdowns, selectedTasks, headerEnabled }) 
         countdowns
       }}
       showEditButton={false}
+      preview={true}
     />
   </div>
 );
@@ -535,33 +593,41 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const taskOptions = getTaskPaths(tasks || []);
 
   useEffect(() => {
-  if (!goal) {
-    setHeaderName("");
-    setHeaderEnabled(false);
-    setGoalFlowDir("any");
-    setSelectedTasks([]);
-    return;
-  }
+    if (!goal) {
+      setHeaderName("");
+      setHeaderEnabled(false);
+      setGoalFlowDir("any");
+      setSelectedTasks([]);
+      return;
+    }
 
-  setHeaderName(goal.header || "");
-  setHeaderEnabled(!!goal.header);
-  setGoalFlowDir(goal.goalFlowDir || "any");
-  setCountdowns(goal?.countdowns || []);
+    setHeaderName(goal.header || "");
+    setHeaderEnabled(!!goal.header);
+    setGoalFlowDir(goal.goalFlowDir || "any");
+    setCountdowns((goal?.countdowns || []).map((cd) => ({
+      ...cd,
+      date: new Date(cd.date),
+    }))
+  );
 
-  const rehydrated = rehydrate_goal_tasks(goal, tasks);
-  setSelectedTasks(rehydrated);
-}, [goal, tasks]);
+    const rehydrated = rehydrate_goal_tasks(goal, tasks);
+    setSelectedTasks(rehydrated);
+  }, [goal, tasks]);
 
   const handleSaveGoal = () => {
-    const enrichedTasks = selectedTasks.map((task) => {
+    const enrichedTasks = selectedTasks.map((task, index) => {
+      const baseTask = {
+        ...task,
+        order: index, // ✅ Save this task’s order in the list
+      };
+
       if (task.grouping && Array.isArray(task.units)) {
         const unitSettings = {};
-    
-        for (const unit of task.units) {
+
+        for (const [unitIndex, unit] of task.units.entries()) {
           const key = unit.key;
           const settings = task.unitSettings?.[key] || {};
-          
-          // ✅ Apply default values if missing
+
           unitSettings[key] = {
             enabled: settings.enabled ?? false,
             flow: settings.flow || "any",
@@ -573,30 +639,36 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
             target: settings.target ?? 0,
             starting: settings.starting ?? 0,
             replaceable: settings.replaceable ?? false,
+            order: unitIndex, // ✅ Save order of each grouped unit
           };
         }
-    
-        const children = task.units.map((unit) => ({
+
+        const children = task.units.map((unit, i) => ({
           unitKey: unit.key,
           unitLabel: unit.label,
           value: 0,
+          order: i,
           ...unitSettings[unit.key],
         }));
-    
+
         return {
-          ...task,
+          ...baseTask,
           unitSettings,
           children,
         };
       }
-    
-      return task;
+
+      return baseTask;
     });
-    
+
+
     const newGoal = {
       header: headerEnabled ? headerName : "",
       tasks: enrichedTasks,
-      countdowns
+      countdowns: countdowns.map((cd) => ({
+        ...cd,
+        date: cd.date instanceof Date ? cd.date.toISOString() : cd.date,
+      })),
     };
 
     const tempId = goal?.tempId || `temp_${uuidv4()}`;
@@ -609,7 +681,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
       dispatch(addGoalOptimistic(fullGoal));
       dispatch(createGoal(fullGoal));
     }
-    
+
     onSave?.(fullGoal);
   };
 
@@ -638,6 +710,7 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
           headerEnabled={headerEnabled}
           headerName={headerName}
           selectedTasks={selectedTasks}
+          countdowns={countdowns}
         />
       </div>
       <div className="goal-form-actions">

@@ -23,6 +23,18 @@ export const deleteGoal = createAsyncThunk("goals/delete", async (id) => {
   return id;
 });
 
+export const reorderGoalsOptimistic = (goals) => ({
+  type: "goals/reorderGoalsOptimistic",
+  payload: goals,
+});
+
+
+export const bulkReorderGoals = createAsyncThunk("goals/bulkReorder", async (goals) => {
+  const response = await goalService.bulkReorderGoals(goals);
+  return response.data;
+});
+
+
 // === Slice ===
 const goalSlice = createSlice({
   name: "goals",
@@ -50,6 +62,9 @@ const goalSlice = createSlice({
     },
     setGoals: (state, action) => {
       state.goals = action.payload.map(enrichGoalWithProgress);
+    },
+    reorderGoalsOptimistic: (state, action) => {
+      state.goals = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -89,10 +104,12 @@ const goalSlice = createSlice({
           };
         }
       })
-
       .addCase(deleteGoal.fulfilled, (state, action) => {
         const id = action.payload;
         state.goals = state.goals.filter((g) => g._id !== id);
+      })
+      .addCase(bulkReorderGoals.fulfilled, (state, action) => {
+        state.goals = action.payload.map(enrichGoalWithProgress);
       });
   },
 });

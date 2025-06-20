@@ -212,6 +212,7 @@
 .goal-tasks-actual {
   height: 100%;
   overflow-y: scroll;
+  max-height: 63vh;
 }
   .goal-tasks-actual .bp5-input-group {
     max-width: 64px;
@@ -235,6 +236,12 @@
 
   .goal-form .goal-countdowns-actual .countdown-row {
     display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .goal-form .goal-countdowns-actual .countdown-row-content {
+    display: flex;
+    justify-content: start;
   }
 
   .goal-form .goal-countdowns-actual-header,
@@ -271,12 +278,19 @@
   
   .goal-actual .add-task-button {
     margin-top: 10px;
-    width: 90px;
+    width: 200px;
+    display: flex;
+    justify-content: space-around;
   }
 
+  .goal-actual .countdown-delete {
+    display: flex;
+    justify-content: end;
+  }
   .goal-actual .add-task-button .bp5-button {
     padding: 0px 5px !important;
-    min-height: 20px;
+    height: 20px;
+
   }
 
   .goal-actual .add-task-button .bp5-button-text {
@@ -407,12 +421,16 @@
   color: white !important;
 }
 
-.grouped-unit-control {
+.goal-tasks-actual .grouped-unit-control .bp5-tag {
+  width: 50px;
+  font-size: 12px !important;
+}
+/* .grouped-unit-control {
   display: flex;
   flex-direction: column;
   justify-content: start;
   align-items: center;
-}
+} */
 
 .grouped-unit-control .switch-container {
   margin-top: 2px;
