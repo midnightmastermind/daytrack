@@ -132,11 +132,11 @@ h1 {
 }
 
 p {
-  font-size: 18px;
+  font-size: 28px;
 }
 .app-logo-container {
   height: 100%;
-  width: 30px;
+  width: 50px;
   padding: 2px;
 }
 .app-logo-container img {
@@ -193,7 +193,7 @@ p {
   display: flex;
   flex-direction: row;
   /* Stack items vertically */
-  height: 30px;
+  height: 50px;
   /* Full height */
   width: 100%;
   /* Set the width */
@@ -209,10 +209,10 @@ p {
 }
 
 .tool-bar .app-name {
-  font-size: 11px;
+  font-size: 28px;
   filter: brightness(150%);
   font-weight: bold;
-  padding: 2px 1px;
+  padding: 0px 1px 5px 1px;
   display: flex;
 }
 
@@ -224,7 +224,7 @@ p {
   box-shadow: unset;
   text-align: left;
   height: 30px;
-  font-size: 11px;
+  font-size: 28px;
   padding-top: 6px;
   padding-left: 5px;
   margin-top: 1px;
@@ -260,13 +260,11 @@ p {
 }
 
 .drag-icon {
-  width: 39px;
-  height: 90px;
   display: flex;
   justify-content: end;
 }
 .drag-icon svg {
-  width: 20px;
+  width: 40px;
   height: 90px;
   color: gray;
   box-shadow: 0 2px 4px var(--color-shadow);
@@ -312,10 +310,14 @@ p {
   justify-content: end;
   align-items: end;
   color:  white;
-  font-size: 11px;
+  font-size: 20px;
   font-weight: bold;
   z-index: 5;
   pointer-events: none;
+}
+
+.bp5-tag {
+  min-height: unset !important;
 }
 
 .Plan-schedule-container .current-time-indicator {
@@ -374,12 +376,12 @@ p {
   flex-direction: column;
   margin-left: 10px;
   color: white;
-  font-size: 12px;
+  font-size: 20px;
 }
 
 .task-bank-header-container .bp5-button {
   color: white !important;
-  font-size: 12px;
+  font-size: 20px;
   border-left: 1px solid var(--color-border)
 }
 
@@ -392,7 +394,7 @@ p {
 }
 
 .time-header {
-  height: 25px;
+  height: 40px;
   background-color: var(--color-bg-secondary);
   display: flex;
   justify-content: start;
@@ -407,7 +409,7 @@ p {
 
 .time-header .bp5-button-text {
   color: white !important;
-  font-size: 12px;
+  font-size: 20px;
 }
 
 
@@ -418,7 +420,7 @@ p {
 .selected-date {
   flex-grow: 1;
   color: white;
-  font-size: 12px;
+  font-size: 20px;
   padding-left: 5px;
   font-weight: bold;
   text-align: start;
@@ -428,7 +430,7 @@ p {
   display: flex;
   justify-content: end;
   color: white;
-  font-size: 11px;
+  font-size: 24px;
   margin-left: 10px;
 }
 
@@ -463,14 +465,32 @@ p {
   display: flex;
   flex-direction: row;
   align-items: center;
-  font-size: 13px;
+  font-size: 21px;
   color: #FBFFFF;
   font-weight: 500;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
-  height: 48px;
+  height: 100px;
 }
 
+.bp5-tag {
+  font-size: 28px;
+  padding: 10px;
+}
+
+.bp5-button {
+  font-size: 28px;
+}
+
+.bp5-icon svg {
+  height: 30px;
+  width: 30px;
+}
+.collapse-button {
+  flex: 1;
+  display: flex;
+  justify-content: start;
+}
 .container .task-header-left,
 .container .task-header-right {
   display: flex;
@@ -478,8 +498,10 @@ p {
 }
 
 .container .task-header-left {
-  margin-right: auto;
   padding-left: 3px;
+  display: flex;
+  flex: 1;
+  justify-content: start;
 }
 
 .container .task-header-left .bp5-button {
@@ -562,7 +584,7 @@ p {
 }
 
 .container .task-bank .taskcard-leaf-preview .leaf-chip span {
-  font-size: 10px;
+  font-size: 20px;
   color: white;
   text-align: left;
 }
@@ -577,7 +599,7 @@ p {
 
 .container .task-bank .task-children-header .bp5-fill {
   color: white;
-  font-size: 10px;
+  font-size: 20px;
 }
 
 .container .task-bank .category-container .bp5-collapse {
@@ -618,7 +640,7 @@ p {
 .container .task-bank .category-container .category-name .bp5-tag {
   color: gray;
   width: 100%;
-  font-size: 11px;
+  font-size: 28px;
   text-align: center;
   padding-left: 10px;
   background-color: var(--color-bg-secondary);
@@ -628,7 +650,7 @@ p {
   flex-grow: 0;
 }
 .container .task-bank .child-task {
-  font-size: 11px;
+  font-size: 28px;
   margin: 3px;
   padding: 3px;
   min-width: unset;
@@ -676,7 +698,7 @@ p {
 
 .container .task-bank .child-task .child-task-input .bp5-input {
   height: 14px;
-  font-size: 12px;
+  font-size: 20px;
   max-width: 150px;
 }
 
@@ -709,7 +731,7 @@ p {
   height: 100%;
   display: flex;
   overflow-y: auto;
-  max-height: calc(100vh - 96px);
+  max-height: calc(100vh - 340px);
 }
 .container .Plan-schedule-container {
   opacity: .7;
@@ -720,12 +742,21 @@ p {
   flex-direction: row-reverse;
 }
   .container .schedule-header {
-  min-height: 30px;
+  min-height: 50px;
   display: flex;
-  font-size: 12px;
+  font-size: 30px;
   color: gray;
   align-items: center;
   background-color: var(--color-bg);
+}
+
+.container .schedule-header .bp5-html-select select {
+ font-size: 24px !important;
+}
+
+.container .schedule-header .bp5-html-select .bp5-icon {
+  top: 3px;
+  right: 3px;
 }
 .container .plan-header {
   border-right: 1px solid var(--color-border);
@@ -760,7 +791,7 @@ p {
 
 .container .schedule-container .timeslot {
   width: 100%;
-  height: 100px;
+  height: 300px;
   min-height: unset;
   display: flex;
   flex-direction: row;
@@ -811,7 +842,7 @@ p {
   border-bottom: 1px solid var(--color-border);
   height: 30px;
   color: white;
-  font-size: 12px;
+  font-size: 20px;
   padding-left: 10px;
 }
 
@@ -920,7 +951,7 @@ p {
 .goal-display-container .goal-header-preview {
   margin-left: 3px;
   margin-top: 3px;
-  font-size: 11px;
+  font-size: 28px;
   color: gray;
 }
 
@@ -935,13 +966,13 @@ p {
 
 .goal-display-header .bp5-button {
   color: white !important;
-  font-size: 12px;
+  font-size: 20px;
   border-left: 1px solid var(--color-border)
 }
 .edit-goal-button {
   margin-left: auto;
   display: flex;
-  font-size: 10px;
+  font-size: 20px;
   min-width: 21px;
   min-height: 12px;
   margin-right: 0px;
@@ -1028,7 +1059,7 @@ p {
 
 .goal-display-container .bp5-tag,
 .goal-form .goal-preview .bp5-tag {
-  font-size: 11px !important;
+  font-size: 28px !important;
 }
 .goal-task .bp5-fill {
   display: flex;
@@ -1120,8 +1151,8 @@ p {
 
 .timeslot-title {
   color: gray;
-  font-size: 11px;
-  width: 40px;
+  font-size: 28px;
+  width: 100px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1134,7 +1165,7 @@ p {
   position: absolute;
   display: none;
   bottom: 0;
-  right: 4px;
+  right: 30px;
 }
 
 .timeslot:hover .timeslot-button {
@@ -1163,7 +1194,7 @@ p {
 
 .section-header {
   color: white;
-  font-size: 12px;
+  font-size: 20px;
   padding-left: 10px;
 }
 
@@ -1192,7 +1223,7 @@ p {
 }
 .preset-values .bp5-tag {
   color: white !important;
-  font-size: 10px;
+  font-size: 20px;
   max-width: 100px;
   display: flex;
   justify-content: space-between;
@@ -1236,7 +1267,7 @@ p {
   background: unset !important;
 }
 .new-entry .preset-input {
-  height: 30px;
+  height: 60px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -1260,10 +1291,10 @@ p {
 }
 .preset-input .bp5-tag {
   color: white !important;
-  font-size: 11px;
+  font-size: 28px;
   width: auto;
-  min-width: 50px;
-  min-height: 30px;
+  min-width: 30px;
+  height: 60px;
 }
 
 .preset-input .suffix-tag,
@@ -1271,7 +1302,7 @@ p {
   min-width: 15px !important;
 }
 .grouping-unit-row .bp5-tag .bp5-fill {
-  font-size: 11px;
+  font-size: 28px;
   display: flex !important;
   align-items: center !important;
 }
@@ -1284,7 +1315,7 @@ p {
 .new-entry .preset-input .bp5-input-group input, 
 .new-entry .preset-name-input input{
   height: 30px;
-  font-size: 11px;
+  font-size: 28px;
 }
 
 .icon-picker-popover {
@@ -1292,7 +1323,7 @@ p {
 }
 
 .bp5-html-select select {
-  font-size: 11px !important;
+  font-size: 28px !important;
   min-width: 55px;
 }
 .new-entry .control-inputs .bp5-control-indicator::before,
@@ -1342,7 +1373,7 @@ p {
 }
 
 .grouped-category .child-task-name {
-  font-size: 11px;
+  font-size: 28px;
   display: flex;
   align-items: center;
 }
@@ -1352,7 +1383,7 @@ p {
 }
 
 .child-task .bp5-input {
-  font-size: 11px;
+  font-size: 28px;
 }
 
 .goal-form-drawer {
@@ -1406,7 +1437,7 @@ p {
 .flow-select select {
   min-width: 41px !important;
   width: 40px;
-  font-size: 14px !important;
+  font-size: 28px !important;
   padding-right: 20px;
   padding-left: 3px;
 }
@@ -1458,7 +1489,7 @@ p {
 
 
 .icon-picker-button {
-  font-size: 10px;
+  font-size: 20px;
   color: #5f6b7c !important;
 }
 
@@ -1475,15 +1506,16 @@ p {
 }
 
 .task-header-left .bp5-icon {
-  margin-right: 3px;
+  margin-right: 0px;
 }
 .task-card .edit-task-button {
   display: none;
-  width: 20px !important;
+  width: 80px !important;
   min-width: unset;
 }
 .task-card:hover .edit-task-button {
-  display: block;
+  display: flex;
+  justify-content: center;
 }
 
 .goal-task .unit-tag {
@@ -1497,7 +1529,7 @@ p {
 
 .task-summary .bp5-tag {
   color: white !important;
-  font-size: 11px;
+  font-size: 28px;
 }
 
 .task-tag .bp5-fill {
@@ -1568,7 +1600,7 @@ p {
 
 
 /* Cover screen - portrait */
-@media only screen and (max-width: 800px) {
+@media only screen and (max-width: 1370px) {
   .task-bank-container {
     width: 100% !important;
     z-index: 1000 !important;
@@ -1576,23 +1608,27 @@ p {
   
   .left-mobile-toolbar,
   .right-mobile-toolbar {
-    width: 20px;
+    width: 70px;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+    justify-content: start;
+    align-items: center;
   }
 
   .left-mobile-toolbar .bp5-icon,
   .right-mobile-toolbar .bp5-icon {
-    margin-right: 3px !important;
   }
 
   .right-side {
-    max-width: 20px;
+    max-width: 70px;
     width: 100%;
     margin-left: 0px !important;
     margin-right: 0px !important;
   }
 
   .container .left-side {
-    width: 98vw;
+    flex: 1;
   }
 
   .goal-form-drawer {
@@ -1697,27 +1733,31 @@ p {
 }
 
 .pomodoro-widget span {
-  font-size: 1.2rem;
+  font-size: 34px;
+  margin-right: 10px;
 }
 
 /* In Toolbar.css or global style file */
 .toolbar-right {
   display: flex;
   align-items: end;
-  gap: 1rem;
 }
 
 .pomodoro-widget {
   display: flex;
   align-items: center;
-  font-size: .9rem;
+  font-size: 28px;
   margin-right: 10px;
   justify-content: start;
+  background-color: #ad4747;
+  padding-left: 15px;
+  border-left: 2px solid gray;
 }
 
 .pomodoro-time {
   display: flex;
   text-wrap: nowrap;
+  margin: 0 10px;
 }
 
 .toolbar-left {
@@ -1729,6 +1769,7 @@ p {
 }
 
 .pomodoro-widget .bp5-icon svg {
-  width: 15px !important;
-  height: 15px !important;
+  width: 40px !important;
+  height: 40px !important;
 }
+

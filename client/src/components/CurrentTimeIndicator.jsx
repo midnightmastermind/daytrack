@@ -1,7 +1,7 @@
 import React from "react";
 import { useCurrentTime } from "../context/TimeProvider";
 
-const SLOT_HEIGHT = 100; // px per 30min block
+const SLOT_HEIGHT = 300; // px per 30min block
 const START_HOUR = 0;   // Schedule starts at 7:00 AM
 
 const CurrentTimeIndicator = () => {

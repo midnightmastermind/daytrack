@@ -57,7 +57,6 @@
   background-color: #1e1f24;
   border-radius: 4px;
   padding: 0;
-  font-size: 0.task-form .9rem;
   max-width: 400px;
   width: 100%;
 }
@@ -129,7 +128,7 @@
   padding: 4px 8px;
   background-color: #101214;
   border-radius: 4px;
-  font-size: 0.task-form .85rem;
+  font-size: 26px;
   color: #ccc;
 }
 
@@ -184,7 +183,7 @@
   margin-left: auto;
 }
 .task-form .child-input-options-header {
-  font-size: 11px;
+  font-size: 26px;
   color: gray;
   display: flex;
 }
@@ -254,7 +253,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 28px;
   color: #FBFFFF;
   font-weight: 500;
   border-bottom: 1px solid var(--color-border);
@@ -322,7 +321,7 @@
 
 .task-form .preview-taskbank .task-children-header .bp5-fill {
   color: white;
-  font-size: 10px;
+  font-size: 25px;
 }
 
 /* Category containers */
@@ -365,7 +364,7 @@
 .task-form .preview-taskbank .category-container .category-name .bp5-tag {
   color: gray;
   width: 100%;
-  font-size: 11px;
+  font-size: 26px;
   text-align: center;
   padding-left: 10px;
   background-color: var(--color-bg-secondary);
@@ -377,7 +376,7 @@
 
 /* Leaf tasks (child-task) */
 .task-form .preview-taskbank .child-task {
-  font-size: 11px;
+  font-size: 26px;
   margin: 3px;
   padding: 3px;
   min-width: unset;
@@ -407,7 +406,7 @@
 
 .task-form .preview-taskbank .child-task .child-task-input .bp5-input {
   height: 14px;
-  font-size: 12px;
+  font-size: 27px;
   max-width: 150px;
 }
 
@@ -451,12 +450,12 @@
 
 .timeslot-title {
   color: gray;
-  font-size: 11px;
+  font-size: 28px;
 }
 
 .child-editor {
   background-color: #1A2129;
-  font-size: 11px;
+  font-size: 26px;
   font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
@@ -476,20 +475,20 @@
   background-color: #161a20;
 }
 .category-children-header.hovered-title {
-  font-size: 12px;
+  font-size: 27px;
 }
 .child-editor-row .bp5-input-group {
   max-width: 100px;
 }
 
 .child-editor-row .bp5-switch .bp5-switch-inner-text {
-  font-size: 11px !important;
+  font-size: 26px !important;
   color: white;
 }
 
 .child-editor-row .bp5-button {
   color: gray !important;
-  font-size: 12px;
+  font-size: 27px;
 }
 
 .nested-button {
@@ -511,7 +510,7 @@
 
 .grouping-unit-list h6 {
   margin: 0 0 6px 0;
-  font-size: 11px;
+  font-size: 26px;
   font-weight: bold;
   color: #ccc;
 }
@@ -532,14 +531,14 @@
 }
 
 .edit-panel-header {
-  font-size: 12px;
+  font-size: 27px;
   color: gray;
   display: flex;
   margin-bottom: 10px;
 }
 
 .preset-inputs-header {
-  font-size: 11px;
+  font-size: 26px;
   color: gray;
   display: flex;
 }
@@ -553,13 +552,13 @@
 
 .task-card-name .bp5-tag {
   height: 9px;
-  font-size: 11px;
+  font-size: 26px;
   padding: 15px 6px !important;
 }
 
 .task-card-name .bp5-input-group input {
   /* height: 20px; */
-  font-size: 11px;
+  font-size: 26px;
 }
 
 .form-section-header {
@@ -571,11 +570,11 @@
 }
 
 .form-section-header .bp5-button {
-  font-size: 12px;
+  font-size: 27px;
 }
 
 .task-form .children-header {
-  font-size: 11px;
+  font-size: 26px;
   color: gray;
   display: flex;
 }
@@ -599,11 +598,11 @@
 
 .task-form-children-list input {
   /* height: 20px; */
-  font-size: 11px;
+  font-size: 26px;
 }
 
 .task-form-children-list .bp5-switch-inner-text {
-  font-size: 11px;
+  font-size: 26px;
 }
 
 .grouping-container {
@@ -650,7 +649,7 @@
 }
 
 .grouping-unit-row select {
-  font-size: 11px;
+  font-size: 26px;
   /* height: 20px; */
 }
 
@@ -669,7 +668,7 @@
 }
 
 .preset-input-row .bp5-tag .bp5-fill {
-  font-size: 11px;
+  font-size: 26px;
   color: white;
   width: 60px;
 }
@@ -705,11 +704,11 @@
 
 .child-name-column .bp5-tag .bp5-fill {
   color: white !important;
-  font-size: 11px;
+  font-size: 26px;
 }
 
 .category-children-header {
-  font-size: 11px;
+  font-size: 26px;
   color: gray;
   display: flex;
   border-bottom: 2px solid #30363D;

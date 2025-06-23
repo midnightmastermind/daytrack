@@ -608,7 +608,7 @@ function App() {
 
                       <div>Plan</div>
                     </div>
-                    <div className="agenda-header">Agenda</div>
+                    <div className="agenda-header">Live</div>
                   </div>
                   <div className="schedules-scroll-wrapper">
                     <Schedule
@@ -623,7 +623,7 @@ function App() {
                     />
                     <Schedule
                       disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
-                      label="Agenda"
+                      label="Live"
                       timeSlots={timeSlots}
                       assignments={assignments.actual}
                       setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}

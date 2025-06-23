@@ -551,20 +551,11 @@ const TaskCard = ({
         >
           <div className="task-header">
             <div className="task-header-left">
-              {!preview && (
-                <Button
-                  icon="cog"
-                  className="edit-task-button"
-                  minimal
-                  onClick={() => {
-                    onEditTask(task);
-                  }}
-                />
-              )}
               {task.children?.length > 0 ? (
                 <Button
                   icon={isOpen ? "caret-down" : "caret-right"}
                   onClick={toggleCollapse}
+                  className={"collapse-button"}
                   minimal
                 >  <div className="task-name">
                     <TaskIcon icon={task.properties.icon} />{task.name}
@@ -594,7 +585,16 @@ const TaskCard = ({
                 ))}
               </div>
             )}
-
+              {!preview && (
+                <Button
+                  icon="cog"
+                  className="edit-task-button"
+                  minimal
+                  onClick={() => {
+                    onEditTask(task);
+                  }}
+                />
+              )}
             <div className="task-header-right">
               <Icon
                 icon="horizontal-inbetween"

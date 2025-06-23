@@ -11,7 +11,7 @@ const Toolbar = ({ selectedDate, setSelectedDate, planDirty, onSaveDayPlan }) =>
         <div className="app-logo-container">
           <img src={appLogoPng} alt="App Logo" className="app-logo" />
         </div>
-        <div className="app-name">daytrack</div>
+        <div className="app-name">pomerino</div>
       </div>
       {/* Right: Pomodoro Timer */}
       <div className="toolbar-right">
