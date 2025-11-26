@@ -32,7 +32,6 @@ const TaskCard = ({
 }) => {
   if (!task) return null;
   const dispatch = useDispatch();
-  console.log(task);
   const taskStateRef = useRef(task);
   const [isOpen, setIsOpen] = useState(false);
   const [newPresetDraft, setNewPresetDraft] = useState({});

@@ -11,6 +11,7 @@ const Schedule = ({
   setAssignments,
   onAssignmentsChange,
   onCopyToAgenda = null, 
+  onCopyFromAgenda = null,
   disableDrop
 }) => {
   const memoizedCards = useMemo(() => (
@@ -24,6 +25,7 @@ const Schedule = ({
         setAssignments={setAssignments}
         onAssignmentsChange={onAssignmentsChange}
         onCopyToAgenda={onCopyToAgenda}
+        onCopyFromAgenda={onCopyFromAgenda}
       />
     ))
   ), [timeSlots, assignments, setAssignments, onAssignmentsChange]);

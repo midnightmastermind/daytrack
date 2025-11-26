@@ -132,7 +132,7 @@ h1 {
 }
 
 p {
-  font-size: 28px;
+  font-size: 20px;
 }
 .app-logo-container {
   height: 100%;
@@ -209,7 +209,7 @@ p {
 }
 
 .tool-bar .app-name {
-  font-size: 28px;
+  font-size: 20px;
   filter: brightness(150%);
   font-weight: bold;
   padding: 0px 1px 5px 1px;
@@ -223,11 +223,12 @@ p {
   border: none !important;
   box-shadow: unset;
   text-align: left;
-  height: 30px;
-  font-size: 28px;
-  padding-top: 6px;
+  font-size: 20px;
+  padding-top: 1px;
   padding-left: 5px;
   margin-top: 1px;
+  min-width: 123px;
+
   /* display: flex;
   align-items: center; */
 }
@@ -255,10 +256,25 @@ p {
 .container .left-side {
   display: flex;
   flex-direction: row;
-  height: 100%;
-  width: 75vw;
+  height: calc(100vh - 50px);
+  width: 100%;
 }
 
+.container .left-side-container {
+  display: flex;
+  width: 75vw;
+  flex-direction: column;
+}
+.container .left-side-header {
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+}
+
+.left-side-header .section-header {
+  display: flex;
+  align-items: center;
+}
 .drag-icon {
   display: flex;
   justify-content: end;
@@ -310,7 +326,7 @@ p {
   justify-content: end;
   align-items: end;
   color:  white;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
   z-index: 5;
   pointer-events: none;
@@ -318,6 +334,7 @@ p {
 
 .bp5-tag {
   min-height: unset !important;
+  line-height: unset;
 }
 
 .Plan-schedule-container .current-time-indicator {
@@ -344,6 +361,7 @@ p {
 
 .container .task-bank .bp5-card {
   padding: 0px;
+  background-color: var(--color-surface);
   flex-direction: column;
   align-items: start;
   border: 1px solid var(--color-border);
@@ -376,12 +394,12 @@ p {
   flex-direction: column;
   margin-left: 10px;
   color: white;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .task-bank-header-container .bp5-button {
   color: white !important;
-  font-size: 20px;
+  font-size: 16px;
   border-left: 1px solid var(--color-border)
 }
 
@@ -409,7 +427,7 @@ p {
 
 .time-header .bp5-button-text {
   color: white !important;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 
@@ -420,7 +438,7 @@ p {
 .selected-date {
   flex-grow: 1;
   color: white;
-  font-size: 20px;
+  font-size: 16px;
   padding-left: 5px;
   font-weight: bold;
   text-align: start;
@@ -430,7 +448,7 @@ p {
   display: flex;
   justify-content: end;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   margin-left: 10px;
 }
 
@@ -462,29 +480,48 @@ p {
 
 .container .task-bank .task-header {
   width: 100%;
+  padding: 5px 0px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  font-size: 21px;
+  font-size: 17px;
   color: #FBFFFF;
   font-weight: 500;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
-  height: 100px;
 }
 
 .bp5-tag {
-  font-size: 28px;
-  padding: 10px;
+  font-size: 20px;
+  padding: 5px;
+}
+
+.tag-wrapper .edit-button {
+  display: none;
+  position: absolute;
+  left: 55px;
+  bottom: 25px;
+}
+
+.tag-wrapper .edit-button-isopen {
+  display: block !important;
+}
+.tag-wrapper .edit-button svg {
+  color: white;
+  height: 20px;
+  width: 20px;
+}
+.tag-wrapper:hover .edit-button {
+  display: block;
 }
 
 .bp5-button {
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .bp5-icon svg {
-  height: 30px;
-  width: 30px;
+  height: 27px;
+  width: 27px;
 }
 .collapse-button {
   flex: 1;
@@ -566,6 +603,7 @@ p {
   border-left: 1px solid white;
   border-right: 1px solid white;
   opacity: .7;
+  display: none;
 }
 
 .container .task-bank .taskcard-leaf-preview .leaf-chip {
@@ -584,7 +622,7 @@ p {
 }
 
 .container .task-bank .taskcard-leaf-preview .leaf-chip span {
-  font-size: 20px;
+  font-size: 16px;
   color: white;
   text-align: left;
 }
@@ -599,7 +637,7 @@ p {
 
 .container .task-bank .task-children-header .bp5-fill {
   color: white;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .container .task-bank .category-container .bp5-collapse {
@@ -640,7 +678,7 @@ p {
 .container .task-bank .category-container .category-name .bp5-tag {
   color: gray;
   width: 100%;
-  font-size: 28px;
+  font-size: 20px;
   text-align: center;
   padding-left: 10px;
   background-color: var(--color-bg-secondary);
@@ -650,11 +688,12 @@ p {
   flex-grow: 0;
 }
 .container .task-bank .child-task {
-  font-size: 28px;
+  font-size: 20px;
   margin: 3px;
   padding: 3px;
   min-width: unset;
   color: white;
+  min-height: 50px !important;
 }
 .child-task .preset-input {
   display: flex;
@@ -691,14 +730,13 @@ p {
 }
 
 .child-task .bp5-checkbox .bp5-control-indicator {
-  height: 20px;
-  width: 20px;
-  margin-top: 2px;
+  height: 23px;
+  width: 23px;
 }
 
 .container .task-bank .child-task .child-task-input .bp5-input {
   height: 14px;
-  font-size: 20px;
+  font-size: 16px;
   max-width: 150px;
 }
 
@@ -731,7 +769,7 @@ p {
   height: 100%;
   display: flex;
   overflow-y: auto;
-  max-height: calc(100vh - 340px);
+  max-height: calc(100vh - 150px);
 }
 .container .Plan-schedule-container {
   opacity: .7;
@@ -744,21 +782,21 @@ p {
   .container .schedule-header {
   min-height: 50px;
   display: flex;
-  font-size: 30px;
+  font-size: 22px;
   color: gray;
   align-items: center;
   background-color: var(--color-bg);
 }
 
 .container .schedule-header .bp5-html-select select {
- font-size: 24px !important;
+ font-size: 17px !important;
 }
 
 .container .schedule-header .bp5-html-select .bp5-icon {
   top: 3px;
   right: 3px;
 }
-.container .plan-header {
+.container .plan-header-container {
   border-right: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -767,13 +805,20 @@ p {
   padding-right: 10px;
 }
 .container .agenda-header,
-.container .plan-header {
+.container .plan-header-container {
   width: 50%;
+}
+
+.container .plan-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
 }
 
 .container .agenda-header {
   display: flex;
   padding-left: 9px;
+  flex-direction: row;
 }
 
 
@@ -804,6 +849,20 @@ p {
   transform: translateZ(0);  /* fixes drag ghost alignment */
   will-change: transform;    /* hint browser to optimize */
 }
+
+.timeslot-title-container {
+  height: 100%;
+  width: 25%;
+  display: flex;
+  align-items: center;
+  background-color: var(--color-bg-light);
+}
+
+.timeslot-title {
+  color: gray;
+  font-size: 20px;
+}
+
 
 .container .Plan-schedule-container .timeslot {
   flex-direction: row-reverse;
@@ -842,7 +901,7 @@ p {
   border-bottom: 1px solid var(--color-border);
   height: 30px;
   color: white;
-  font-size: 20px;
+  font-size: 16px;
   padding-left: 10px;
 }
 
@@ -951,7 +1010,7 @@ p {
 .goal-display-container .goal-header-preview {
   margin-left: 3px;
   margin-top: 3px;
-  font-size: 28px;
+  font-size: 20px;
   color: gray;
 }
 
@@ -966,24 +1025,19 @@ p {
 
 .goal-display-header .bp5-button {
   color: white !important;
-  font-size: 20px;
+  font-size: 16px;
   border-left: 1px solid var(--color-border)
 }
 .edit-goal-button {
   margin-left: auto;
   display: flex;
-  font-size: 20px;
+  font-size: 16px;
   min-width: 21px;
   min-height: 12px;
   margin-right: 0px;
   padding-right: 2px;
   padding-top: 4px;
   padding-left: 4px;
-}
-
-.edit-goal-button .bp5-icon svg {
-  width: 12px;
-  height: 12px;
 }
 
 .goal-display-container .goals-container .goal-item {
@@ -1004,13 +1058,11 @@ p {
   justify-content: start;
   margin: 10px;
   height: 100%;
+  min-height: 46px;
 }
 
 .goal-display-container .goals-container .unit-progress {
   flex: 1;
-}
-.goal-display-container .goals-container .unit-progress .bp5-fill {
-  font-weight: bold;
 }
 
 .goal-display-container .goals-container .goal-units-container,
@@ -1059,7 +1111,7 @@ p {
 
 .goal-display-container .bp5-tag,
 .goal-form .goal-preview .bp5-tag {
-  font-size: 28px !important;
+  font-size: 20px !important;
 }
 .goal-task .bp5-fill {
   display: flex;
@@ -1149,9 +1201,14 @@ p {
   color: gray !important;
 }
 
+.temporary-task {
+  background: #519d1d !important;
+  border: 4px dashed white !important;
+}
+
 .timeslot-title {
   color: gray;
-  font-size: 28px;
+  font-size: 20px;
   width: 100px;
   height: 100%;
   display: flex;
@@ -1161,12 +1218,28 @@ p {
   background-color: var(--color-bg-light);
 }
 
-.timeslot-button {
+.Plan-schedule-container .timeslot .timeslot-button {
   position: absolute;
-  display: none;
   bottom: 0;
   right: 30px;
 }
+
+.Live-schedule-container .timeslot .timeslot-button {
+  position: absolute;
+  bottom: 0;
+  left: 30px;
+}
+.timeslot-button {
+  display: none;
+}
+
+.plan-header-container:hover .timeslot-button,
+.agenda-header:hover .timeslot-button {
+  display: inline-flex;
+  position: relative;
+}
+
+
 
 .timeslot:hover .timeslot-button {
   display: block;
@@ -1175,7 +1248,7 @@ p {
   opacity: 0.7;
 }
 .goal-countdown-tags {
-  margin: 10px 1px 0px 1px;
+  margin: 10px;
 }
 .goal-countdown-tags .bp5-fill {
   color: white !important;
@@ -1184,6 +1257,8 @@ p {
 .Plan-schedule-container .tag-container {
   border-left: unset;
   border-right: 1px solid var(--color-border);
+  align-content: flex-start;
+  gap: 4px;
 }
 .goal-display-header {
   display: flex;
@@ -1194,7 +1269,7 @@ p {
 
 .section-header {
   color: white;
-  font-size: 20px;
+  font-size: 16px;
   padding-left: 10px;
 }
 
@@ -1223,7 +1298,7 @@ p {
 }
 .preset-values .bp5-tag {
   color: white !important;
-  font-size: 20px;
+  font-size: 16px;
   max-width: 100px;
   display: flex;
   justify-content: space-between;
@@ -1266,13 +1341,11 @@ p {
 ::selection {
   background: unset !important;
 }
-.new-entry .preset-input {
-  height: 60px;
+.preset-input {
+  height: 40px;
   width: 100%;
   display: flex;
   align-items: center;
-  max-width: 300px;
-  justify-content: start;
   margin-top: 3px;
 }
 
@@ -1281,20 +1354,18 @@ p {
   outline-offset: 0px;
 }
 
-.new-entry .preset-inputs {
+ .preset-inputs {
   align-self: end;
   justify-content: start;
   display: flex;
   flex-direction: column;
   align-items: start;
-  max-width: 300px;
 }
 .preset-input .bp5-tag {
   color: white !important;
-  font-size: 28px;
+  font-size: 20px;
   width: auto;
-  min-width: 30px;
-  height: 60px;
+  height: 40px;
 }
 
 .preset-input .suffix-tag,
@@ -1302,7 +1373,7 @@ p {
   min-width: 15px !important;
 }
 .grouping-unit-row .bp5-tag .bp5-fill {
-  font-size: 28px;
+  font-size: 20px;
   display: flex !important;
   align-items: center !important;
 }
@@ -1315,7 +1386,7 @@ p {
 .new-entry .preset-input .bp5-input-group input, 
 .new-entry .preset-name-input input{
   height: 30px;
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .icon-picker-popover {
@@ -1323,13 +1394,12 @@ p {
 }
 
 .bp5-html-select select {
-  font-size: 28px !important;
   min-width: 55px;
 }
 .new-entry .control-inputs .bp5-control-indicator::before,
 .new-entry .bp5-control-indicator {
-  height: 20px !important;
-  width: 20px !important;
+  height: 30px !important;
+  width: 30px !important;
 }
 
 .new-entry .bp5-control-indicator {
@@ -1364,16 +1434,11 @@ p {
   display: flex;
   width: 30px;
   height: 30px;
-  align-self: flex-end;
   margin-right: 2px;
 }
 
-.preset-save-container svg {
-  height: 11px;
-}
-
 .grouped-category .child-task-name {
-  font-size: 28px;
+  font-size: 20px;
   display: flex;
   align-items: center;
 }
@@ -1383,7 +1448,7 @@ p {
 }
 
 .child-task .bp5-input {
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .goal-form-drawer {
@@ -1435,15 +1500,21 @@ p {
 }
 
 .flow-select select {
-  min-width: 41px !important;
-  width: 40px;
-  font-size: 28px !important;
-  padding-right: 20px;
+  width: 57px;
+  height: 43px;
+  font-size: 20px !important;
+  padding-right: 24px;
   padding-left: 3px;
 }
 
 .flow-select .bp5-icon {
-  right: 3px !important;
+  right: 2px !important;
+  bottom: 5px !important;
+  padding-bottom: 5px;
+}
+
+.flow-select .bp5-icon svg {
+  height: 26px !important;
 }
 .triangle-indicator.success {
   color: #0f9960;
@@ -1470,7 +1541,7 @@ p {
 
 .empty-container {
   width: 100%;
-  font-size: 20px;
+  font-size: 16px;
   color: gray;
   margin-top: 20%;
 }
@@ -1489,7 +1560,7 @@ p {
 
 
 .icon-picker-button {
-  font-size: 20px;
+  font-size: 22px;
   color: #5f6b7c !important;
 }
 
@@ -1529,7 +1600,7 @@ p {
 
 .task-summary .bp5-tag {
   color: white !important;
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .task-tag .bp5-fill {
@@ -1692,6 +1763,77 @@ p {
     height: 100vh;
     overflow-y: scroll;
   }
+
+  /* 🎯 All Font-Size Declarations Extracted from App.css */
+
+button {
+  font-size: 1rem;
+}
+
+p {
+  font-size: 28px;
+}
+
+.tool-bar .app-name {
+  font-size: 28px;
+}
+
+.bp5-editable-text::before {
+  font-size: 28px;
+}
+
+.current-time-indicator {
+  font-size: 20px;
+}
+
+.container .task-bank-header {
+  font-size: 20px;
+}
+
+.task-bank-header-container .bp5-button {
+  font-size: 20px;
+}
+
+.time-header .bp5-button-text {
+  font-size: 20px;
+}
+
+.selected-date {
+  font-size: 20px;
+}
+
+.current-time {
+  font-size: 24px;
+}
+
+.container .task-bank .task-header {
+  font-size: 21px;
+}
+
+.bp5-tag {
+  font-size: 28px;
+}
+
+.bp5-button {
+  font-size: 28px;
+}
+
+.container .task-bank .taskcard-leaf-preview .leaf-chip span {
+  font-size: 20px;
+}
+
+.container .task-bank .task-children-header .bp5-fill {
+  font-size: 20px;
+}
+
+.pomodoro-widget {
+  font-size: 28px;
+}
+
+.pomodoro-widget span {
+  font-size: 34px;
+}
+
 }
 
 /* Cover screen - landscape */
@@ -1746,7 +1888,7 @@ p {
 .pomodoro-widget {
   display: flex;
   align-items: center;
-  font-size: 28px;
+  font-size: 20px;
   margin-right: 10px;
   justify-content: start;
   background-color: #ad4747;

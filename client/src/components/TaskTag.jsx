@@ -1,12 +1,20 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Tag, Button } from "@blueprintjs/core";
+import {
+  Tag,
+  Button,
+  Popover,
+  PopoverInteractionKind,
+  Card,
+  InputGroup,
+} from "@blueprintjs/core";
 import {
   findTaskByIdDeep,
   formatValueWithAffixes,
   getAncestorGroupingUnits,
 } from "../helpers/taskUtils";
 import TaskIcon from "./TaskIcon";
+
 /** === Helper: extract valid input entries === */
 const getValidInputEntries = (input = {}, { minimal = false } = {}) => {
   // If it's a primitive (string, number, etc), just return it as one entry
@@ -54,7 +62,7 @@ const MainTaskTag = ({ task }) => {
 
   return (
     <div className="main-task-tag">
-      <Tag key={taskId} intent="primary" minimal={false}>
+      <Tag key={taskId} className={`${task?.properties?.temp ? 'temporary-task' : ''}`} intent="primary" minimal={false}>
         <TaskIcon icon={task?.properties?.icon} />
         {taskName}
       </Tag>
@@ -144,7 +152,6 @@ const TaskSummary = ({ task, entries = [], tasks = [] }) => {
   );
 };
 
-/** === TaskTag === */
 const TaskTag = ({
   task,
   showAncestry = false,
@@ -157,10 +164,18 @@ const TaskTag = ({
   const ancestry = showAncestry ? task.assignmentAncestry || [] : [];
   const summaryEntries = getValidInputEntries(input, { minimal: minimalValues });
 
+  const [isOpen, setIsOpen] = useState(false);
+  const popoverRef = useRef();
+
+  const taskId = task._id || task.id || task.tempId;
+  const combinedClass = `task-tag ${className} ${
+    summaryEntries.length === 0 ? "task-standalone" : ""
+  }`;
+
   const content = (
     <div className="task-content">
       {ancestry.length > 0 && (
-        <TaskAncestry ancestry={ancestry} currentTaskId={task._id || task.id} />
+        <TaskAncestry ancestry={ancestry} currentTaskId={taskId} />
       )}
       <MainTaskTag task={task} />
       {summaryEntries.length > 0 && (
@@ -169,25 +184,66 @@ const TaskTag = ({
     </div>
   );
 
-  const combinedClass = `task-tag ${className} ${
-    summaryEntries.length === 0 ? "task-standalone" : ""
-  }`;
+  const handleClosePopover = () => setIsOpen(false);
 
-  if (typeof onRemove === "function") {
+  const EditPopover = (
+    <Card style={{ padding: "10px", minWidth: "200px" }}>
+      <InputGroup
+        value={task.name}
+        fill
+        disabled
+        placeholder="Edit task name"
+        style={{ marginBottom: "10px" }}
+      />
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <Button
+          icon="floppy-disk"
+          text="Save"
+          disabled
+          onClick={handleClosePopover}
+        />
+        <Button
+          icon="trash"
+          intent="danger"
+          onClick={() => {
+            handleClosePopover();
+            if (onRemove) onRemove();
+          }}
+        />
+      </div>
+    </Card>
+  );
+
+  const rightIcon = (
+    <Popover
+      ref={popoverRef}
+      interactionKind={PopoverInteractionKind.CLICK}
+      isOpen={isOpen}
+      onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+      content={EditPopover}
+      position="bottom-right"
+      minimal
+    >
+      <Button
+        icon="cog"
+        className={`edit-button ${isOpen ? 'edit-button-isopen' : ''}`}
+        minimal
+        small
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((prev) => !prev); // Toggle open state
+        }}
+      />
+    </Popover>
+  );
+
+  if (typeof onRemove === "function" && !task?.properties?.temp) {
     return (
       <Tag
         minimal={true}
         intent="none"
         className={combinedClass}
-        rightIcon={
-          <Button
-            icon="cross"
-            className="close-button"
-            minimal
-            small
-            onClick={onRemove}
-          />
-        }
+        rightIcon={rightIcon}
       >
         {content}
       </Tag>
@@ -195,7 +251,10 @@ const TaskTag = ({
   }
 
   return (
-    <div className={combinedClass} style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+    <div
+      className={combinedClass}
+      style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
+    >
       {content}
     </div>
   );

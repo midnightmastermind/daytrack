@@ -8,7 +8,8 @@ const DayPlanSchema = new mongoose.Schema({
   result: { type: Array, default: [] },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-  name: { type: String, default: ""}
+  name: { type: String, default: ""},
+  notebook: { type: String, default: "" }
 });
 
 module.exports = mongoose.model("DayPlan", DayPlanSchema);

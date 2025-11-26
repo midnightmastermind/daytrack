@@ -20,13 +20,173 @@ import {
   deleteGoalOptimistic
 } from "./store/goalSlice";
 import { v4 as uuidv4 } from "uuid";
-import GoalItem from "./components/GoalItem";
+import GoalItem from "./components/GoalCard";
 import { findTaskByIdDeep, updateTaskByIdImmutable } from "./helpers/taskUtils";
 import { rehydrate_goal_tasks } from "./helpers/goalUtils";
 import DatePickerPopover from "./components/DatePickerPopover";
 
 /** Inline Components **/
+const GoalItemEditor = ({
+  goalItem,
+  onUpdate,
+  onDelete,
+  taskOptions,
+  tasks,
+  index
+}) => {
+  const [selectedTaskId, setSelectedTaskId] = useState("");
 
+  const updateField = (key, value) => {
+    onUpdate({ ...goalItem, [key]: value });
+  };
+
+  const updateTask = (taskId, key, value) => {
+    const updatedTasks = goalItem.tasks.map((task) =>
+      task.task_id === taskId ? { ...task, [key]: value } : task
+    );
+    onUpdate({ ...goalItem, tasks: updatedTasks });
+  };
+
+  const addTask = () => {
+    const selected = taskOptions.find((t) => t.id === selectedTaskId);
+    if (!selected) return;
+    const original = findTaskByIdDeep(selected.id, tasks);
+    const groupingEnabled = original?.properties?.group;
+    const units = original?.properties?.grouping?.units || [];
+
+    const newTask = {
+      task_id: selected.id,
+      path: selected.pathArray,
+      order: goalItem.tasks.length,
+      flow: "any",
+      useInput: false,
+      incrementValue: 1,
+      reverseFlow: false,
+      replaceable: false,
+      ...(groupingEnabled && {
+        grouping: true,
+        units,
+        unitSettings: {}
+      })
+    };
+
+    onUpdate({
+      ...goalItem,
+      tasks: [...goalItem.tasks, newTask]
+    });
+
+    setSelectedTaskId("");
+  };
+
+  return (
+    <Card className="goal-item-editor" elevation={2}>
+      <div className="goal-item-editor-header">
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <InputGroup
+            placeholder="Goal Item Label"
+            value={goalItem.label || ""}
+            onChange={(e) => updateField("label", e.target.value)}
+            style={{ flexGrow: 1, marginRight: 8 }}
+          />
+          <Button icon="trash" intent="danger" minimal onClick={onDelete} />
+        </div>
+
+        <div className="goal-item-settings">
+          <div className="setting-block">
+            <div>Time Scale</div>
+            <HTMLSelect
+              value={goalItem.timeScale || "daily"}
+              onChange={(e) => updateField("timeScale", e.target.value)}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="overall">Overall</option>
+            </HTMLSelect>
+          </div>
+
+          <div className="setting-block">
+            <div>Value Type</div>
+            <HTMLSelect
+              value={goalItem.valueType || "integer"}
+              onChange={(e) => updateField("valueType", e.target.value)}
+            >
+              <option value="integer">Integer</option>
+              <option value="currency">Currency</option>
+              <option value="percentage">Percentage</option>
+            </HTMLSelect>
+          </div>
+
+          <div className="setting-block">
+            <div>Starting Value</div>
+            <InputGroup
+              value={goalItem.starting ?? ""}
+              onChange={(e) => updateField("starting", e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="setting-block">
+            <Switch
+              checked={goalItem.hasTarget ?? true}
+              onChange={(e) => updateField("hasTarget", e.target.checked)}
+              innerLabel="Target"
+            />
+            {goalItem.hasTarget && (
+              <div className="target-operator-row">
+                <HTMLSelect
+                  value={goalItem.operator}
+                  onChange={(e) => updateField("operator", e.target.value)}
+                >
+                  <option value="=">=</option>
+                  <option value=">">{">"}</option>
+                  <option value="<">{"<"}</option>
+                </HTMLSelect>
+                <InputGroup
+                  value={goalItem.target ?? ""}
+                  onChange={(e) => updateField("target", e.target.value)}
+                  placeholder="Target"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="goal-item-tasks">
+        <div className="task-list-header">
+          <strong>Tasks</strong>
+          <Popover
+            content={
+              <div className="add-task-popover">
+                <HTMLSelect
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                >
+                  <option value="">Select a task</option>
+                  {taskOptions.map((option, idx) => (
+                    <option key={`${option.id}-${idx}`} value={option.id}>
+                      {option.pathArray.join(" / ")}
+                    </option>
+                  ))}
+                </HTMLSelect>
+                <Button text="Add Task" onClick={addTask} intent="primary" />
+              </div>
+            }
+            interactionKind="click"
+            isOpen={false}
+          >
+            <Button icon="plus" minimal text="Add Task" onClick={() => {}} />
+          </Popover>
+        </div>
+
+        {goalItem.tasks.map((task, idx) => (
+          <GoalTaskRow key={idx} task={task} updateGoalItem={updateTask} />
+        ))}
+      </div>
+    </Card>
+  );
+};
 const GoalTaskRow = ({ task, updateGoalItem }) => {
   return (
     <div className="goal-task-row">
@@ -589,7 +749,9 @@ const GoalForm = ({ goal, tasks, onSave, onClose }) => {
   const [headerName, setHeaderName] = useState("");
   const [headerEnabled, setHeaderEnabled] = useState(false);
   const [goalFlowDir, setGoalFlowDir] = useState("any");
-  const [selectedTasks, setSelectedTasks] = useState([]);
+  // const [selectedTasks, setSelectedTasks] = useState([]);
+  const [goalItems, setGoalItems] = useState([]);
+
   const [countdowns, setCountdowns] = useState([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");

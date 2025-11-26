@@ -1,0 +1,177 @@
+.goal-form {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .goal-form h3 {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+  }
+  
+  .goal-form .form-group {
+    margin-bottom: 15px;
+  }
+  .goal-form .goal-item-editor {
+    background-color: #12151B;
+    padding: 10px 10px !important;
+    margin: 10px 10px !important;
+    border-top: 1px solid #30363D;
+
+  }
+  .goal-form .goal-editor,
+  .goal-form .goal-preview {
+    background-color: #1A2129;
+    border: 1px solid #30363D;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  .goal-form .goal-editor {
+    flex: 3;
+    min-width: 600px;
+  }
+  .goal-task-settings .bp5-fill {
+    color: white !important;
+  }
+  
+  .goal-task-settings select,
+  .goal-task-settings input,
+  .goal-task-settings span {
+    color: white !important;
+  }
+  
+  .goal-task-settings .bp5-switch {
+    margin-top: 5px;
+  }
+  
+  .goal-task-settings .bp5-input:disabled::placeholder {
+    color: white;
+  }
+  .goal-task-settings select:hover {
+    background-color: rgba(211, 216, 222, 0.5);
+  }
+  
+  .grouped-unit-row,
+  .goal-task-settings {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+  }
+  
+  .goal-form .bp5-select::after, .bp5-html-select .bp5-icon, .bp5-select .bp5-icon {
+    right: 4px !important;
+    top: 3px !important;
+  }
+
+  .goal-form .unit-header {
+    display: flex;
+    gap: 10px;
+  }
+
+  .goal-form .goal-task-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background-color: #1A2129;
+    padding: 10px 20px;
+    
+  }
+
+  .goal-form .goal-unit-editor {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100px;
+  }
+
+  .header-section .bp5-input-group input,
+  .header-section .bp5-control-indicator-child div {
+    color: white !important;
+    font-size: 20px !important;
+  }
+
+  .goal-form .bp5-control.bp5-switch .bp5-switch-inner-text {
+    font-size: 18px;
+    color: white !important;
+  }
+  .goal-form .form-section-body {
+    display: flex;
+    justify-content: start;
+    gap: 10px;
+  }
+
+  .goal-form .form-section {
+    margin-bottom: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  .goal-form .form-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    gap: 5px;
+  }
+
+  .goal-form .bp5-numeric-input {
+    max-width: 75px;
+  }
+
+.goal-form .bp5-input,
+.goal-form .bp5-html-select select {
+    font-size: 15px;
+}
+
+.goal-form .form-section-header.small {
+    font-size: 15px;
+}
+
+.goal-form .form-section-header.medium {
+    font-size: 17px;
+}
+
+
+.goal-form .form-section-header.large {
+    font-size: 19px;
+}
+
+.goal-form .goal-tags {
+    display: flex;
+    justify-content: start;
+    margin-bottom: 10px;
+}
+
+.goal-form .group-switch {
+    margin-bottom: 20px;
+}
+
+.goal-form .bp5-control-indicator {
+    height: 25px;
+    padding: 4px;
+}
+
+.goal-form .goal-items {
+    height: 100%;
+    overflow-y: scroll;
+    max-height: calc(100vh - 350px);
+}
+.goal-form .goal-item-editor {
+    display: flex;
+    flex-direction: column;
+}
+.goal-form .goal-item-editor .trash-button {
+    align-self: end;
+}
+
+.goal-form .goal-task-header {
+    display: flex;
+    justify-content: space-between;    
+}
+
+.goal-form .goal-prefix,
+.goal-form .goal-suffix {
+    width: 50px;
+}
+
+.goal-form .bp5-control-indicator-child {
+    line-height: 18px;
+}

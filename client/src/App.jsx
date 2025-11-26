@@ -43,7 +43,8 @@ import Schedule from "./components/Schedule";
 import TaskDisplay from "./components/TaskDisplay";
 import GoalDisplay from "./components/GoalDisplay";
 import NewTaskForm from "./NewTaskForm";
-import GoalForm from "./GoalForm";
+import Notebook from "./components/Notebook.jsx";
+import GoalForm from "./forms/goals/GoalForm";
 import LiveTime from "./components/LiveTime";
 import PlanTemplateManager from "./components/PlanTemplateManager";
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
@@ -56,11 +57,14 @@ function App() {
   const { tasks } = useSelector((state) => state.tasks);
   const { dayplans } = useSelector((state) => state.dayplans);
   const { goals } = useSelector((state) => state.goals);
+  const [notebookText, setNotebookText] = useState("");
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const goalsWithProgress = useSelector(makeSelectGoalsWithProgress(selectedDate));
   const [taskSnapshot, setTaskSnapshot] = useState([]);
   const [rightPanelMode, setRightPanelMode] = useState("goals");
+  const [leftPanelMode, setLeftPanelMode] = useState("schedule"); // or "notebook"
+
   const [currentTemplate, setCurrentTemplate] = useState(null);
   const isMobile = useIsMobile();
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
@@ -83,7 +87,6 @@ function App() {
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const drawerRef = useRef(null);
 
-  console.log(adhocDraftMapRef);
   useEffect(() => {
     dispatch(fetchTasks());
     dispatch(fetchAllDayPlans());
@@ -122,9 +125,11 @@ function App() {
       (found.plan || []).forEach((entry) => {
         preview[entry.timeSlot] = entry.assignedTasks || [];
       });
+      setNotebookText(found.notebook || "");
       setAssignments({ actual, preview });
       setLastSavedAssignments({ actual, preview });
     } else {
+      setNotebookText("");
       setAssignments({ actual: {}, preview: {} });
       setLastSavedAssignments({ actual: {}, preview: {} });
     }
@@ -145,7 +150,6 @@ function App() {
       const cursorX = e.clientX;
 
       // Console for debugging
-      console.log("PointerX", cursorX, "Drawer right edge", rect.right);
 
       if (cursorX > rect.right + 50) {
         setShouldHideDrawer(true);
@@ -183,6 +187,71 @@ function App() {
 
     // ✅ Save to DB
     saveDayPlan(updated, "actual");
+  };
+
+  const handleCopyFromAgenda = (slot) => {
+    const agendaTasks = assignments.actual[slot] || [];
+    const planTasks = assignments.preview[slot] || [];
+
+    const planIds = new Set(planTasks.map((t) => t.assignmentId));
+    const newTasks = agendaTasks.filter((t) => !planIds.has(t.assignmentId));
+
+    const updatedPreview = {
+      ...assignments.preview,
+      [slot]: [...planTasks, ...newTasks],
+    };
+
+    const updated = {
+      ...assignments,
+      preview: updatedPreview,
+    };
+
+    setAssignments(updated);
+    saveDayPlan(updated, "preview");
+  };
+
+  const handleCopyAllToAgenda = () => {
+    const updatedActual = { ...assignments.actual };
+
+    for (const slot of timeSlots) {
+      const planTasks = assignments.preview[slot] || [];
+      const agendaTasks = assignments.actual[slot] || [];
+
+      const agendaIds = new Set(agendaTasks.map((t) => t.assignmentId));
+      const newTasks = planTasks.filter((t) => !agendaIds.has(t.assignmentId));
+
+      updatedActual[slot] = [...agendaTasks, ...newTasks];
+    }
+
+    const updated = {
+      ...assignments,
+      actual: updatedActual,
+    };
+
+    setAssignments(updated);
+    saveDayPlan(updated, "actual");
+  };
+
+  const handleCopyAllFromAgenda = () => {
+    const updatedPreview = { ...assignments.preview };
+
+    for (const slot of timeSlots) {
+      const agendaTasks = assignments.actual[slot] || [];
+      const planTasks = assignments.preview[slot] || [];
+
+      const planIds = new Set(planTasks.map((t) => t.assignmentId));
+      const newTasks = agendaTasks.filter((t) => !planIds.has(t.assignmentId));
+
+      updatedPreview[slot] = [...planTasks, ...newTasks];
+    }
+
+    const updated = {
+      ...assignments,
+      preview: updatedPreview,
+    };
+
+    setAssignments(updated);
+    saveDayPlan(updated, "preview");
   };
 
   const deletePlanTemplate = async (id) => {
@@ -260,13 +329,10 @@ function App() {
   const handleInsertAdhoc = (tempId, draftTask) => {
     const groupingUnits = findTaskByIdDeep(draftTask.parentId, taskSnapshotRef.current)?.properties?.grouping?.units || [];
     const structuredTask = buildAdhocChildFromDraft(draftTask, groupingUnits);
-    console.log("save to adhocmap");
     adhocDraftMapRef.current.set(tempId, structuredTask);
-    console.log(adhocDraftMapRef.current)
   };
 
   const insertAdhocTask = (task) => {
-    console.log("insert adhoc task: ", task);
 
     // Don't reset checkbox yet
     dispatch(addTaskOptimistic(task));
@@ -279,6 +345,24 @@ function App() {
     adhocDraftMapRef.current.delete(task.id);
   };
 
+  const saveNotebookOnly = async (text) => {
+    const existing = dayplans.find(
+      (p) => new Date(p.date).toDateString() === selectedDate.toDateString()
+    );
+
+    if (!existing) return;
+
+    const updated = { ...existing, notebook: text };
+    setNotebookText(text); // update local state
+
+    // Update in Redux/state if you want:
+    dispatch(updateDayPlan({ id: existing._id, dayPlanData: { notebook: text } }));
+
+    AppToaster.show({
+      message: "📝 Notebook saved!",
+      intent: Intent.SUCCESS,
+    });
+  };
 
   const saveDayPlan = async (assignmentsToSave, type = "actual") => {
     console.log("====saveDayPlan====");
@@ -309,39 +393,70 @@ function App() {
 
       for (const goal of goals) {
         let newEntries = [];
-
+      
+        // Clone goalItems to avoid mutating Redux state
+        const goalItems = (goal.goalItems || []).map((item) => ({
+          ...item,
+          progress: [...(item.progress || [])],
+        }));
+      
         for (const slotTasks of Object.values(assignmentsToSave[type])) {
           if (!Array.isArray(slotTasks)) continue;
-
+      
           for (const task of slotTasks) {
-            const entries = buildProgressEntriesFromTask(task, goal, date, task.assignmentId);
+            const entries = buildProgressEntriesFromTask(
+              task,
+              goalItems,
+              date,
+              task.assignmentId
+            );
             newEntries = [...newEntries, ...entries];
           }
         }
-
-        // 🧼 Determine removed assignmentIds
+      
+        // Determine removed assignmentIds
         const prevAssignments = Object.values(lastSavedAssignments[type] || {}).flat();
         const newAssignments = Object.values(assignmentsToSave[type] || {}).flat();
-
+      
         const removedAssignmentIds = prevAssignments
-          .map(t => t.assignmentId)
-          .filter(id => id && !newAssignments.some(nt => nt.assignmentId === id));
-
-        // 🧽 Filter out removed AND duplicate assignmentIds
-        const newAssignmentIds = new Set(newEntries.map(e => e.assignmentId));
-        const cleanedProgress = (goal.progress || []).filter(
-          (entry) =>
-            !removedAssignmentIds.includes(entry.assignmentId) &&
-            !newAssignmentIds.has(entry.assignmentId) // <- prevent duplicates
-        );
-
-        const updatedProgress = [...cleanedProgress, ...newEntries];
-
+          .map((t) => t.assignmentId)
+          .filter(
+            (id) => id && !newAssignments.some((nt) => nt.assignmentId === id)
+          );
+      
+        // Update each goalItem's progress individually
+        for (const item of goalItems) {
+          const key = `${goal._id || goal.tempId}__item${item.order}`;
+          const entriesToAdd = newEntries.filter((e) => e.goalItemKey === key);
+          const existing = item.progress || [];
+      
+          const newAssignmentIds = new Set(entriesToAdd.map((e) => e.assignmentId));
+          const cleaned = existing.filter(
+            (entry) =>
+              !removedAssignmentIds.includes(entry.assignmentId) &&
+              !newAssignmentIds.has(entry.assignmentId)
+          );
+      
+          item.progress = [...cleaned, ...entriesToAdd];
+        }
+      
         if (newEntries.length > 0 || removedAssignmentIds.length > 0) {
-          dispatch(updateGoalOptimistic({ id: goal._id, updates: { progress: updatedProgress } }));
-          dispatch(updateGoal({ id: goal._id, goalData: { progress: updatedProgress } }));
+          dispatch(updateGoalOptimistic({
+            id: goal._id,
+            updates: {
+              goalItems,
+            },
+          }));
+          dispatch(updateGoal({
+            id: goal._id,
+            goalData: {
+              goalItems,
+            },
+          }));
         }
       }
+      
+      
     }
     setLastSavedAssignments({
       ...lastSavedAssignments,
@@ -398,7 +513,6 @@ function App() {
       return;
     }
 
-    console.log("continued");
     const fromTaskBank = source.droppableId === "taskBank";
 
     const type = destination.droppableId.includes("preview") ? "preview" : "actual";
@@ -505,134 +619,180 @@ function App() {
         />
         <div className="main-content">
           <div className="content">
-            <div className="left-side">
-              {isMobile && (
-                <div className={"left-mobile-toolbar"}>
-                  <Button
-                    icon="menu"
-                    minimal
-                    onClick={() => setLeftDrawerOpen(true)}
-                    title="Open Task Bank"
-                  />
-                </div>
-              )}
-              <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-                {isMobile ? (
+            <div className="left-side-container">
+              <div className="left-side-header">
+                <div className="section-header">View</div>
+                <Button
+                  icon="exchange"
+                  onClick={() =>
+                    setLeftPanelMode((prev) => (prev === "schedule" ? "notebook" : "schedule"))
+                  }
+                  minimal
+                  title="Switch between Task/Schedule and Notebook"
+                />
+              </div>
+              <div className="left-side">
+                {leftPanelMode === "schedule" ? (
+                  <>
+                    {isMobile && (
+                      <div className={"left-mobile-toolbar"}>
+                        <Button
+                          icon="menu"
+                          minimal
+                          onClick={() => setLeftDrawerOpen(true)}
+                          title="Open Task Bank"
+                        />
+                      </div>
+                    )}
+                    <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+                      {isMobile ? (
 
-                  <Drawer
-                    isOpen={leftDrawerOpen}
-                    onClose={() => setLeftDrawerOpen(false)}
-                    position={Position.LEFT}
-                    title="Tasks"
-                    className={`mobile-taskbank-drawer ${shouldHideDrawer ? "soft-hide" : ""}`}
-                    hasBackdrop={!shouldHideDrawer}
-                    usePortal={false} // 👈 KEY CHANGE
-                  >
-                    <div
-                      ref={drawerRef}
-                      onPointerEnter={() => {
-                        if (isDragging) setPointerOverDrawer(true);
-                      }}
-                      onPointerLeave={() => {
-                        if (isDragging) setPointerOverDrawer(false);
-                      }}>
-                      <TaskBank
-                        tasks={tasks}
-                        draggedTaskId={draggedTaskId}
-                        onInsertAdhoc={handleInsertAdhoc}
-                        onEditTask={(task) => {
-                          setTask(task);
-                          setIsDrawerOpen(true); // edit flow keeps the task
-                        }}
-                        onNewTask={() => {
-                          setTask(null); // ← clear any previously selected task
-                          setIsDrawerOpen(true);
-                        }}
-                        onTaskUpdate={(updatedTask) => {
-                          const newSnapshot = taskSnapshotRef.current.map((t) =>
-                            t._id === updatedTask._id ? updatedTask : t
-                          );
-                          taskSnapshotRef.current = newSnapshot;
-                          setTaskSnapshot(newSnapshot);
-                        }}
-                      />
-                    </div>
-                  </Drawer>
+                        <Drawer
+                          isOpen={leftDrawerOpen}
+                          onClose={() => setLeftDrawerOpen(false)}
+                          position={Position.LEFT}
+                          title="Tasks"
+                          className={`mobile-taskbank-drawer ${shouldHideDrawer ? "soft-hide" : ""}`}
+                          hasBackdrop={!shouldHideDrawer}
+                          usePortal={false} // 👈 KEY CHANGE
+                        >
+                          <div
+                            ref={drawerRef}
+                            onPointerEnter={() => {
+                              if (isDragging) setPointerOverDrawer(true);
+                            }}
+                            onPointerLeave={() => {
+                              if (isDragging) setPointerOverDrawer(false);
+                            }}>
+                            <TaskBank
+                              tasks={tasks}
+                              draggedTaskId={draggedTaskId}
+                              onInsertAdhoc={handleInsertAdhoc}
+                              onEditTask={(task) => {
+                                setTask(task);
+                                setIsDrawerOpen(true); // edit flow keeps the task
+                              }}
+                              onNewTask={() => {
+                                setTask(null); // ← clear any previously selected task
+                                setIsDrawerOpen(true);
+                              }}
+                              onTaskUpdate={(updatedTask) => {
+                                const newSnapshot = taskSnapshotRef.current.map((t) =>
+                                  t._id === updatedTask._id ? updatedTask : t
+                                );
+                                taskSnapshotRef.current = newSnapshot;
+                                setTaskSnapshot(newSnapshot);
+                              }}
+                            />
+                          </div>
+                        </Drawer>
+                      ) : (
+                        <TaskBank
+                          tasks={tasks}
+                          draggedTaskId={draggedTaskId}
+                          onInsertAdhoc={handleInsertAdhoc}
+                          onEditTask={(task) => {
+                            setTask(task);
+                            setIsDrawerOpen(true); // edit flow keeps the task
+                          }}
+                          onNewTask={() => {
+                            setTask(null); // ← clear any previously selected task
+                            setIsDrawerOpen(true);
+                          }}
+                          onTaskUpdate={(updatedTask) => {
+                            const newSnapshot = taskSnapshotRef.current.map((t) =>
+                              t._id === updatedTask._id ? updatedTask : t
+                            );
+                            taskSnapshotRef.current = newSnapshot;
+                            setTaskSnapshot(newSnapshot);
+                          }}
+                        />
+                      )}
+                      <div className="schedule-container dual">
+                        <div className="time-header">
+                          <div className="selected-date">
+                            <DatePickerPopover
+                              selectedDate={selectedDate}
+                              setSelectedDate={setSelectedDate}
+                            />
+                          </div>
+                          <div className="current-time">
+                            <LiveTime />
+                          </div>
+                          <div className="time-divider" />
+                        </div>
+                        <div className="schedule-header">
+                          <div className="plan-header-container">
+                            <PlanTemplateManager
+                              assignments={assignments.preview}
+                              setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                              allDayPlans={dayplans.filter(dp => !dp.date && dp.name)}
+                              savePlanTemplate={saveNamedPlanTemplate}
+                              updatePlanTemplate={updateNamedPlanTemplate}
+                              currentTemplate={currentTemplate}
+                              deletePlanTemplate={deletePlanTemplate}
+                              setCurrentTemplate={setCurrentTemplate}
+                              saveAssignments={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                            />
+
+                            <div className="plan-header">
+                              <div>Plan</div>
+                              <Button
+                                icon="arrow-right"
+                                className="timeslot-button"
+                                minimal
+                                small
+                                title="Copy entire Plan → Live"
+                                onClick={handleCopyAllToAgenda} // ✅ Plan ➡️ Live
+                              />
+                            </div>
+                          </div>
+                          <div className="agenda-header">
+                            <Button
+                              icon="arrow-left"
+                              className="timeslot-button"
+                              minimal
+                              small
+                              title="Copy entire Live → Plan"
+                              onClick={handleCopyAllFromAgenda} // ✅ Live ➡️ Plan
+                            />
+                            <div>Live</div>
+                          </div>
+                        </div>
+                        <div className="schedules-scroll-wrapper">
+                          <Schedule
+                            disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
+                            label="Plan"
+                            onCopyToAgenda={handleCopyToAgenda}
+                            timeSlots={timeSlots}
+                            assignments={assignments.preview}
+                            setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                            setPlanDirty={setPlanDirty}
+                            onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                          />
+                          <Schedule
+                            disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
+                            label="Live"
+                            onCopyFromAgenda={handleCopyFromAgenda} // ✅
+                            timeSlots={timeSlots}
+                            assignments={assignments.actual}
+                            setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
+                            setPlanDirty={setPlanDirty}
+                            onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
+                          />
+                        </div>
+                      </div>
+                    </DragDropContext>
+                  </>
                 ) : (
-                  <TaskBank
-                    tasks={tasks}
-                    draggedTaskId={draggedTaskId}
-                    onInsertAdhoc={handleInsertAdhoc}
-                    onEditTask={(task) => {
-                      setTask(task);
-                      setIsDrawerOpen(true); // edit flow keeps the task
-                    }}
-                    onNewTask={() => {
-                      setTask(null); // ← clear any previously selected task
-                      setIsDrawerOpen(true);
-                    }}
-                    onTaskUpdate={(updatedTask) => {
-                      const newSnapshot = taskSnapshotRef.current.map((t) =>
-                        t._id === updatedTask._id ? updatedTask : t
-                      );
-                      taskSnapshotRef.current = newSnapshot;
-                      setTaskSnapshot(newSnapshot);
-                    }}
+                  <Notebook
+                    selectedDate={selectedDate}
+                    initialText={notebookText}
+                    onSave={saveNotebookOnly}
+                    onDelete={() => saveNotebookOnly("")}
                   />
                 )}
-                <div className="schedule-container dual">
-                  <div className="time-header">
-                    <div className="selected-date">
-                      <DatePickerPopover
-                        selectedDate={selectedDate}
-                        setSelectedDate={setSelectedDate}
-                      />
-                    </div>
-                    <div className="current-time">
-                      <LiveTime />
-                    </div>
-                    <div className="time-divider" />
-                  </div>
-                  <div className="schedule-header">
-                    <div className="plan-header">
-                      <PlanTemplateManager
-                        assignments={assignments.preview}
-                        setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
-                        allDayPlans={dayplans.filter(dp => !dp.date && dp.name)}
-                        savePlanTemplate={saveNamedPlanTemplate}
-                        updatePlanTemplate={updateNamedPlanTemplate}
-                        currentTemplate={currentTemplate}
-                        deletePlanTemplate={deletePlanTemplate}
-                        setCurrentTemplate={setCurrentTemplate}
-                      />
-
-                      <div>Plan</div>
-                    </div>
-                    <div className="agenda-header">Live</div>
-                  </div>
-                  <div className="schedules-scroll-wrapper">
-                    <Schedule
-                      disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
-                      label="Plan"
-                      onCopyToAgenda={handleCopyToAgenda}
-                      timeSlots={timeSlots}
-                      assignments={assignments.preview}
-                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
-                      setPlanDirty={setPlanDirty}
-                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
-                    />
-                    <Schedule
-                      disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
-                      label="Live"
-                      timeSlots={timeSlots}
-                      assignments={assignments.actual}
-                      setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
-                      setPlanDirty={setPlanDirty}
-                      onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
-                    />
-                  </div>
-                </div>
-              </DragDropContext>
+              </div>
             </div>
             <div className="right-side">
               {isMobile && (

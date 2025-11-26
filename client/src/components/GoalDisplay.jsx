@@ -5,7 +5,7 @@ import { Button } from "@blueprintjs/core";
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import GoalItem from "./GoalItem";
+import GoalCard from "./GoalCard";
 import { reorderGoalsOptimistic, bulkReorderGoals } from "../store/goalSlice";
 const SortableGoal = ({ goal, onEditGoal }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: goal._id || goal.tempId });
@@ -17,7 +17,7 @@ const SortableGoal = ({ goal, onEditGoal }) => {
 
   return (
     <div ref={setNodeRef} style={style} className="goal-item-container">
-      <GoalItem
+      <GoalCard
         goal={goal}
         onEdit={onEditGoal}
         dragAttributes={attributes}

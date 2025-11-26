@@ -20,13 +20,14 @@ export function formatValueWithAffixes(prefix = "", value, type = "string", suff
   if (value === null || typeof value === "undefined") return "";
 
   let formattedValue;
-
+  
   switch (type) {
     case "integer":
       formattedValue = parseInt(value, 10);
       if (isNaN(formattedValue)) return "";
       break;
     case "float":
+    case "currency":
       formattedValue = parseFloat(value).toFixed(2);
       if (isNaN(formattedValue)) return "";
       break;
