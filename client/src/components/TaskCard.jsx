@@ -14,35 +14,50 @@ import {
   HTMLSelect,
   EditableText
 } from "@blueprintjs/core";
-import { Draggable } from "react-beautiful-dnd";
 import { useDispatch } from "react-redux";
-import { createTask, addTaskOptimistic, updateTaskOptimistic } from "../store/tasksSlice";
-import { getSelectedLeaves, sanitizeInputValues, formatValueWithAffixes, getAncestorGroupingUnits, findTaskByIdDeep } from "../helpers/taskUtils";
+import {
+  createTask,
+  addTaskOptimistic,
+  updateTaskOptimistic
+} from "../store/tasksSlice";
+import {
+  getSelectedLeaves,
+  sanitizeInputValues,
+  formatValueWithAffixes,
+  getAncestorGroupingUnits,
+  findTaskByIdDeep
+} from "../helpers/taskUtils";
 import TaskIcon from "./TaskIcon";
 import EmojiIconPicker from "./EmojiIconPicker";
 
-const TaskCard = ({
-  task,
-  index,
-  onEditTask,
-  onTaskUpdate,
-  onInsertAdhoc,
-  draggedTaskId,
-  preview = false,
-}) => {
+const TaskCard = React.forwardRef((props, ref) => {
+  const {
+    task,
+    index,
+    onEditTask,
+    onTaskUpdate,
+    onInsertAdhoc,
+    draggedTaskId,
+    preview = false,
+  } = props;
   if (!task) return null;
   const dispatch = useDispatch();
   const taskStateRef = useRef(task);
+
+  // -----------------------------
+
   const [isOpen, setIsOpen] = useState(false);
   const [newPresetDraft, setNewPresetDraft] = useState({});
-  const [draftSessionId, setDraftSessionId] = useState(null); // new
-
+  const [draftSessionId, setDraftSessionId] = useState(null);
   const [localTask, setLocalTask] = useState(task);
+
   const toggleCollapse = () => setIsOpen(!isOpen);
+
   useEffect(() => {
     setLocalTask(task);
-    taskStateRef.current = task; // ✅ keep ref updated with latest task prop
+    taskStateRef.current = task;
   }, [task]);
+
   useEffect(() => {
     if (!onInsertAdhoc) return;
     if (isDraftEmpty(newPresetDraft)) return;
@@ -54,25 +69,32 @@ const TaskCard = ({
     if (draggedTaskId === myId) {
       setIsOpen(false);
       setNewPresetDraft({});
-      setDraftSessionId(null); // 🧹 reset the session ID
+      setDraftSessionId(null);
     }
   }, [draggedTaskId]);
+
   function isDraftEmpty(draft) {
-    return !draft.name &&
+    return (
+      !draft.name &&
       !draft.checkbox &&
       !Object.entries(draft).some(([key, val]) => {
-        if (["name", "checkbox", "tempId", "parentId", "inserted"].includes(key)) return false;
+        if (
+          ["name", "checkbox", "tempId", "parentId", "inserted"].includes(key)
+        )
+          return false;
         if (typeof val === "object") return val?.value || val?.flow;
         return !!val;
-      });
+      })
+    );
   }
+
   const updateChildValue = (childrenArray, childId, key, newValue) => {
     return childrenArray.map((child) => {
       const childKey = child._id || child.tempId || child.id;
       if (childKey?.toString() === childId?.toString()) {
         const updatedValues = { ...(child.values || {}), [key]: newValue };
         return { ...child, values: updatedValues };
-      } else if (child.children && child.children.length > 0) {
+      } else if (child.children?.length > 0) {
         return {
           ...child,
           children: updateChildValue(child.children, childId, key, newValue),
@@ -98,31 +120,30 @@ const TaskCard = ({
   };
 
   const handleNewPresetChange = (key, value, parentId) => {
-    // 🆕 If no draft ID yet, create a new session ID
-    const tempId = draftSessionId || `adhoc_${task._id}_${parentId}_${Date.now()}`;
+    const tempId =
+      draftSessionId || `adhoc_${task._id}_${parentId}_${Date.now()}`;
 
-    // Set session ID only once per draft session
     if (!draftSessionId) setDraftSessionId(tempId);
 
-    // Update the draft
     if (key === "name") {
-      setNewPresetDraft(prev => ({
+      setNewPresetDraft((prev) => ({
         ...prev,
         name: value,
         parentId,
         tempId,
       }));
     } else {
-      setNewPresetDraft(prev => ({
+      setNewPresetDraft((prev) => ({
         ...prev,
         [key]: value,
         parentId,
         tempId,
       }));
     }
-    // Update taskStateRef to reflect input live
+
     const children = taskStateRef.current.children || [];
-    const targetIndex = children.findIndex(c => c.tempId === tempId);
+    const targetIndex = children.findIndex((c) => c.tempId === tempId);
+
     if (targetIndex !== -1) {
       const target = { ...children[targetIndex] };
       target.values = {
@@ -149,12 +170,13 @@ const TaskCard = ({
 
     const input = {};
 
-    groupingUnits.forEach(unit => {
-      if (unit.key === "name") return; // ❗ Prevent name collisions
+    groupingUnits.forEach((unit) => {
+      if (unit.key === "name") return;
 
-      input[unit.key] = draft[unit.key] ?? (
-        unit.type === "text" ? "" : { value: 0, flow: "in" }
-      );
+      input[unit.key] =
+        draft[unit.key] ??
+        (unit.type === "text" ? "" : { value: 0, flow: "in" });
+
       if (typeof draft[unit.key] === "object") {
         input[unit.key] = {
           ...input[unit.key],
@@ -162,7 +184,6 @@ const TaskCard = ({
         };
       }
     });
-
 
     return {
       id: draft.tempId,
@@ -176,11 +197,11 @@ const TaskCard = ({
         input: true,
         card: false,
         category: false,
-        adhoc: true, // ✅ new
+        adhoc: true,
       },
       values: {
         checkbox: draft.checkbox || false,
-        input // ✅ Only includes unit keys now
+        input,
       },
       children: [],
       goals: [],
@@ -188,16 +209,23 @@ const TaskCard = ({
     };
   };
 
-
   const saveNewPreset = () => {
     if (!newPresetDraft.name) return;
-    const tempId = newPresetDraft.tempId || `preset_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
 
-    const presetTask = buildAdhocChildFromDraft({ ...newPresetDraft, checkbox: false, tempId });
+    const tempId =
+      newPresetDraft.tempId ||
+      `preset_${task._id}_${newPresetDraft.parentId}_${Date.now()}`;
+
+    const presetTask = buildAdhocChildFromDraft({
+      ...newPresetDraft,
+      checkbox: false,
+      tempId,
+    });
+
     if (!presetTask) return;
+
     dispatch(addTaskOptimistic(presetTask));
     dispatch(createTask(presetTask));
-
     setNewPresetDraft({});
   };
 
@@ -208,8 +236,10 @@ const TaskCard = ({
       .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0))
       .map((child) => {
         const childKey = child._id || child.tempId || child.id;
-
-        const groupingUnits = getAncestorGroupingUnits([taskStateRef.current], childKey); // ← No need to pass down
+        const groupingUnits = getAncestorGroupingUnits(
+          [taskStateRef.current],
+          childKey
+        );
 
         if (child.properties?.category) {
           return (
@@ -218,9 +248,13 @@ const TaskCard = ({
                 <TaskIcon icon={child.properties?.icon} />
                 <Tag minimal>{child.name}</Tag>
               </div>
-              {(child.children?.length > 0) && (
+              {child.children?.length > 0 && (
                 <Collapse isOpen keepChildrenMounted>
-                  <div className={`category-collapse ${groupingUnits.length > 0 ? "grouped-category" : ""}`}>
+                  <div
+                    className={`category-collapse ${
+                      groupingUnits.length > 0 ? "grouped-category" : ""
+                    }`}
+                  >
                     {renderChildren(child.children, child._id)}
                   </div>
                 </Collapse>
@@ -228,6 +262,116 @@ const TaskCard = ({
             </div>
           );
         }
+
+        const fieldMap = groupingUnits.map((unit) => {
+          if (unit.key === "name") return null;
+
+          const field = child.values?.input?.[unit.key];
+          const value =
+            typeof field === "object" ? field.value ?? "" : field;
+          const flow = typeof field === "object" ? field.flow : "in";
+          const isDynamic =
+            typeof field === "object" && field.dynamic === true;
+
+          return (
+            <div key={`${childKey}-${unit.key}`} className="preset-input">
+              <Tag minimal className="unit-label-tag">
+                <TaskIcon icon={unit.icon} />
+                {unit.key}:
+              </Tag>
+
+              {isDynamic && Boolean(child.name) ? (
+                unit.type === "text" ? (
+                  <>
+                    <EditableText
+                      placeholder={unit.label}
+                      value={value || ""}
+                      onChange={(value) =>
+                        handleChildChange(childKey, "input", {
+                          ...child.values?.input,
+                          [unit.key]: value,
+                        })
+                      }
+                      selectAllOnFocus
+                      confirmOnEnterKey={false}
+                    />
+                    <HTMLSelect
+                      className="flow-select"
+                      value={flow || "in"}
+                      onChange={(e) =>
+                        handleChildChange(childKey, "input", {
+                          ...child.values?.input,
+                          [unit.key]: e.target.value,
+                        })
+                      }
+                      options={[
+                        { label: "➕ Append", value: "in" },
+                        { label: "➖ Retract", value: "out" },
+                        { label: "🔁 Replace", value: "replace" },
+                      ]}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="numeric-input">
+                      {unit.prefix && <Tag minimal>{unit.prefix}</Tag>}
+                      <NumericInput
+                        fill
+                        value={value || 0}
+                        onValueChange={(num) =>
+                          handleChildChange(childKey, "input", {
+                            ...child.values?.input,
+                            [unit.key]: {
+                              value: num,
+                              flow,
+                              dynamic: true,
+                            },
+                          })
+                        }
+                        buttonPosition="none"
+                      />
+                      {unit.suffix && <Tag minimal>{unit.suffix}</Tag>}
+                    </div>
+                    <HTMLSelect
+                      className="flow-select"
+                      value={flow || "in"}
+                      onChange={(e) =>
+                        handleChildChange(childKey, "input", {
+                          ...child.values?.input,
+                          [unit.key]: {
+                            ...child.values?.input?.[unit.key],
+                            flow: e.target.value,
+                          },
+                        })
+                      }
+                      options={[
+                        { label: "➕ In", value: "in" },
+                        { label: "➖ Out", value: "out" },
+                        { label: "🔁 Replace", value: "replace" },
+                      ]}
+                    />
+                  </>
+                )
+              ) : (
+                <div
+                  className={`unit-value ${
+                    flow === "in" ? "increased_value" : "decreased_value"
+                  }`}
+                >
+                  {unit.type === "text"
+                    ? value
+                    : `${formatValueWithAffixes(
+                        unit.prefix,
+                        Number(value) || 0,
+                        unit.type,
+                        unit.suffix
+                      )}`}
+                </div>
+              )}
+            </div>
+          );
+        });
+
         return (
           <Tag
             key={childKey}
@@ -250,16 +394,18 @@ const TaskCard = ({
                 {child.name}
               </div>
             </div>
-            {/* 👇 Fallback for simple input tasks (not grouped or category) */}
+
             {child.properties?.input &&
               !child.properties?.group &&
               !child.properties?.category && (
                 <>
                   <EditableText
                     placeholder="Enter value..."
-                    value={typeof child.values.input === "object"
-                      ? JSON.stringify(child.values.input)
-                      : child.values.input}
+                    value={
+                      typeof child.values.input === "object"
+                        ? JSON.stringify(child.values.input)
+                        : child.values.input
+                    }
                     onChange={(value) =>
                       handleChildChange(childKey, "input", value)
                     }
@@ -281,124 +427,16 @@ const TaskCard = ({
                   />
                 </>
               )}
-            {groupingUnits.length > 0 &&
-              <div className="preset-inputs">
-                {groupingUnits.map((unit) => {
-                  if (unit.key === "name") return null;
 
-                  const field = child.values?.input?.[unit.key];
-                  const value = typeof field === "object" ? (field.value ?? "") : field;
-                  const flow = typeof field === "object" ? field.flow : "in";
-                  const isDynamic = typeof field === "object" && field.dynamic === true;
-
-                  return (
-
-                    <div
-                      key={`${childKey}-${unit.key}`}
-                      className="preset-input"
-                    >
-                      {/* Always show icon + label */}
-                      <Tag minimal className="unit-label-tag">
-                        <TaskIcon icon={unit.icon} />
-                        {unit.key}:
-                      </Tag>
-
-                      {/* Dynamic input mode */}
-                      {isDynamic && Boolean(child.name) ? (
-                        unit.type === "text" ? (
-                          <>
-                            <EditableText
-                              placeholder={unit.label}
-                              value={value || ""}
-                              onChange={(value) =>
-                                handleChildChange(childKey, "input", {
-                                  ...child.values?.input,
-                                  [unit.key]: value,
-                                })
-                              }
-                              selectAllOnFocus
-                              confirmOnEnterKey={false}
-                            />
-                            <HTMLSelect
-                              className="flow-select"
-                              value={flow || "in"}
-                              onChange={(e) =>
-                                handleChildChange(childKey, "input", {
-                                  ...child.values?.input,
-                                  [unit.key]: e.target.value,
-                                })
-                              }
-                              options={[
-                                { label: "➕ Append", value: "in" },
-                                { label: "➖ Retract", value: "out" },
-                                { label: "🔁 Replace", value: "replace" },
-                              ]}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <div className="numeric-input">
-                              {unit.prefix && <Tag minimal>{unit.prefix}</Tag>}
-                              <NumericInput
-                                fill
-                                value={value || 0}
-                                onValueChange={(num) =>
-                                  handleChildChange(childKey, "input", {
-                                    ...child.values?.input,
-                                    [unit.key]: {
-                                      value: num,
-                                      flow,
-                                      dynamic: true,
-                                    },
-                                  })
-                                }
-                                buttonPosition="none"
-                              />
-                              {unit.suffix && <Tag minimal>{unit.suffix}</Tag>}
-                            </div>
-                            <HTMLSelect
-                              className="flow-select"
-                              value={flow || "in"}
-                              onChange={(e) =>
-                                handleChildChange(childKey, "input", {
-                                  ...child.values?.input,
-                                  [unit.key]: {
-                                    ...child.values?.input?.[unit.key],
-                                    flow: e.target.value,
-                                  },
-                                })
-                              }
-                              options={[
-                                { label: "➕ In", value: "in" },
-                                { label: "➖ Out", value: "out" },
-                                { label: "🔁 Replace", value: "replace" },
-                              ]}
-                            />
-                          </>
-                        )
-                      ) : (
-                        // Static tag view
-                        <div
-                          className={`unit-value ${flow === "in" ? "increased_value" : "decreased_value"
-                            }`}
-                        >
-                          {unit.type === "text" ? value : `${formatValueWithAffixes(unit.prefix, Number(value) || 0, unit.type, unit.suffix)}`}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-            }
+            {groupingUnits.length > 0 && (
+              <div className="preset-inputs">{fieldMap}</div>
+            )}
           </Tag>
         );
-
       });
 
     const parent = findTaskByIdDeep(parentId, [taskStateRef.current]);
     const groupingUnits = parent?.properties?.grouping?.units;
-    // ← No need to pass down
 
     if (groupingUnits?.length > 0) {
       rendered.push(
@@ -419,13 +457,14 @@ const TaskCard = ({
               />
               <EditableText
                 value={newPresetDraft.name || ""}
-                onChange={(val) => {
-                  handleNewPresetChange("name", val, parentId);
-                }}
+                onChange={(val) =>
+                  handleNewPresetChange("name", val, parentId)
+                }
                 selectAllOnFocus={true}
                 confirmOnEnterKey={true}
               />
             </div>
+
             <div className="preset-save-container">
               <Button
                 icon="floppy-disk"
@@ -436,29 +475,33 @@ const TaskCard = ({
               />
             </div>
           </div>
+
           <div className="preset-inputs">
             {groupingUnits.map((unit) => {
               if (unit.key === "name") return null;
 
               return (
-                <div
-                  key={`new-${unit.key}`}
-                  className="preset-input"
-                >
+                <div key={`new-${unit.key}`} className="preset-input">
                   <Tag minimal intent="primary">
                     <TaskIcon icon={unit.icon} />
                     {unit.key}
                   </Tag>
+
                   {unit.type === "text" ? (
                     <>
                       <EditableText
                         value={newPresetDraft[unit.key] || ""}
                         onChange={(value) =>
-                          handleNewPresetChange(unit.key, value, parentId)
+                          handleNewPresetChange(
+                            unit.key,
+                            value,
+                            parentId
+                          )
                         }
                         selectAllOnFocus
                         confirmOnEnterKey={false}
                       />
+
                       <HTMLSelect
                         className="flow-select"
                         value={newPresetDraft[unit.key]?.flow || "in"}
@@ -466,7 +509,8 @@ const TaskCard = ({
                           handleNewPresetChange(
                             unit.key,
                             {
-                              value: newPresetDraft[unit.key]?.value || 0,
+                              value:
+                                newPresetDraft[unit.key]?.value || 0,
                               flow: e.target.value,
                             },
                             parentId
@@ -482,20 +526,41 @@ const TaskCard = ({
                   ) : (
                     <>
                       <div className="numeric-input">
-                        {unit.prefix && <Tag className="prefix-tag" minimal>{unit.prefix}</Tag>}
+                        {unit.prefix && (
+                          <Tag className="prefix-tag" minimal>
+                            {unit.prefix}
+                          </Tag>
+                        )}
+
                         <NumericInput
                           fill
-                          value={Number(newPresetDraft[unit.key]?.value) || 0}
+                          value={
+                            Number(
+                              newPresetDraft[unit.key]?.value
+                            ) || 0
+                          }
                           onValueChange={(num) =>
-                            handleNewPresetChange(unit.key, {
-                              value: num,
-                              flow: newPresetDraft[unit.key]?.flow || "in",
-                            }, parentId)
+                            handleNewPresetChange(
+                              unit.key,
+                              {
+                                value: num,
+                                flow:
+                                  newPresetDraft[unit.key]?.flow ||
+                                  "in",
+                              },
+                              parentId
+                            )
                           }
                           buttonPosition="none"
                         />
-                        {unit.suffix && <Tag className="suffix-tag" minimal>{unit.suffix}</Tag>}
+
+                        {unit.suffix && (
+                          <Tag className="suffix-tag" minimal>
+                            {unit.suffix}
+                          </Tag>
+                        )}
                       </div>
+
                       <HTMLSelect
                         className="flow-select"
                         value={newPresetDraft[unit.key]?.flow || "in"}
@@ -503,7 +568,8 @@ const TaskCard = ({
                           handleNewPresetChange(
                             unit.key,
                             {
-                              value: newPresetDraft[unit.key]?.value || 0,
+                              value:
+                                newPresetDraft[unit.key]?.value || 0,
                               flow: e.target.value,
                             },
                             parentId
@@ -515,11 +581,10 @@ const TaskCard = ({
                           { label: "🔁 Replace", value: "replace" },
                         ]}
                       />
-
                     </>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -531,94 +596,89 @@ const TaskCard = ({
     return rendered;
   };
 
-  const taskId =
-    (task._id || task.tempId || task.id || "unknown-task").toString();
-  const selectedLeaves = getSelectedLeaves(localTask).filter((leaf) => leaf._id !== localTask._id); // exclude fallback parent;
+  const selectedLeaves = getSelectedLeaves(localTask).filter(
+    (leaf) => leaf._id !== localTask._id
+  );
 
+  // ----------------------------------------------------------
+  // 🔥 FINAL JSX — dnd-kit version (no Draggable component)
+  // ----------------------------------------------------------
 
   return (
-    <Draggable draggableId={taskId} index={index}>
-      {(provided, snapshot) => (
-        <Card
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          className={`task-card${preview ? " preview" : ""}${snapshot.isDragging ? " dragging" : ""}`}
-          style={{
-            ...provided.draggableProps.style,
-            opacity: snapshot.isDragging ? 0.5 : 1,
-          }}
-        >
-          <div className="task-header">
-            <div className="task-header-left">
-              {task.children?.length > 0 ? (
-                <Button
-                  icon={isOpen ? "caret-down" : "caret-right"}
-                  onClick={toggleCollapse}
-                  className={"collapse-button"}
-                  minimal
-                >  <div className="task-name">
-                    <TaskIcon icon={task.properties.icon} />{task.name}
-                  </div>
-                </Button>
-              ) : (
-                <>
-                  <Icon icon="dot" />
-                  <div className="task-name">
-                    <TaskIcon icon={task.properties.icon} />{task.name}
-                  </div>
-                </>
-              )}
-            </div>
-            {selectedLeaves.length > 0 && (
-              <div className="taskcard-leaf-preview">
-                {selectedLeaves.map((leaf) => (
-                  <Tag
-                    key={leaf._id || leaf.tempId || leaf.id}
-                    className="leaf-chip"
-                    minimal
-                    intent="success"
-                    icon="tick"
-                  >
-                    {leaf.name}
-                  </Tag>
-                ))}
-              </div>
-            )}
-              {!preview && (
-                <Button
-                  icon="cog"
-                  className="edit-task-button"
-                  minimal
-                  onClick={() => {
-                    onEditTask(task);
-                  }}
-                />
-              )}
-            <div className="task-header-right">
-              <Icon
-                icon="horizontal-inbetween"
-                className="drag-icon"
-                {...provided.dragHandleProps} // ✅ Apply drag handle only here
-              />
-            </div>
-          </div>
-
-          {task.children?.length > 0 && (
-            <Collapse
-              className="task-children-collapse"
-              isOpen={isOpen}
-              keepChildrenMounted
+    <Card
+      ref={ref}
+className={`task-card${preview ? " preview" : ""}`}
+    >
+      <div className="task-header">
+        <div className="task-header-left">
+          {task.children?.length > 0 ? (
+            <Button
+              icon={isOpen ? "caret-down" : "caret-right"}
+              onClick={toggleCollapse}
+              className={"collapse-button"}
+              minimal
             >
-              <div className="task-children">
-                {renderChildren(
-                  taskStateRef.current.children || [],
-                  task._id)}
+              <div className="task-name">
+                <TaskIcon icon={task.properties.icon} />
+                {task.name}
               </div>
-            </Collapse>
+            </Button>
+          ) : (
+            <>
+              <Icon icon="dot" />
+              <div className="task-name">
+                <TaskIcon icon={task.properties.icon} />
+                {task.name}
+              </div>
+            </>
           )}
-        </Card>
+        </div>
+
+        {selectedLeaves.length > 0 && (
+          <div className="taskcard-leaf-preview">
+            {selectedLeaves.map((leaf) => (
+              <Tag
+                key={leaf._id || leaf.tempId || leaf.id}
+                className="leaf-chip"
+                minimal
+                intent="success"
+                icon="tick"
+              >
+                {leaf.name}
+              </Tag>
+            ))}
+          </div>
+        )}
+
+        {!preview && (
+          <Button
+            icon="cog"
+            className="edit-task-button"
+            minimal
+            onClick={() => {
+              onEditTask(task);
+            }}
+          />
+        )}
+
+        <div className="task-header-right">
+        {props.dragHandle}
+        </div>
+      </div>
+
+      {task.children?.length > 0 && (
+        <Collapse
+          className="task-children-collapse"
+          isOpen={isOpen}
+          keepChildrenMounted
+        >
+          <div className="task-children">
+            {renderChildren(taskStateRef.current.children || [], task._id)}
+          </div>
+        </Collapse>
       )}
-    </Draggable>
+    </Card>
   );
-}
+});
+
 export default TaskCard;

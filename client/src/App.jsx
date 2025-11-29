@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { DragDropContext } from "react-beautiful-dnd";
 import { DateTime } from "luxon";
 import { Button, Drawer, DrawerSize, Position, Toaster, Intent } from "@blueprintjs/core";
 import "./App.css";
@@ -8,6 +7,7 @@ import { TimeProvider } from "./context/TimeProvider";
 import { buildScheduleAssignmentsFromTask, countTasks, filterByTaskAndUnit, findTaskByIdDeep, countValues, insertTaskById, sanitizeInputValues } from './helpers/taskUtils.js';
 import { buildProgressEntriesFromTask } from "./helpers/goalUtils";
 import useIsMobile from "./helpers/useIsMobile.js";
+import TaskCard from "./components/TaskCard.jsx";
 import {
   fetchTasks,
   deleteTask,
@@ -50,6 +50,15 @@ import PlanTemplateManager from "./components/PlanTemplateManager";
 import { makeSelectGoalsWithProgress } from "./selectors/goalSelectors";
 import DatePickerPopover from "./components/DatePickerPopover.jsx";
 
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+
 export const AppToaster = Toaster.create({ position: Position.BOTTOM_RIGHT });
 
 function App() {
@@ -86,6 +95,10 @@ function App() {
   const [planDirty, setPlanDirty] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const drawerRef = useRef(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   useEffect(() => {
     dispatch(fetchTasks());
@@ -393,16 +406,16 @@ function App() {
 
       for (const goal of goals) {
         let newEntries = [];
-      
+
         // Clone goalItems to avoid mutating Redux state
         const goalItems = (goal.goalItems || []).map((item) => ({
           ...item,
           progress: [...(item.progress || [])],
         }));
-      
+
         for (const slotTasks of Object.values(assignmentsToSave[type])) {
           if (!Array.isArray(slotTasks)) continue;
-      
+
           for (const task of slotTasks) {
             const entries = buildProgressEntriesFromTask(
               task,
@@ -413,33 +426,33 @@ function App() {
             newEntries = [...newEntries, ...entries];
           }
         }
-      
+
         // Determine removed assignmentIds
         const prevAssignments = Object.values(lastSavedAssignments[type] || {}).flat();
         const newAssignments = Object.values(assignmentsToSave[type] || {}).flat();
-      
+
         const removedAssignmentIds = prevAssignments
           .map((t) => t.assignmentId)
           .filter(
             (id) => id && !newAssignments.some((nt) => nt.assignmentId === id)
           );
-      
+
         // Update each goalItem's progress individually
         for (const item of goalItems) {
           const key = `${goal._id || goal.tempId}__item${item.order}`;
           const entriesToAdd = newEntries.filter((e) => e.goalItemKey === key);
           const existing = item.progress || [];
-      
+
           const newAssignmentIds = new Set(entriesToAdd.map((e) => e.assignmentId));
           const cleaned = existing.filter(
             (entry) =>
               !removedAssignmentIds.includes(entry.assignmentId) &&
               !newAssignmentIds.has(entry.assignmentId)
           );
-      
+
           item.progress = [...cleaned, ...entriesToAdd];
         }
-      
+
         if (newEntries.length > 0 || removedAssignmentIds.length > 0) {
           dispatch(updateGoalOptimistic({
             id: goal._id,
@@ -455,8 +468,8 @@ function App() {
           }));
         }
       }
-      
-      
+
+
     }
     setLastSavedAssignments({
       ...lastSavedAssignments,
@@ -475,110 +488,139 @@ function App() {
     });
   };
 
-  const onDragEnd = (result) => {
-    console.log("====onDragEnd====");
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+
     setDraggedTaskId(null);
 
-    const { source, destination, draggableId } = result;
-    if (!destination || !source) return;
-    console.log(result);
-    // ✅ If reordering inside task bank
-    if (source.droppableId === "taskBank" && destination.droppableId === "taskBank") {
-      const taskBankTasks = taskSnapshotRef.current
-        .filter((task) => task.properties?.card)
-        .sort((a, b) => (a.properties?.order ?? 0) - (b.properties?.order ?? 0));
+    if (!over) return;  // dropped outside anything
 
-      const [moved] = taskBankTasks.splice(source.index, 1);
-      taskBankTasks.splice(destination.index, 0, moved);
+    const activeId = active.id;
+    const overId = over.id;
 
-      const reordered = taskBankTasks.map((task, index) => ({
+    const activeData = active.data?.current || {};
+    const sourceContainer = activeData.container;
+    const sourceIndex = activeData.index;
+
+    console.log("active:", active);
+    console.log("activeData:", activeData);
+    console.log("over:", over);
+    console.log("sourceContainer:", sourceContainer);
+    console.log("overId:", overId);
+
+
+    const taskBankItems = taskSnapshotRef.current
+      .filter(t => t.properties?.card)
+      .map(t => t._id || t.tempId);
+
+    const isFromTaskBank = taskBankItems.includes(active.id);
+    const isOverTaskBank = over && taskBankItems.includes(over.id);
+    // ===============================
+    // 1️⃣ REORDER TASK BANK
+    // ===============================
+    if (isFromTaskBank && isOverTaskBank) {
+      const oldIndex = active.data.current.sortable.index;
+      const newIndex = over.data.current.sortable.index;
+
+      const bankTasks = taskSnapshotRef.current
+        .filter(t => t.properties?.card)
+        .sort((a, b) => (a.properties.order ?? 0) - (b.properties.order ?? 0));
+
+      const [moved] = bankTasks.splice(oldIndex, 1);
+      bankTasks.splice(newIndex, 0, moved);
+
+      const reordered = bankTasks.map((task, idx) => ({
         ...task,
-        properties: {
-          ...task.properties,
-          order: index,
-        },
+        properties: { ...task.properties, order: idx }
       }));
 
-      const updatedSnapshot = taskSnapshotRef.current.map((task) => {
-        const updated = reordered.find((t) => (t._id || t.tempId) === (task._id || task.tempId));
-        return updated || task;
+      dispatch(reorderTasksOptimistic(reordered));
+      dispatch(bulkReorderTasks(reordered));
+
+      // update snapshot
+      const updatedSnapshot = taskSnapshotRef.current.map(t => {
+        const match = reordered.find(r => (r._id || r.tempId) === (t._id || t.tempId));
+        return match || t;
       });
 
       taskSnapshotRef.current = updatedSnapshot;
       setTaskSnapshot(updatedSnapshot);
 
-      dispatch(reorderTasksOptimistic(reordered)); // ✅ Optimistic update
-      dispatch(bulkReorderTasks(reordered));       // ✅ Server save
-
       return;
     }
 
-    const fromTaskBank = source.droppableId === "taskBank";
+    // ===============================
+    // 2️⃣ DROPPING INTO A SCHEDULE SLOT
+    // ===============================
+    const isScheduleDrop =
+      overId.includes("preview_") || overId.includes("actual_");
 
-    const type = destination.droppableId.includes("preview") ? "preview" : "actual";
-    const slotKey = destination.droppableId.replace("preview_", "").replace("actual_", "");
+    if (!isScheduleDrop) return;
+
+    const targetType = overId.includes("preview") ? "preview" : "actual";
+    const slotKey = overId.replace("preview_", "").replace("actual_", "");
+
+    console.log("Dropping into schedule →", targetType, slotKey);
+
     const updated = { ...assignments };
-    const destSlot = updated[type][slotKey] || [];
+    const destSlot = updated[targetType][slotKey] || [];
 
-    if (fromTaskBank) {
-      let taskFromBank = findTaskByIdDeep(draggableId, taskSnapshotRef.current);
+    // -------------------------------
+    // Pull task from TaskBank
+    // -------------------------------
+    if (isFromTaskBank) {
+      let taskFromBank = findTaskByIdDeep(activeId, taskSnapshotRef.current);
 
+      // Handle adhoc presets
       if (taskFromBank && adhocDraftMapRef.current.size > 0) {
-        const matchingAdhocs = [...adhocDraftMapRef.current.entries()]
-          .filter(([key]) => key.startsWith(`adhoc_${draggableId}`))
-          .map(([_, task]) => task);
+        const matches = [...adhocDraftMapRef.current.entries()]
+          .filter(([k]) => k.startsWith(`adhoc_${activeId}`))
+          .map(([_, t]) => t);
 
-        if (matchingAdhocs.length > 0) {
-          matchingAdhocs.forEach((adhocTask) => {
-            insertAdhocTask(adhocTask);
-            adhocDraftMapRef.current.delete(adhocTask.id);
-          });
-          taskFromBank = taskSnapshotRef.current.find((t) => (t._id || t.tempId)?.toString() === draggableId);
+        if (matches.length > 0) {
+          matches.forEach((adhocTask) => insertAdhocTask(adhocTask));
+          adhocDraftMapRef.current.clear();
+
+          taskFromBank = taskSnapshotRef.current.find(
+            (t) => (t._id || t.tempId).toString() === activeId
+          );
         }
       }
 
       if (!taskFromBank) return;
-      console.log("[🧲 onDragEnd] Dragged task:", taskFromBank.name, taskFromBank);
+
       const selectedLeaves = buildScheduleAssignmentsFromTask(taskFromBank);
-      console.log("[🌿 buildScheduleAssignmentsFromTask] Selected leaves:", selectedLeaves.map(t => t.name));
 
-      const currentIds = new Set(destSlot.map(t => t.assignmentId));
-      const newTasks = selectedLeaves.filter(t => !currentIds.has(t.assignmentId));
-      // if (newTasks.length < selectedLeaves.length) {
-      //   AppToaster.show({
-      //     message: "That task is already scheduled at this time.",
-      //     intent: Intent.WARNING,
-      //   });
-      // }
+      const existingIds = new Set(destSlot.map((t) => t.assignmentId));
 
-      updated[type][slotKey] = [...destSlot, ...newTasks];
+      const newTasks = selectedLeaves.filter(
+        (t) => !existingIds.has(t.assignmentId)
+      );
+
+      updated[targetType][slotKey] = [...destSlot, ...newTasks];
+
+      setAssignments(updated);
+
+      const cleared = taskSnapshotRef.current.map(deepResetAdhocCheckboxes);
+      taskSnapshotRef.current = cleared;
+      setTaskSnapshot(cleared);
+
+      saveDayPlan(updated, targetType);
     }
+
     setIsDragging(false);
-    setShouldHideDrawer(false); // reset
+    setShouldHideDrawer(false);
     setLeftDrawerOpen(false);
-
-    setAssignments(updated);
-    const cleared = taskSnapshotRef.current.map((t) => deepResetAdhocCheckboxes(t));
-    taskSnapshotRef.current = cleared;
-    setTaskSnapshot(cleared);
-    saveDayPlan(updated, type);
   };
 
-  const onDragStart = (start) => {
-    const { draggableId, source } = start;
+
+  const onDragStart = (event) => {
+    const { active } = event;
+    const draggableId = active.id;
+
+    setDraggedTaskId(draggableId);  // ⭐ REQUIRED
     setIsDragging(true);
-
-    console.log("🔥 Drag started for", draggableId, "from", source.droppableId);
-    // setDraggedTaskId(draggableId);
-
-    // Optional: set state to track currently dragged task
-    // setDraggingTaskId(draggableId);
   };
-  const onBeforeCapture = (before) => {
-    const taskId = before.draggableId;
-    setDraggedTaskId(taskId); // set it early
-  };
-
   function deepResetAdhocCheckboxes(task) {
     let changed = false;
 
@@ -625,7 +667,9 @@ function App() {
                 <Button
                   icon="exchange"
                   onClick={() =>
-                    setLeftPanelMode((prev) => (prev === "schedule" ? "notebook" : "schedule"))
+                    setLeftPanelMode((prev) =>
+                      prev === "schedule" ? "notebook" : "schedule"
+                    )
                   }
                   minimal
                   title="Switch between Task/Schedule and Notebook"
@@ -644,17 +688,22 @@ function App() {
                         />
                       </div>
                     )}
-                    <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-                      {isMobile ? (
 
+                    <DndContext
+                      sensors={sensors}
+                      onDragStart={onDragStart}
+                      onDragEnd={onDragEnd}
+                    >
+                      {isMobile ? (
                         <Drawer
                           isOpen={leftDrawerOpen}
                           onClose={() => setLeftDrawerOpen(false)}
                           position={Position.LEFT}
                           title="Tasks"
-                          className={`mobile-taskbank-drawer ${shouldHideDrawer ? "soft-hide" : ""}`}
+                          className={`mobile-taskbank-drawer ${shouldHideDrawer ? "soft-hide" : ""
+                            }`}
                           hasBackdrop={!shouldHideDrawer}
-                          usePortal={false} // 👈 KEY CHANGE
+                          usePortal={false}
                         >
                           <div
                             ref={drawerRef}
@@ -663,22 +712,27 @@ function App() {
                             }}
                             onPointerLeave={() => {
                               if (isDragging) setPointerOverDrawer(false);
-                            }}>
+                            }}
+                          >
+
                             <TaskBank
                               tasks={tasks}
                               draggedTaskId={draggedTaskId}
                               onInsertAdhoc={handleInsertAdhoc}
                               onEditTask={(task) => {
                                 setTask(task);
-                                setIsDrawerOpen(true); // edit flow keeps the task
+                                setIsDrawerOpen(true);
                               }}
                               onNewTask={() => {
-                                setTask(null); // ← clear any previously selected task
+                                setTask(null);
                                 setIsDrawerOpen(true);
                               }}
                               onTaskUpdate={(updatedTask) => {
-                                const newSnapshot = taskSnapshotRef.current.map((t) =>
-                                  t._id === updatedTask._id ? updatedTask : t
+                                const newSnapshot = taskSnapshotRef.current.map(
+                                  (t) =>
+                                    t._id === updatedTask._id
+                                      ? updatedTask
+                                      : t
                                 );
                                 taskSnapshotRef.current = newSnapshot;
                                 setTaskSnapshot(newSnapshot);
@@ -687,27 +741,32 @@ function App() {
                           </div>
                         </Drawer>
                       ) : (
+
                         <TaskBank
                           tasks={tasks}
                           draggedTaskId={draggedTaskId}
                           onInsertAdhoc={handleInsertAdhoc}
                           onEditTask={(task) => {
                             setTask(task);
-                            setIsDrawerOpen(true); // edit flow keeps the task
+                            setIsDrawerOpen(true);
                           }}
                           onNewTask={() => {
-                            setTask(null); // ← clear any previously selected task
+                            setTask(null);
                             setIsDrawerOpen(true);
                           }}
                           onTaskUpdate={(updatedTask) => {
-                            const newSnapshot = taskSnapshotRef.current.map((t) =>
-                              t._id === updatedTask._id ? updatedTask : t
+                            const newSnapshot = taskSnapshotRef.current.map(
+                              (t) =>
+                                t._id === updatedTask._id
+                                  ? updatedTask
+                                  : t
                             );
                             taskSnapshotRef.current = newSnapshot;
                             setTaskSnapshot(newSnapshot);
                           }}
                         />
                       )}
+
                       <div className="schedule-container dual">
                         <div className="time-header">
                           <div className="selected-date">
@@ -725,14 +784,26 @@ function App() {
                           <div className="plan-header-container">
                             <PlanTemplateManager
                               assignments={assignments.preview}
-                              setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
-                              allDayPlans={dayplans.filter(dp => !dp.date && dp.name)}
+                              setAssignments={(data) =>
+                                setAssignments((prev) => ({
+                                  ...prev,
+                                  preview: data,
+                                }))
+                              }
+                              allDayPlans={dayplans.filter(
+                                (dp) => !dp.date && dp.name
+                              )}
                               savePlanTemplate={saveNamedPlanTemplate}
                               updatePlanTemplate={updateNamedPlanTemplate}
                               currentTemplate={currentTemplate}
                               deletePlanTemplate={deletePlanTemplate}
                               setCurrentTemplate={setCurrentTemplate}
-                              saveAssignments={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                              saveAssignments={(data) =>
+                                saveDayPlan(
+                                  { ...assignments, preview: data },
+                                  "preview"
+                                )
+                              }
                             />
 
                             <div className="plan-header">
@@ -743,7 +814,7 @@ function App() {
                                 minimal
                                 small
                                 title="Copy entire Plan → Live"
-                                onClick={handleCopyAllToAgenda} // ✅ Plan ➡️ Live
+                                onClick={handleCopyAllToAgenda}
                               />
                             </div>
                           </div>
@@ -754,35 +825,78 @@ function App() {
                               minimal
                               small
                               title="Copy entire Live → Plan"
-                              onClick={handleCopyAllFromAgenda} // ✅ Live ➡️ Plan
+                              onClick={handleCopyAllFromAgenda}
                             />
                             <div>Live</div>
                           </div>
                         </div>
+
                         <div className="schedules-scroll-wrapper">
                           <Schedule
-                            disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
+                            disableDrop={
+                              scheduleTemporarilyDisabled || pointerOverDrawer
+                            }
                             label="Plan"
                             onCopyToAgenda={handleCopyToAgenda}
                             timeSlots={timeSlots}
                             assignments={assignments.preview}
-                            setAssignments={(data) => setAssignments((prev) => ({ ...prev, preview: data }))}
+                            setAssignments={(data) =>
+                              setAssignments((prev) => ({
+                                ...prev,
+                                preview: data,
+                              }))
+                            }
                             setPlanDirty={setPlanDirty}
-                            onAssignmentsChange={(data) => saveDayPlan({ ...assignments, preview: data }, "preview")}
+                            onAssignmentsChange={(data) =>
+                              saveDayPlan(
+                                { ...assignments, preview: data },
+                                "preview"
+                              )
+                            }
                           />
                           <Schedule
-                            disableDrop={scheduleTemporarilyDisabled || pointerOverDrawer}
+                            disableDrop={
+                              scheduleTemporarilyDisabled || pointerOverDrawer
+                            }
                             label="Live"
-                            onCopyFromAgenda={handleCopyFromAgenda} // ✅
+                            onCopyFromAgenda={handleCopyFromAgenda}
                             timeSlots={timeSlots}
                             assignments={assignments.actual}
-                            setAssignments={(data) => setAssignments((prev) => ({ ...prev, actual: data }))}
+                            setAssignments={(data) =>
+                              setAssignments((prev) => ({
+                                ...prev,
+                                actual: data,
+                              }))
+                            }
                             setPlanDirty={setPlanDirty}
-                            onAssignmentsChange={(data) => saveDayPlan({ ...assignments, actual: data }, "actual")}
+                            onAssignmentsChange={(data) =>
+                              saveDayPlan(
+                                { ...assignments, actual: data },
+                                "actual"
+                              )
+                            }
                           />
                         </div>
                       </div>
-                    </DragDropContext>
+
+                      {/* ⭐ ADDED: DragOverlay */}
+                      <DragOverlay>
+                        {draggedTaskId ? (
+                          <div className="drag-overlay-wrapper">
+                            <TaskCard
+                              task={findTaskByIdDeep(
+                                draggedTaskId,
+                                taskSnapshotRef.current
+                              )}
+                              preview={true}
+                            />
+                          </div>
+
+                        ) : null}
+
+                      </DragOverlay>
+
+                    </DndContext>
                   </>
                 ) : (
                   <Notebook
@@ -903,8 +1017,9 @@ function App() {
           />
         </Drawer>
       </div>
-    </TimeProvider>
+    </TimeProvider >
   );
+
 }
 
 export default App;

@@ -359,7 +359,8 @@ p {
   overflow-y: scroll;
 }
 
-.container .task-bank .bp5-card {
+.container .task-bank .bp5-card,
+.drag-overlay-wrapper .bp5-card {
   padding: 0px;
   background-color: var(--color-surface);
   flex-direction: column;

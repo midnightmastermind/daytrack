@@ -1,9 +1,49 @@
 import React, { useMemo } from "react";
-import { Card, Elevation, Tag, Button } from "@blueprintjs/core";
-import { Droppable, Draggable } from "react-beautiful-dnd";
+import { Card, Elevation, Button } from "@blueprintjs/core";
 import { DateTime } from "luxon";
 import { useCurrentCutoff } from "../context/TimeProvider";
 import TaskTag from "./TaskTag";
+
+import { useDroppable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Small sortable wrapper for each chip
+function SortableTaskTag({ task, index, tasks, onRemove, disabled }) {
+  const id = task.assignmentId.toString();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id,
+    disabled
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }}
+      className="tag-wrapper"
+    >
+      <TaskTag
+        tasks={tasks}
+        task={task}
+        minimalValues={true}
+        onRemove={onRemove}
+        dragProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
 
 const ScheduleCard = ({
   tasks,
@@ -17,6 +57,7 @@ const ScheduleCard = ({
   taskPreview = false,
   disableDrop
 }) => {
+
   const tasksForSlot = assignments[timeSlot] || [];
   const cutoff = useCurrentCutoff();
 
@@ -40,82 +81,65 @@ const ScheduleCard = ({
     onAssignmentsChange(updated);
   };
 
-  return (
-    <Droppable
-      className={'droppable-container'}
-      droppableId={`${label}_${timeSlot}`}
-      ignoreContainerClipping={true}
-      isDropDisabled={disableDrop}
-    >
-      {(provided, snapshot) => (
-        <Card
-          className={`timeslot${isPast ? " past" : ""}`}
-          elevation={Elevation.FOUR}
-          interactive
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-          style={{
-            border: snapshot.isDraggingOver ? "2px dashed #4caf50" : "1px solid #30363D",
-            backgroundColor: snapshot.isDraggingOver ? "#0E1115" : undefined,
-          }}
-        >
-          <div className={`timeslot-title timeslot-title-${label}`}>
-            <div>{timeSlot}</div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {typeof onCopyFromAgenda === "function" && (
-                <Button
-                  icon="arrow-left"
-                  minimal
-                  small
-                  title="Copy from Agenda"
-                  className="timeslot-button"
-                  onClick={() => onCopyFromAgenda(timeSlot)}
-                  disabled={hasTempTasks}
-                />
-              )}
-              {typeof onCopyToAgenda === "function" && (
-                <Button
-                  icon="arrow-right"
-                  minimal
-                  small
-                  title="Copy to Agenda"
-                  className="timeslot-button"
-                  onClick={() => onCopyToAgenda(timeSlot)}
-                />
-              )}
-            </div>
-          </div>
+  // --- dnd-kit Droppable ---
+  const droppableId = `${label}_${timeSlot}`;
+  const { setNodeRef, isOver } = useDroppable({
+    id: droppableId,
+    disabled: disableDrop
+  });
 
-          <div className="tag-container">
-            {tasksForSlot.map((task, index) => (
-              <Draggable
-                key={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
-                isDragDisabled={task.properties?.temp === true}
-                draggableId={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
-                index={index}
-              >
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className="tag-wrapper"
-                  >
-                    <TaskTag
-                      tasks={tasks}
-                      task={task}
-                      minimalValues={true}
-                      onRemove={() => removeTask(index)}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        </Card>
-      )}
-    </Droppable>
+  return (
+    <Card
+      className={`timeslot${isPast ? " past" : ""}`}
+      elevation={Elevation.FOUR}
+      interactive
+      ref={setNodeRef}
+      style={{
+        border: isOver ? "2px dashed #4caf50" : "1px solid #30363D",
+        backgroundColor: isOver ? "#0E1115" : undefined,
+      }}
+    >
+      <div className={`timeslot-title timeslot-title-${label}`}>
+        <div>{timeSlot}</div>
+        <div style={{ display: "flex", gap: "4px" }}>
+          {typeof onCopyFromAgenda === "function" && (
+            <Button
+              icon="arrow-left"
+              minimal
+              small
+              title="Copy from Agenda"
+              className="timeslot-button"
+              onClick={() => onCopyFromAgenda(timeSlot)}
+              disabled={hasTempTasks}
+            />
+          )}
+
+          {typeof onCopyToAgenda === "function" && (
+            <Button
+              icon="arrow-right"
+              minimal
+              small
+              title="Copy to Agenda"
+              className="timeslot-button"
+              onClick={() => onCopyToAgenda(timeSlot)}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="tag-container">
+        {tasksForSlot.map((task, index) => (
+          <SortableTaskTag
+            key={`${taskPreview ? "preview-" : ""}${task.assignmentId}`}
+            task={task}
+            index={index}
+            tasks={tasks}
+            onRemove={() => removeTask(index)}
+            disabled={task.properties?.temp === true}
+          />
+        ))}
+      </div>
+    </Card>
   );
 };
 

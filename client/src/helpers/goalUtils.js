@@ -203,9 +203,7 @@ export function buildProgressEntriesFromTask(task, goalItems, assignmentDate, as
     for (const goalTask of item.tasks || []) {
       const goalTaskId = goalTask.task_id?.toString?.();
 
-      console.log(goalItemKey);
-      console.log(taskId);
-      console.log(goalTask.task_id);
+      if (goalTaskId !== taskId ) continue;
 
       if (goalTask.grouping) {
         const groupParentId = getGroupParentId(task);

@@ -105,12 +105,12 @@ const tasksSlice = createSlice({
       .addCase(bulkReorderTasks.fulfilled, (state, action) => {
         state.loading = false;
         // Optional: ensure the final order is reflected
-        for (const updated of action.payload) {
+        /*for (const updated of action.payload) {
           const idx = state.tasks.findIndex(t => t._id === updated._id);
           if (idx !== -1) {
             state.tasks[idx].properties.order = updated.properties.order;
           }
-        }
+        }*/
       })
       .addCase(bulkReorderTasks.rejected, (state, action) => {
         state.loading = false;

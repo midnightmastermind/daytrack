@@ -26,7 +26,6 @@ const formatCountdownPreview = (name, date) => {
 
 const GoalItem = ({ item, changeIndicators, triggerChangeIndicator }) => {
   const key = `${item.goalId}__item${item.order}`;
-  console.log(item);
   const getProgressValue = () => {
     const timeScale = item.timeScale || "overall";
 
@@ -40,7 +39,6 @@ const GoalItem = ({ item, changeIndicators, triggerChangeIndicator }) => {
   };
 
   function formatItemValue(value, item) {
-    console.log(item);
     return formatValueWithAffixes(item.unitPrefix || "", value, item.valueType || "string", item.unitSuffix || "");
   }
 
@@ -64,7 +62,6 @@ const GoalItem = ({ item, changeIndicators, triggerChangeIndicator }) => {
   });
   const intent = complete ? "success" : "danger";
   const change = changeIndicators[key];
-  console.log(item);
   return (
     <div className="goal-task" style={{ display: "flex", alignItems: "center", gap: 1 }}>
       <Tag className="unit-tag" intent={intent} minimal={!complete}>
