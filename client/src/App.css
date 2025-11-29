@@ -62,6 +62,7 @@
 :focus {
   /* outline: unset !important; */
 }
+
 /* Example usage */
 body {
   background-color: var(--color-bg);
@@ -71,29 +72,35 @@ body {
   height: 100%;
   overflow-y: hidden;
 }
+
 .decreased_value {
   background-color: var(--color-error);
 }
+
 .unit-value {
   padding: 0px 2px;
   border: 1px solid white;
   border-radius: 2px;
   margin-left: 2px;
 }
+
 .flow-switch-in .bp5-control-indicator {
   background: var(--color-success) !important;
 }
 
-.flow-switch-out .bp5-control-indicator{
+.flow-switch-out .bp5-control-indicator {
   background: var(--color-error) !important;
 }
+
 .flow-switch-out .bp5-control-indicator-child,
 .flow-switch-in .bp5-control-indicator-child {
   color: white;
 }
+
 .increased_value {
   background-color: var(--color-success);
 }
+
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -134,11 +141,13 @@ h1 {
 p {
   font-size: 20px;
 }
+
 .app-logo-container {
   height: 100%;
   width: 50px;
   padding: 2px;
 }
+
 .app-logo-container img {
   height: 100%;
   width: 100%;
@@ -232,13 +241,16 @@ p {
   /* display: flex;
   align-items: center; */
 }
+
 .bp5-icon-time {
   color: white;
 }
+
 .bp5-editable-text-input {
   min-width: 60px !important;
   width: auto !important;
 }
+
 /* Make sure navbar items are aligned correctly */
 .container .tool-bar .bp5-navbar-group {
   display: flex;
@@ -265,6 +277,7 @@ p {
   width: 75vw;
   flex-direction: column;
 }
+
 .container .left-side-header {
   display: flex;
   justify-content: space-between;
@@ -275,10 +288,12 @@ p {
   display: flex;
   align-items: center;
 }
+
 .drag-icon {
   display: flex;
   justify-content: end;
 }
+
 .drag-icon svg {
   width: 40px;
   height: 90px;
@@ -294,7 +309,8 @@ p {
   align-items: start;
   height: 100%;
   margin-left: 10px;
-  max-height: calc(100vh); /* adjust for your layout */
+  max-height: calc(100vh);
+  /* adjust for your layout */
 
 }
 
@@ -302,6 +318,7 @@ p {
   margin-left: 3px;
   max-width: 100px;
 }
+
 .right-side-header {
   display: flex;
   width: 100%;
@@ -312,20 +329,21 @@ p {
   border-left: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
 }
+
 .current-time-indicator {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   border-bottom: 4px solid rgba(255, 0, 0, 0.274) !important;
-  
-  background-color:  rgba(255, 0, 0, 0.06) !important; 
+
+  background-color: rgba(255, 0, 0, 0.06) !important;
   /* height: 18px;
   border-top: 4px solid rgba(255, 0, 0, 0.274) !important; */
   display: flex;
   justify-content: end;
   align-items: end;
-  color:  white;
+  color: white;
   font-size: 16px;
   font-weight: bold;
   z-index: 5;
@@ -342,8 +360,9 @@ p {
 }
 
 .current-time-block {
-  background-color:  rgba(255, 0, 0, 0.11) !important;
+  background-color: rgba(255, 0, 0, 0.11) !important;
 }
+
 .container .goal-display-container {
   width: 100%;
   height: 100%;
@@ -444,6 +463,7 @@ p {
   font-weight: bold;
   text-align: start;
 }
+
 .current-time {
   flex-grow: 1;
   display: flex;
@@ -460,6 +480,7 @@ p {
   height: 50%;
   margin-left: 10px;
 }
+
 .container .main-content .task-bank {
   display: flex;
   flex-direction: column;
@@ -468,12 +489,13 @@ p {
   background-color: var(--color-bg);
   overflow: visible !important;
 }
+
 .schedule-slot,
 .timeslot {
   overflow: visible !important;
 }
 
-.container .main-content .task-bank-scroll-wrapper{
+.container .main-content .task-bank-scroll-wrapper {
   height: 100%;
   overflow-y: auto;
   max-height: calc(100vh - 78px);
@@ -507,11 +529,13 @@ p {
 .tag-wrapper .edit-button-isopen {
   display: block !important;
 }
+
 .tag-wrapper .edit-button svg {
   color: white;
   height: 20px;
   width: 20px;
 }
+
 .tag-wrapper:hover .edit-button {
   display: block;
 }
@@ -524,11 +548,13 @@ p {
   height: 27px;
   width: 27px;
 }
+
 .collapse-button {
   flex: 1;
   display: flex;
   justify-content: start;
 }
+
 .container .task-header-left,
 .container .task-header-right {
   display: flex;
@@ -546,6 +572,7 @@ p {
   background-color: var(--color-surface);
   box-shadow: unset;
 }
+
 .container .task-header-left .bp5-button .bp5-icon {
   color: #FBFFFF;
 }
@@ -563,12 +590,15 @@ p {
 .container .task-bank .dragging {
   height: 40px !important;
 }
+
 .drag-icon {
   cursor: grab;
 }
+
 .dragging .drag-icon {
   cursor: grabbing;
 }
+
 .container .task-bank .task-options {
   width: 100%;
   height: 100%;
@@ -594,6 +624,7 @@ p {
 .numeric-input {
   display: flex;
 }
+
 .container .task-bank .taskcard-leaf-preview {
   display: flex;
   flex-direction: column;
@@ -614,9 +645,11 @@ p {
   padding-top: 1px;
   line-height: 10px;
 }
+
 .container .task-bank .taskcard-leaf-preview .leaf-chip .bp5-icon-tick {
   margin-right: 2px;
 }
+
 .container .task-bank .taskcard-leaf-preview .leaf-chip svg {
   height: 9px;
   width: 9px;
@@ -627,6 +660,7 @@ p {
   color: white;
   text-align: left;
 }
+
 .container .task-bank .task-children-collapse {
   width: 100%;
   /* max-height: 165px; */
@@ -647,6 +681,7 @@ p {
   background-color: var(--color-surface-light);
 
 }
+
 .container .task-bank .category-container {
   height: 100%;
   display: flex;
@@ -688,6 +723,7 @@ p {
 .container .task-bank .category-container .category-name .bp5-tag span {
   flex-grow: 0;
 }
+
 .container .task-bank .child-task {
   font-size: 20px;
   margin: 3px;
@@ -696,10 +732,12 @@ p {
   color: white;
   min-height: 50px !important;
 }
+
 .child-task .preset-input {
   display: flex;
   justify-content: end;
 }
+
 .container .task-bank .child-task .bp5-fill {
   display: flex;
   align-items: center !important;
@@ -709,6 +747,7 @@ p {
 .grouped-category .bp5-fill {
   flex-direction: column;
 }
+
 .preset-input .bp5-fill {
   flex-direction: row !important;
 }
@@ -754,8 +793,10 @@ p {
   width: 100%;
   border: 1px solid var(--color-border);
   padding: 1px;
-  flex: 1;            /* let it grow with layout */
-  min-height: 0;      /* important for scroll to calculate properly */
+  flex: 1;
+  /* let it grow with layout */
+  min-height: 0;
+  /* important for scroll to calculate properly */
   overflow: visible;
 }
 
@@ -766,12 +807,14 @@ p {
   padding: 0px 2px;
   overflow: visible !important;
 }
+
 .container .schedule-container .schedules-scroll-wrapper {
   height: 100%;
   display: flex;
   overflow-y: auto;
   max-height: calc(100vh - 150px);
 }
+
 .container .Plan-schedule-container {
   opacity: .7;
   height: 100%;
@@ -780,7 +823,8 @@ p {
 .container .Plan-schedule-container .tag-container {
   flex-direction: row-reverse;
 }
-  .container .schedule-header {
+
+.container .schedule-header {
   min-height: 50px;
   display: flex;
   font-size: 22px;
@@ -790,13 +834,14 @@ p {
 }
 
 .container .schedule-header .bp5-html-select select {
- font-size: 17px !important;
+  font-size: 17px !important;
 }
 
 .container .schedule-header .bp5-html-select .bp5-icon {
   top: 3px;
   right: 3px;
 }
+
 .container .plan-header-container {
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -805,6 +850,7 @@ p {
   position: relative;
   padding-right: 10px;
 }
+
 .container .agenda-header,
 .container .plan-header-container {
   width: 50%;
@@ -846,9 +892,12 @@ p {
   padding: 0px;
   margin-bottom: 2px;
   background-color: var(--color-surface-light);
-  position: relative;        /* important */
-  transform: translateZ(0);  /* fixes drag ghost alignment */
-  will-change: transform;    /* hint browser to optimize */
+  position: relative;
+  /* important */
+  transform: translateZ(0);
+  /* fixes drag ghost alignment */
+  will-change: transform;
+  /* hint browser to optimize */
 }
 
 .timeslot-title-container {
@@ -1029,6 +1078,7 @@ p {
   font-size: 16px;
   border-left: 1px solid var(--color-border)
 }
+
 .edit-goal-button {
   margin-left: auto;
   display: flex;
@@ -1054,7 +1104,7 @@ p {
 }
 
 .goal-display-container .goals-container .goal-tasks {
-    display: flex;
+  display: flex;
   flex-direction: column;
   justify-content: start;
   margin: 10px;
@@ -1067,12 +1117,12 @@ p {
 }
 
 .goal-display-container .goals-container .goal-units-container,
-.goal-form .goal-preview .goal-units-container{
+.goal-form .goal-preview .goal-units-container {
   height: 100%;
 }
 
 .goal-display-container .goals-container .goal-unit,
-.goal-form .goal-preview .goal-unit{
+.goal-form .goal-preview .goal-unit {
   height: 100%;
   display: flex;
   position: relative;
@@ -1080,7 +1130,7 @@ p {
 
 
 .goal-display-container .goals-container .goal-unit .bp5-tag,
-.goal-form .goal-preview .goal-unit .bp5-tag{
+.goal-form .goal-preview .goal-unit .bp5-tag {
   height: 50%;
 }
 
@@ -1114,15 +1164,18 @@ p {
 .goal-form .goal-preview .bp5-tag {
   font-size: 20px !important;
 }
+
 .goal-task .bp5-fill {
   display: flex;
   align-items: center;
   line-height: 23px;
 }
+
 .goal-display-container .goal-task,
-  .goal-form .goal-preview .goal-task {
-    justify-content: end;
+.goal-form .goal-preview .goal-task {
+  justify-content: end;
 }
+
 /* Scrollbar size */
 ::-webkit-scrollbar {
   width: 2px;
@@ -1198,6 +1251,7 @@ p {
 .task-content {
   width: 100%;
 }
+
 .tag-chain .bp5-minimal {
   color: gray !important;
 }
@@ -1230,6 +1284,7 @@ p {
   bottom: 0;
   left: 30px;
 }
+
 .timeslot-button {
   display: none;
 }
@@ -1245,12 +1300,15 @@ p {
 .timeslot:hover .timeslot-button {
   display: block;
 }
+
 .timeslot.past {
   opacity: 0.7;
 }
+
 .goal-countdown-tags {
   margin: 10px;
 }
+
 .goal-countdown-tags .bp5-fill {
   color: white !important;
 }
@@ -1261,6 +1319,7 @@ p {
   align-content: flex-start;
   gap: 4px;
 }
+
 .goal-display-header {
   display: flex;
   justify-content: space-between;
@@ -1277,6 +1336,7 @@ p {
 .grouped-unit-input-container .grouped-unit-row {
   justify-content: end !important;
 }
+
 .grouped-category {
   flex-direction: column;
 }
@@ -1295,8 +1355,9 @@ p {
   margin-left: 5px;
   align-content: end;
   line-height: 11px;
-  
+
 }
+
 .preset-values .bp5-tag {
   color: white !important;
   font-size: 16px;
@@ -1309,13 +1370,15 @@ p {
 .preset-input-row .bp5-control-indicator {
   margin-inline-start: -26px !important;
 }
-.preset-input-row .bp5-control{
+
+.preset-input-row .bp5-control {
   margin-top: 5px;
 }
 
 .bp5-tag {
   min-width: unset;
 }
+
 .preset-unit .unit-label {
   margin-right: 3px;
 }
@@ -1323,6 +1386,7 @@ p {
 .preset-unit .unit-value {
   font-weight: bold;
 }
+
 .preset-unit .bp5-text-overflow-ellipsis {
   display: flex !important;
   justify-content: space-between !important;
@@ -1339,9 +1403,11 @@ p {
   justify-content: start;
   align-items: start !important;
 }
+
 ::selection {
   background: unset !important;
 }
+
 .preset-input {
   height: 40px;
   width: 100%;
@@ -1355,13 +1421,14 @@ p {
   outline-offset: 0px;
 }
 
- .preset-inputs {
+.preset-inputs {
   align-self: end;
   justify-content: start;
   display: flex;
   flex-direction: column;
   align-items: start;
 }
+
 .preset-input .bp5-tag {
   color: white !important;
   font-size: 20px;
@@ -1373,19 +1440,23 @@ p {
 .preset-input .prefix-tag {
   min-width: 15px !important;
 }
+
 .grouping-unit-row .bp5-tag .bp5-fill {
   font-size: 20px;
   display: flex !important;
   align-items: center !important;
 }
+
 .new-entry .preset-input .bp5-numeric-input {
   max-width: 50px;
 }
+
 .new-entry .preset-name-input input {
   width: 100px;
 }
-.new-entry .preset-input .bp5-input-group input, 
-.new-entry .preset-name-input input{
+
+.new-entry .preset-input .bp5-input-group input,
+.new-entry .preset-name-input input {
   height: 30px;
   font-size: 20px;
 }
@@ -1397,6 +1468,7 @@ p {
 .bp5-html-select select {
   min-width: 55px;
 }
+
 .new-entry .control-inputs .bp5-control-indicator::before,
 .new-entry .bp5-control-indicator {
   height: 30px !important;
@@ -1481,9 +1553,11 @@ p {
   align-items: center;
   line-height: 23px !important;
 }
+
 .triangle-indicator {
   position: absolute;
-  right: -8px; /* adjust as needed */
+  right: -8px;
+  /* adjust as needed */
   top: 50%;
   transform: translateY(-50%);
   font-size: 6px;
@@ -1517,6 +1591,7 @@ p {
 .flow-select .bp5-icon svg {
   height: 26px !important;
 }
+
 .triangle-indicator.success {
   color: #0f9960;
 }
@@ -1524,16 +1599,20 @@ p {
 .triangle-indicator.danger {
   color: #db3737;
 }
-
+.mobile-taskbank-drawer {
+  width: 75% !important;
+}
 @keyframes popFade {
   0% {
     transform: translateY(-50%) scale(1.4);
     opacity: 1;
   }
+
   60% {
     transform: translateY(-50%) scale(1.15);
     opacity: 0.8;
   }
+
   100% {
     transform: translateY(-50%) scale(1);
     opacity: 0;
@@ -1580,11 +1659,13 @@ p {
 .task-header-left .bp5-icon {
   margin-right: 0px;
 }
+
 .task-card .edit-task-button {
   display: none;
   width: 80px !important;
   min-width: unset;
 }
+
 .task-card:hover .edit-task-button {
   display: flex;
   justify-content: center;
@@ -1595,8 +1676,8 @@ p {
 }
 
 .task-tag {
- display: flex; 
- width: 100%;
+  display: flex;
+  width: 100%;
 }
 
 .task-summary .bp5-tag {
@@ -1626,9 +1707,11 @@ p {
   display: flex;
   justify-content: end;
 }
+
 .close-button span {
   color: white !important;
 }
+
 .close-button {
   margin-right: 5px !important;
 }
@@ -1677,7 +1760,7 @@ p {
     width: 100% !important;
     z-index: 1000 !important;
   }
-  
+
   .left-mobile-toolbar,
   .right-mobile-toolbar {
     width: 70px;
@@ -1689,8 +1772,7 @@ p {
   }
 
   .left-mobile-toolbar .bp5-icon,
-  .right-mobile-toolbar .bp5-icon {
-  }
+  .right-mobile-toolbar .bp5-icon {}
 
   .right-side {
     max-width: 70px;
@@ -1718,6 +1800,7 @@ p {
   .goal-form .goal-preview {
     margin-left: 0px !important;
   }
+
   .goal-form .goal-preview .goal-item {
     margin-top: 5px !important;
   }
@@ -1767,80 +1850,78 @@ p {
 
   /* 🎯 All Font-Size Declarations Extracted from App.css */
 
-button {
-  font-size: 1rem;
-}
+  button {
+    font-size: 1rem;
+  }
 
-p {
-  font-size: 28px;
-}
+  p {
+    font-size: 28px;
+  }
 
-.tool-bar .app-name {
-  font-size: 28px;
-}
+  .tool-bar .app-name {
+    font-size: 28px;
+  }
 
-.bp5-editable-text::before {
-  font-size: 28px;
-}
+  .bp5-editable-text::before {
+    font-size: 28px;
+  }
 
-.current-time-indicator {
-  font-size: 20px;
-}
+  .current-time-indicator {
+    font-size: 20px;
+  }
 
-.container .task-bank-header {
-  font-size: 20px;
-}
+  .container .task-bank-header {
+    font-size: 20px;
+  }
 
-.task-bank-header-container .bp5-button {
-  font-size: 20px;
-}
+  .task-bank-header-container .bp5-button {
+    font-size: 20px;
+  }
 
-.time-header .bp5-button-text {
-  font-size: 20px;
-}
+  .time-header .bp5-button-text {
+    font-size: 20px;
+  }
 
-.selected-date {
-  font-size: 20px;
-}
+  .selected-date {
+    font-size: 20px;
+  }
 
-.current-time {
-  font-size: 24px;
-}
+  .current-time {
+    font-size: 24px;
+  }
 
-.container .task-bank .task-header {
-  font-size: 21px;
-}
+  .container .task-bank .task-header {
+    font-size: 21px;
+  }
 
-.bp5-tag {
-  font-size: 28px;
-}
+  .bp5-tag {
+    font-size: 28px;
+  }
 
-.bp5-button {
-  font-size: 28px;
-}
+  .bp5-button {
+    font-size: 28px;
+  }
 
-.container .task-bank .taskcard-leaf-preview .leaf-chip span {
-  font-size: 20px;
-}
+  .container .task-bank .taskcard-leaf-preview .leaf-chip span {
+    font-size: 20px;
+  }
 
-.container .task-bank .task-children-header .bp5-fill {
-  font-size: 20px;
-}
+  .container .task-bank .task-children-header .bp5-fill {
+    font-size: 20px;
+  }
 
-.pomodoro-widget {
-  font-size: 28px;
-}
+  .pomodoro-widget {
+    font-size: 28px;
+  }
 
-.pomodoro-widget span {
-  font-size: 34px;
-}
+  .pomodoro-widget span {
+    font-size: 34px;
+  }
 
 }
 
 /* Cover screen - landscape */
-@media only screen and (max-height: 400px) and (orientation: landscape) {
-
-}
+@media only screen and (max-height: 400px) and (orientation: landscape) {}
 
 /* Main (unfolded) screen - portrait */
 @media only screen and (min-width: 700px) and (max-width: 800px) and (orientation: portrait) {
@@ -1850,13 +1931,12 @@ p {
 }
 
 /* Main (unfolded) screen - landscape */
-@media only screen and (min-width: 1000px) and (orientation: landscape) {
-
-}
+@media only screen and (min-width: 1000px) and (orientation: landscape) {}
 
 .custom-drawer {
   position: absolute;
-  top: 30px; /* or your toolbar height */
+  top: 30px;
+  /* or your toolbar height */
   left: 0;
   width: 280px;
   height: calc(100vh - 30px);
@@ -1915,4 +1995,3 @@ p {
   width: 40px !important;
   height: 40px !important;
 }
-
