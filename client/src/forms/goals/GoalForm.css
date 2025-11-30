@@ -59,7 +59,6 @@
   
   .goal-form .bp5-select::after, .bp5-html-select .bp5-icon, .bp5-select .bp5-icon {
     right: 4px !important;
-    top: 3px !important;
   }
 
   .goal-form .unit-header {
@@ -86,17 +85,18 @@
   .header-section .bp5-input-group input,
   .header-section .bp5-control-indicator-child div {
     color: white !important;
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
 
   .goal-form .bp5-control.bp5-switch .bp5-switch-inner-text {
-    font-size: 18px;
+    font-size: 15px;
     color: white !important;
   }
   .goal-form .form-section-body {
     display: flex;
     justify-content: start;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
   .goal-form .form-section {

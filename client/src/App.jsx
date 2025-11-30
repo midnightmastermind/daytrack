@@ -54,6 +54,7 @@ import {
   DndContext,
   PointerSensor,
   useSensor,
+  TouchSensor,
   useSensors,
   DragOverlay
 } from "@dnd-kit/core";
@@ -97,7 +98,15 @@ function App() {
   const drawerRef = useRef(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    })
   );
 
   useEffect(() => {
@@ -178,6 +187,13 @@ function App() {
       window.removeEventListener("pointermove", handlePointerMove);
     };
   }, [isDragging]);
+
+  useEffect(() => {
+    const el = document.querySelector(".current-time-block");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
 
   const handleCopyToAgenda = (slot) => {
     const planTasks = assignments.preview[slot] || [];

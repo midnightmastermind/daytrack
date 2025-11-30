@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import TaskCard from "./TaskCard";
 import { Icon } from "@blueprintjs/core";
+
 export default function SortableTaskCard({ task, ...props }) {
   const id = (task._id || task.tempId).toString();
 
@@ -17,18 +18,23 @@ export default function SortableTaskCard({ task, ...props }) {
     <Icon
       icon="horizontal-inbetween"
       className="drag-icon"
-      {...listeners}
-      {...attributes}
+      {...listeners}     // ⭐ Touch + pointer drag events
+      {...attributes}    // ⭐ Accessibility + sorting info
     />
   );
 
   return (
-    <TaskCard
-      {...props}
-      task={task}
+    <div         // ⭐ MUST be a DOM element
       ref={setNodeRef}
       style={style}
-      dragHandle={dragHandle}
-    />
+      {...attributes}
+      className="cloned-task"
+    >
+      <TaskCard
+        {...props}
+        task={task}
+        dragHandle={dragHandle}
+      />
+    </div>
   );
 }
